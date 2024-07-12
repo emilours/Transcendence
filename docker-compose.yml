@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - ft_transcendence
+    restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"] #ou verifier si le port est ouvert
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    command: gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgres://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@db:5432/$${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ft_transcendence
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./backend/static:/static
+      - ./backend/media:/media
+    ports:
+      - "8080:80"  # Expose le port 80 à l'intérieur du conteneur sur le port 8080 de l'hôte
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - ft_transcendence
+
+volumes:
+  postgres-data:
+
+networks:
+  ft_transcendence:
