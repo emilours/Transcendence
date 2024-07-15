@@ -7,7 +7,7 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Ajouter psycopg2-binary
+# Ajouter psycopg2-binary -> connecteur DB
 RUN pip install psycopg2-binary
 
 # Copie tous les fichiers du répertoire courant
