@@ -80,18 +80,13 @@ WSGI_APPLICATION = 'my_website.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-import os
-from pathlib import Path
-
-# BASE_DIR est défini ici
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'your_db_name'),
-        'USER': os.getenv('POSTGRES_USER', 'your_db_user'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'your_db_password'),
+        'NAME': 'your_db_name',
+        'USER': 'your_database_user',
+        'PASSWORD': 'your_database_password',
         'HOST': 'db',
         'PORT': '5432',
     }
