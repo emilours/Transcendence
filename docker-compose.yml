@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   db:
@@ -21,9 +21,11 @@ services:
 
   backend:
     build: ./backend
-    command: gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn my_website.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - ./backend:/app
+    ports:
+      - "8000:8000"
     environment:
       - DATABASE_URL=postgres://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@db:5432/$${POSTGRES_DB}
     depends_on:
@@ -39,12 +41,18 @@ services:
       - ./backend/static:/static
       - ./backend/media:/media
     ports:
-      - "8080:80"  # Expose le port 80 à l'intérieur du conteneur sur le port 8080 de l'hôte
+      - "8080:80"
     depends_on:
       backend:
         condition: service_started
     networks:
       - ft_transcendence
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      # test: ["CMD", "pidof", "nginx"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres-data:

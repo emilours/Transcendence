@@ -1,7 +1,7 @@
 FROM python:3.9
 
 # Définit le répertoire de travail dans le conteneur
-WORKDIR /app
+WORKDIR ./backend
 
 COPY requirements.txt .
 
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # demarre l'application avec Gunicorn
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "my_website.wsgi:application", "--bind", "0.0.0.0:8000"]
