@@ -22,3 +22,16 @@ mysite/urls.py : les déclarations des URL de ce projet Django, une sorte de « 
 mysite/asgi.py : un point d’entrée pour les serveurs Web compatibles aSGI pour déployer votre projet. Voir Comment déployer avec ASGI pour plus de détails.
 
 mysite/wsgi.py : un point d’entrée pour les serveurs Web compatibles WSGI pour déployer votre projet. Voir Comment déployer avec WSGI pour plus de détails.
+
+
+Utilisation de Django admin :
+
+Gérer les utilisateurs : Utilisez Django admin pour ajouter et gérer les utilisateurs, attribuer des rôles et des permissions.
+Modérer le contenu : La modération des messages, des commentaires et autres contenus générés par les utilisateurs peut être effectuée via l'interface admin.
+Visualiser les données : Accédez rapidement aux statistiques et aux données clés de l'application via l'interface admin.
+
+Utilisation de manage.py :
+
+Développement et déploiement : Utilisez manage.py pour appliquer des migrations, exécuter le serveur de développement, collecter des fichiers statiques pour le déploiement, etc.
+Automatisation des tâches : Écrivez des scripts de gestion et des tâches récurrentes, comme la sauvegarde de la base de données ou l'importation de données en masse.
+Tests : Exécutez des tests unitaires et fonctionnels pour vous assurer que votre application fonctionne correctement.
