@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
      'my_website',
+     'authentification',
+     'gameplay',
+     'pong',
+     'second_game',
 ]
 
 MIDDLEWARE = [
