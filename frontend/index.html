@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Chat Pong</title>
 	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/myStyle.css">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Potta+One&display=swap">
 	<!-- Bootstrap -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
@@ -13,124 +14,79 @@
 </head>
 
 <body>
-	<header>
-		<!-- <div class="container-fluid bg-secondary">
-			<div class="row d-flex justify-content-between">
-				<div class="col d-flex justify-content-end">
-					<img src="./img/pusheen_logo.png" alt="pusheen playing with a racket" class="img-fluid w-50">
-				</div>
-				<div class="col d-flex justify-content-start">
-					<img src="./img/pusheen.gif" alt="big pusheen logo" class="img-fluid">
-				</div>
-			</div>
-		</div> -->
+	<header class="font-potta">
 		<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
 			<div class="container-fluid bg-secondary" >
 				<a class="navbar-brand" href="#">
-					<img src="./img/icone.jpg" alt="icone de pusheen" width="50" height="50">
+					<img src="./img/pusheen_nav.png" alt="icone de pusheen" width="60" height="60">
 				</a>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
 				aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse justify-content-between my-2" id="navbarContent">
-					<ul class="navbar-nav mx-auto">
+					<ul class="navbar-nav mx-auto align-items-center">
 						<li class="nav-item">
-							<a class="nav-link active" aria-current="page" href="#">Home</a>
+							<a class="nav-link active" aria-current="page" href="#" id="home">Home</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="#aboutUS">About Us</a>
+							<a class="nav-link" href="#footer">About Us</a>
 						</li>
-						<li class="nav-item dropdown">
+						<li class="nav-item">
+							<button id="decrease-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
+								<i class="bi bi-dash-circle"></i>
+								<span class="d-md-none ms-1 fs-6">Increase font size</span>
+							</button>
+						</li>
+						<li class="nav-item">
+							<button id="increase-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Increase font size">
+								<i class="bi bi-plus-circle"></i>
+								<span class="d-md-none ms-1 fs-6">Decrease font size</span>
+							</button>
+						</li>
+						<li class="nav-item dropdown ms-3 mb-4 mb-md-0">
 							<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-								langages
+								<img src="./img/global.png" alt="Choose your language" width="24" height="24">
+								<span class="d-md-none ms-1 fs-6">Languages</span>
 							</a>
-							<ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+							<ul class="dropdown-menu rounded-3 bg-secondary dropdown-menu-primary" aria-labelledby="navbarDropdown">
 								<li><a class="dropdown-item" href="#">English</a></li>
 								<li><a class="dropdown-item" href="#">French</a></li>
 								<!-- <li><hr class="dropdown-divider"></li> -->
 								<li><a class="dropdown-item" href="#">Spanish</a></li>
 							</ul>
 						</li>
-						<!-- <li class="nav-item">
-							<a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-						</li> -->
 					</ul>
 
-					<div class="d-flex">
-						<button type="button" class="btn btn-outline-primary rounded-pill">Login</button>
-						<button type="button" class="btn btn-primary rounded-pill ms-2">Sign-up</button>
+					<div class="d-flex justify-content-center">
+						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="login">Login</button>
+						<button type="button" class="btn btn-primary rounded-pill ms-2" id="signup">Sign-up</button>
 					</div>
 				</div>
 			</div>
 		</nav>
 	</header>
 
-	<!-- <div id="app"></div> -->
-	<main>
-		<!-- <section class="pt-5"></section> -->
-		<section class="py-5 mt-5">
-			<div class="container">
-				<div class="row g-4">
-					<div class="col-12 col-md-6">
-						<img src="./img/pusheen_drink.png" alt="john doe" description="hello" width="75%">
-					</div>
-					<div class="col-12 col-md-6 bg-primary d-flex align-items-center justify-content-center rounded-3">
-						<video controls>
-							<source src="./video/pusheen_the_cat_intro.mp4" type="video/mp4" />
-							<p>
-								Votre navigateur ne prend pas en charge les vidéos HTML5. Voici
-								<a href="myVideo.mp4">un lien pour télécharger la vidéo</a>.
-							</p>
-						</video>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<section class="py-5">
-			<div class="container">
-				<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe deserunt officia consequuntur inventore ipsa iste amet minus qui quas, nesciunt,
-					 voluptas quod? In hic unde incidunt voluptates laboriosam. Sapiente, natus!</p>
-				<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe deserunt officia consequuntur inventore ipsa iste amet minus qui quas, nesciunt,
-					voluptas quod? In hic unde incidunt voluptates laboriosam. Sapiente, natus!</p>
-				<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe deserunt officia consequuntur inventore ipsa iste amet minus qui quas, nesciunt,
-					voluptas quod? In hic unde incidunt voluptates laboriosam. Sapiente, natus!</p>
-			</div>
-		</section>
-
-		<section class="py-5">
-			<div class="container">
-				<div class="row g-4 justify-content-evenly">
-					<div class="col-12 col-md-4 bg-primary d-flex flex-column align-items-center justify-content-center rounded-3">
-						<h1 class="fw-bold text-center">Pusheen Arcade</h1>
-						<button type="button" class="btn btn-light mt-3 rounded-3 bg-secondary">Play Now</button>
-					</div>
-					<div class="col-12 col-md-4">
-						<img src="./img/pusheen.gif" alt="pusheen drinking" description="hello" width="100%">
-					</div>
-				</div>
-			</div>
-		</section>
-
+	<main class="flex-grow-1 d-flex flex-column">
+		<div id="app" class="container mt-5 pt-2"></div>
 	</main>
 
-	<footer class="border-top" id="footer">
+	<footer class="border-top border-info mt-4 font-potta" id="footer">
 		<div class="container-fluid py-4 bg-secondary">
-			<div class="row gy-4 align-items-center">
-				<div class="col-12 col-md-4">
+			<div class="row gy-2 align-items-center">
+				<div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-start">
 					<a class="navbar-brand text-dark text-uppercase fw-bold" href="#">
-						<span class="bg-primary bg-gradient p-1 rounded-3 text-light">E</span>xemple
+						<span class="bg-primary bg-gradient p-1 rounded-3 text-info">Push</span>een
 					</a>
 				</div>
-				<div class="col-12 col-md-4 text-md-center">
+				<div class="col-12 col-md-4 d-flex justify-content-center text-md-center">
 					<ul class="list-unstyled mb-0">
 						<li>
 							<a href="#" class="text-decoration-none text-dark" data-bs-toggle="modal" data-bs-target="#aboutUs">About Us</a>
 						</li>
 					</ul>
 				</div>
-				<div class="col-12 col-md-4 text-md-end">
+				<div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-end">
 					<ul class="list-inline mb-0">
 						<li class="list-inline-item">
 							<a href="https://42.fr/en/homepage/" target="_blank" class="text-decoration-none text-dark" data-bs-toggle="tooltip" title="school 42">
@@ -146,6 +102,7 @@
 				</div>
 			</div>
 		</div>
+
 		<!-- Modal -->
 		<div class="modal fade" id="aboutUs" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered">
@@ -175,46 +132,3 @@
 
 </body>
 </html>
-
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="fr">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Ma SPA en JavaScript</title>
-	<link rel="stylesheet" href="css.css">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Potta+One&display=swap" rel="stylesheet">
-</head>
-<body>
-	<nav>
-		<a href="#" id="home">Accueil</a>
-		<a href="#" id="about">À propos</a>
-		<a href="#" id="contact">Contact</a>
-	</nav>
-	<div class="container" id="app">
-		Le contenu sera chargé ici
-	</div>
-
-
-	<div class="main">
-
-		<div class="main-login">
-
-			<p class="test-login">Already Regstered</p>
-			<button class="button-login">SIGNIN</button>
-			<p class="test-login">create an account</p>
-			<button class="button-login">sign up</button>
-
-		</div>
-
-		<img class="main-img" src="./assets/pusheen_exp 1.png" />
-	</div>
-</body>
-</html> -->
-
-<!-- --bs-body-font-family: 'Potta One', sans-serif; -->

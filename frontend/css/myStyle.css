@@ -1,0 +1,22 @@
+html, body {
+	height: 100%;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+}
+
+main {
+	flex-grow: 1;
+}
+
+
+.font-potta {
+	font-family: 'Potta One', sans-serif;
+}
+
+.font-roboto {
+	font-family: 'Roboto', sans-serif;
+}
+
