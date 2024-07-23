@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			<div class="container">
 				<div class="row g-4">
 					<div class="col-12 col-md-6 d-flex justify-content-center">
-						<img src="./img/pusheen_drink.png" alt="john doe" description="hello" width="75%">
+						<img src="./img/pusheen_drink.png" alt="Pusheen driking a cola" description="hello" width="75%">
 					</div>
 					<div class="col-12 col-md-6 mt-4 d-flex align-items-center justify-content-center">
 						<video controls class="w-100 rounded-3 border border-5 border-primary">
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary">Play Now</button>
 					</div>
 					<div class="col-12 col-md-4">
-						<img src="./img/pusheen.gif" alt="pusheen drinking" description="hello" class="rounded-3 w-100 border border-5 border-secondary">
+						<img src="./img/pusheen.gif" alt="pusheen playing with a racket" description="hello" class="rounded-3 w-100 border border-5 border-secondary">
 					</div>
 				</div>
 			</div>
@@ -70,8 +70,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function renderSignUp() {
 		app.innerHTML = `
-		<section class="vh-100 d-flex align-items-center justify-content-center">
-			<div class="container">
+		<section class="d-flex align-items-center justify-content-center">
+			<div class="container mt-5">
 				<div class="row justify-content-center">
 					<div class="col-12 col-md-8 col-lg-6">
 						<div class="card shadow">
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
 							</div>
 						</div>
 						<div class="text-center mt-3">
-							<a href="#" class="text-decoration-none" id="login">Already have an account? Login</a>
+							<p>Already have an account? <a href="#" class="text-decoration-none" id="login">Login</a> </p>
 						</div>
 					</div>
 				</div>
@@ -114,8 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function renderLogin() {
 		app.innerHTML = `
-		<section class="vh-100 d-flex align-items-center justify-content-center">
-			<div class="container my-5">
+		<section class="d-flex align-items-center justify-content-center">
+			<div class="container mt-5">
 				<div class="row justify-content-center">
 					<div class="col-12 col-md-6 col-lg-4">
 						<div class="card shadow">
@@ -171,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-
 	document.addEventListener('click', (event) => {
 		if (event.target.matches('#home')) {
 			event.preventDefault();
@@ -185,21 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	});
 
-	// document.getElementById('home').addEventListener('click', (event) => {
-	// 	event.preventDefault();
-	// 	handleRoute('home');
-	// });
-
-	// document.getElementById('signup').addEventListener('click', (event) => {
-	// 	event.preventDefault();
-	// 	handleRoute('signup');
-	// });
-
-	// document.getElementById('login').addEventListener('click', (event) => {
-	// 	event.preventDefault();
-	// 	handleRoute('login');
-	// });
-
 	window.addEventListener('popstate', (event) => {
 		if (event.state && event.state.route) {
 			handleRoute(event.state.route, false);
@@ -208,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	});
 
-	// Charger la page actuelle basée sur le hash ou la page d'accueil par défaut
 	const initialRoute = window.location.hash.replace('#', '') || 'home';
 	handleRoute(initialRoute, false);
 });
