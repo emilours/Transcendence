@@ -85,16 +85,37 @@ WSGI_APPLICATION = 'my_website.wsgi.application'
 #     }
 # }
 
+import os
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'your_db_name',
-        'USER': 'your_database_user',
-        'PASSWORD': 'your_database_password',
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': os.environ.get('POSTGRES_NAME'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
+
+# from decouple import config
+
+# db_user = config('POSTGRES_USER')
+# db_password = config('POSTGRES_PASSWORD')
+# db_name = config('POSTGRES_NAME')
+# db_host = config('POSTGRES_HOST')
+# db_port = config('POSTGRES_PORT')
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': db_name,
+#         'USER': db_user,
+#         'PASSWORD': db_password,
+#         'HOST': db_host,
+#         'PORT': db_port,
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
