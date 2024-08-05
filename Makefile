@@ -5,12 +5,12 @@ IMAGES			=	$(shell docker images -q)
 CONTAINERS		=	$(shell docker ps -aq)
 VOLUMES			=	$(shell docker volume ls -q)
 NETWORKS		=	$(shell docker network ls -q)
-DATA_DIR		=	./data/PostgreSQL
+# DATA_DIR		=	./data/PostgreSQL
 
 all:
 	@echo "$(YELLOW)\n. . . Launching . . .\n$(RESET)"
-	@mkdir -p $(DATA_DIR)
-	@docker compose -p $(PROJET_NAME) -f ./docker-compose.yml up -d
+#	@mkdir -p $(DATA_DIR)
+	@docker compose -f ./docker-compose.yml up -d
 	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"
 
 start:
@@ -24,7 +24,7 @@ start:
 
 logs:
 	@echo "$(YELLOW)\n. . . Displaying logs . . . \n$(RESET)"
-	@docker compose -f ./docker-compose.yml logs -f
+	@docker compose logs
 	@echo "\n$(BOLD)$(GREEN)Displayed logs [ ✔ ]\n$(RESET)"
 
 stop:
@@ -45,22 +45,28 @@ down:
 		echo "\n$(BOLD)$(RED)No Docker containers found.$(RESET)\n"; \
 	fi
 
-clean: down
-	@echo "$(YELLOW)\n. . . Cleaning up unused resources (excluding data) . . .\n$(RESET)"
-	@docker container prune -f
-	@docker image prune -a -f
-	@docker volume prune -a -f
-	@docker network prune -f
-	@echo "\n$(BOLD)$(GREEN)Cleaned up unused resources (excluding data) [ ✔ ]\n$(RESET)"
+clean: stop down
+	@if [ -n "$(CONTAINERS)" ]; then \
+		echo "Removing containers..."; \
+		docker rm -f $(CONTAINERS); \
+	fi
+	@if [ -n "$(IMAGES)" ]; then \
+		echo "Removing images..."; \
+		docker rmi -f $(IMAGES); \
+	fi
 
 fclean: clean
 	@echo "$(YELLOW)\n. . . Performing full cleanup . . .\n$(RESET)"
-	@rm -rf $(DATA_DIR)
+#	@rm -rf $(DATA_DIR)
+		@if [ -n "$(VOLUMES)" ]; then \
+		echo "Removing volumes..."; \
+		docker volume rm $(VOLUMES); \
+	fi
 	@docker system prune -a -f
 	@echo "\n$(BOLD)$(GREEN)Full cleanup completed [ ✔ ]\n$(RESET)"
 
-re: down all
-	@echo "$(YELLOW)\n. . . Restarting the project . . .\n$(RESET)"
+
+re: clean all
 
 check_status:
 	@echo "\n$(YELLOW)docker ps -a $(RESET)" && docker ps -a

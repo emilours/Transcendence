@@ -27,3 +27,7 @@
 
 # Password
 .env
+.env.db
+
+# Virtual Environment
+myVirtualEnv/
