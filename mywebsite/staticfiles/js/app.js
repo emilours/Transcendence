@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					</div>
 					<div class="col-12 col-md-6 mt-4 d-flex align-items-center justify-content-center">
 						<video controls class="w-100 rounded-3 border border-5 border-primary">
-							<source src="{% static 'frontend/video/pusheen_the_cat_intro.mp4' %}" type="video/mp4"/>
+							<source src="{% static 'video/pusheen_the_cat_intro.mp4' %}" type="video/mp4"/>
 							<p>
 								Votre navigateur ne prend pas en charge les vidéos HTML5. Voici
 								<a href="{% static 'frontend/video/pusheen_the_cat_intro.mp4' %}">un lien pour télécharger la vidéo</a>.
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary">Play Now</button>
 					</div>
 					<div class="col-12 col-md-4">
-						<img src="{% static 'frontend/img/pusheen.gif' %}" alt="pusheen playing with a racket" description="hello" class="rounded-3 w-100 border border-5 border-secondary">
+						<img src="{% static 'img/pusheen.gif' %}" alt="pusheen playing with a racket" description="hello" class="rounded-3 w-100 border border-5 border-secondary">
 					</div>
 				</div>
 			</div>
