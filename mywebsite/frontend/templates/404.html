@@ -68,11 +68,17 @@
 		</nav>
 	</header>
 
-
 	<main class="flex-grow-1 d-flex flex-column">
-		<div id="app" class="container mt-5 pt-2"></div>
+		<section class="py-md-5 mt-5">
+			<div class="container mt-5 pt-2 text-center">
+				<h1>404 - Page Not Found</h1>
+				<p>Sorry, the page you are looking for does not exist.</p>
+			</div>
+			<div class="container mt-5 pt-2 text-center">
+				<img src="{% static 'img/pusheen_sherlock.png' %}" alt="pusheen page 404" width="50%">
+			</div>
+		</section>
 	</main>
-
 
 
 	<footer class="border-top border-info mt-4 font-potta" id="footer">
@@ -132,7 +138,7 @@
 	crossorigin="anonymous"></script>
 	<script> const CSRF_TOKEN = '{{ csrf_token }}'</script>
 	<script src="{% static 'js/bootstrap.js' %}"></script>
-	<script src="{% static 'js/frontend.js' %}"></script>
+	<script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>
 

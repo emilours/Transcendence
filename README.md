@@ -3,20 +3,18 @@
 ## Project Structure
 
 ```bash
-├── mywebsite
-│   ├── frontend
+├── mywebsite/
+│   ├── frontend/
 │   │   ├── migrations/
 │   │   ├── static/
-│   │   │   └── frontend/
-│   │   │       └── css/
-│   │   │       └── img/
-│   │   │       └── js/
-│   │   │       └── node_modules/
-│   │   │       └── sass/
-│   │   │       └── vidieo/
+│   │   │   └── css/
+│   │   │   └── img/
+│   │   │   └── js/
+│   │   │   └── node_modules/
+│   │   │   └── sass/
+│   │   │   └── video/
 │   │   ├── templates/
-│   │   │   └── frontend/
-│   │   │       └── index.html
+│   │   │   └── indenx.html
 │   │   ├── __init__.py
 │   │   ├── admin.py
 │   │   ├── apps.py
@@ -25,12 +23,13 @@
 │   │   ├── test.py
 │   │   ├── urls.py
 │   │   └── views.py
-│   ├── mywebsite
+│   ├── mywebsite/
 │   │   ├── __init__.py
 │   │   ├── asgi.py
 │   │   ├── settings.py
 │   │   ├── urls.py
 │   │   └── wsgi.py
+│   ├── staticfiles/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
 │   ├── manage.py

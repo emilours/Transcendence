@@ -203,7 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
 		renderLogin();
 	});
 
-	const initialRoute = window.location.hash.replace('#', '') || 'home';
+	// const initialRoute = window.location.hash.replace('#', '') || 'home';
+	const initialRoute = window.location.pathname.replace('/', '') || 'home';
 	handleRoute(initialRoute, false);
 });
 
