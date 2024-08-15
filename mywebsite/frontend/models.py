@@ -1,13 +1,26 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.contrib.auth.models import AbstractUser, Group, Permission
 
-class CustomUser(AbstractBaseUser):
+class User(AbstractUser):
 	email = models.EmailField(unique=True)
-	first_name = models.CharField(max_length=150)
-	last_name = models.CharField(max_length=150)
+	score = models.IntegerField(default=0)
+	games_played = models.IntegerField(default=0)
 
-	USERNAME_FIELD = 'email'
-	REQUIRED_FIELDS = []
+	# Add related_name to groups and user_permissions fields
+	groups = models.ManyToManyField(
+		Group,
+		related_name='frontend_users',  # Updated related_name
+		blank=True,
+		help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+		verbose_name='groups',
+	)
+	user_permissions = models.ManyToManyField(
+		Permission,
+		related_name='frontend_users_permissions',  # Updated related_name
+		blank=True,
+		help_text='Specific permissions for this user.',
+		verbose_name='user permissions',
+	)
 
 	def __str__(self):
-		return self.email
+		return self.username

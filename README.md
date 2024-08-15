@@ -5,7 +5,6 @@
 ```bash
 ├── mywebsite/
 │   ├── frontend/
-│   │   ├── migrations/
 │   │   ├── static/
 │   │   │   └── css/
 │   │   │   └── img/
@@ -14,7 +13,7 @@
 │   │   │   └── sass/
 │   │   │   └── video/
 │   │   ├── templates/
-│   │   │   └── indenx.html
+│   │   │   └── base.html
 │   │   ├── __init__.py
 │   │   ├── admin.py
 │   │   ├── apps.py

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Transcendence{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to Transcendence!</h1>
+    <p class="lead">Play Pong and connect with other players in real-time.</p>
+    <hr class="my-4">
+    <p>Ready to join the game?</p>
+    <a class="btn btn-primary btn-lg" href="{% url 'signup' %}" role="button" id="signup">Sign Up</a>
+</div>
+{% endblock %}

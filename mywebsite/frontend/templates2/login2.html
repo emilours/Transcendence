@@ -1,0 +1,35 @@
+<section class="d-flex align-items-center justify-content-center">
+	<div class="container mt-5">
+		<div class="row justify-content-center">
+			<div class="col-12 col-md-6 col-lg-4">
+				<div class="card shadow">
+					<div class="card-body p-5">
+						<h3 class="card-title text-center mb-4 font-potta">Login</h3>
+						<form class="font-roboto" method='POST' action="{% url 'home' %}">
+							<div class="mb-3">
+								<label for="email" class="form-label"></label>
+								<input type="email" class="form-control" id="email" placeholder="Email" aria-describedby="emailHelp" required>
+							</div>
+							<div class="mb-3">
+								<label for="password" class="form-label"></label>
+								<input type="password" class="form-control" id="password" placeholder="Password" required>
+							</div>
+							<div class="my-4 form-check">
+								<input type="checkbox" class="form-check-input" id="rememberMe">
+								<label class="form-check-label" for="rememberMe">Remember me</label>
+							</div>
+							<button type="submit" class="btn btn-primary w-100">Login</button>
+							<div class="text-center mt-3">
+								<a href="#" class="text-decoration-none">Forgot password?</a>
+							</div>
+						</form>
+					</div>
+				</div>
+				<div class="text-center mt-3 font-roboto">
+					<p>Don't have an account? <a href="#" class="text-decoration-none" id="signup-link">Sign up</a></p>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+ 
