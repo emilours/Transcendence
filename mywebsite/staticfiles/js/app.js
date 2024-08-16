@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						<div class="card shadow">
 							<div class="card-body p-5">
 								<h3 class="card-title text-center mb-4 font-potta">Sign Up</h3>
-								<form method='POST' action="{% url 'home' %}">
+								<form method='POST' action="/home/">
 									<input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">
 									<div class="mb-3">
 										<label for="firstName" class="form-label">First Name</label>
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						<div class="card shadow">
 							<div class="card-body p-5">
 								<h3 class="card-title text-center mb-4 font-potta">Login</h3>
-								<form class="font-roboto" method='POST' action="{% url 'home' %}">
+								<form class="font-roboto" method='POST' action="/home/">
 									<input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">
 									<div class="mb-3">
 										<label for="email" class="form-label"></label>

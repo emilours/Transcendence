@@ -37,14 +37,14 @@ services:
     build: ./nginx
     container_name: nginx
     volumes:
-      - static_volume:/static/
+      - static_volume:/staticfiles/
     ports:
       - 8080:8080
     depends_on:
       mywebsite:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3

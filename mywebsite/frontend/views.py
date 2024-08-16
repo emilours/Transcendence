@@ -21,9 +21,20 @@ def signup_view(request):
 		form = CustomUserCreationForm()
 	return render(request, 'signup.html', {'form': form})
 
+# def login_view(request):
+# 	# Implémentez la logique de connexion ici
+# 	return render(request, 'login.html')
+
 def login_view(request):
-	# Implémentez la logique de connexion ici
-	return render(request, 'login.html')
+    if request.method == 'POST':
+        form = CustomAuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('index')
+    else:
+        form = CustomAuthenticationForm()
+    return render(request, 'login.html', {'form': form})
 
 # def signup(request):
 # 	if request.method == 'POST':
@@ -49,3 +60,4 @@ def login_view(request):
 # def logout(request):
 # 	auth_logout(request)
 # 	return redirect('home')
+
