@@ -5,6 +5,7 @@ class User(AbstractUser):
 	email = models.EmailField(unique=True)
 	score = models.IntegerField(default=0)
 	games_played = models.IntegerField(default=0)
+	#avatar
 
 	# Add related_name to groups and user_permissions fields
 	groups = models.ManyToManyField(
