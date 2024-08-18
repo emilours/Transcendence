@@ -37,8 +37,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)  # Ce champ est essentiel
     is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)  # Ce champ est également nécessaire
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

@@ -102,17 +102,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.postgresql"),
-#         'NAME': os.environ.get('SQL_DATABASE', 'PusheenDB'),
-#         'USER': os.environ.get('SQL_USER', 'user'),
-#         'PASSWORD': os.environ.get('SQL_PASSWORD', '123'),
-#         'HOST': os.environ.get('SQL_HOST', 'localhost'),
-#         'PORT': os.environ.get('SQL_PORT', '5432'),
-#     }
-# }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -169,4 +158,4 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 # Custom user model
-# AUTH_USER_MODEL = 'frontend.CustomUser'
+AUTH_USER_MODEL = 'frontend.CustomUser'

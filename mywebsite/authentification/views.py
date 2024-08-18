@@ -3,40 +3,12 @@ from django.contrib.auth import authenticate, login
 from django.http import HttpResponse 
 from django.http import HttpResponseBadRequest
 from django.contrib import messages
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.contrib.auth import get_user_model
 
-# def signin(request):
-#     if request.method == 'POST':
-#         print('**************************************')
-#         print('SIGNIN')
-#         print('**************************************')
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-
-#         # test
-#         print('***********************************')
-#         print(email)
-#         print(password)
-#         print('***********************************')
-        
-#         if not email or not password:
-#             messages.error(request, "Email and password are required.")
-#             return HttpResponse("Email and password are required.", status=401)
-        
-#         user = authenticate(request, email=email, password=password)
-        
-#         if user is not None:
-#             login(request, user)
-#             messages.success(request, "You have successfully logged in.")
-#             return HttpResponse("You have successfully logged in.", status=201)
-#         else:
-#             messages.error(request, "Invalid email or password.")
-#             return HttpResponse("Invalid email or password.", status=401)
-#     else:
-#         messages.error(request, "Log in process failed.")
-#         return HttpResponse("Log in process failed.", status=401)
+User = get_user_model()
 
 def signin(request):
     if request.method == 'POST':
@@ -98,11 +70,13 @@ def signup(request):
             messages.error(request, "Passwords do not match.")
             return HttpResponse("Passwords do not match.", status=400)
 
+        User = get_user_model()
+
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email is already in use.")
             return HttpResponse("Email is already in use.", status=400)
 
-        user = User.objects.create_user(username=email, email=email, password=password1)
+        user = User.objects.create_user(email=email, password=password1)
         user.first_name = firstname
         user.last_name = lastname
         user.save()
