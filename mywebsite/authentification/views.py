@@ -1,9 +1,8 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse 
 from django.http import HttpResponseBadRequest
 from django.contrib import messages
-# from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
@@ -28,7 +27,6 @@ def signin(request):
             messages.error(request, "Email and password are required.")
             return HttpResponse("Email and password are required.", status=401)
         
-        # Authenticate with email
         user = authenticate(request, email=email, password=password)
         
         if user is not None:
@@ -94,6 +92,14 @@ def signup(request):
         messages.error(request, "Sign up process failed.")
         return HttpResponse("Sign up process failed.", status=400)
 
+def signout(request):
+    if request.user.is_authenticated:
+        logout(request)
+        messages.info(request, "You have been logged out.")
+        return HttpResponse("You have successfully logged out.", status=200)
+    else:
+        messages.warning(request, "You are not currently logged in.")
+        return HttpResponse("You are not currently logged in.", status=403)
 
 def contact(request):
     users = User.objects.all().values('id', 'email', 'first_name', 'last_name', 'password')
