@@ -7,6 +7,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 
+# ================================================================
+# ===                       USER LOGS                          ===
+# ================================================================
+
 User = get_user_model()
 
 def signin(request):
@@ -116,3 +120,7 @@ def contact(request):
     users = User.objects.all().values('id', 'email', 'first_name', 'last_name', 'password', 'display_name', 'avatar')
     user_list = list(users)
     return JsonResponse(user_list, safe=False)
+
+# ================================================================
+# ===              USER FRIEND REQUESTS                        ===
+# ================================================================

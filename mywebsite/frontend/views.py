@@ -10,31 +10,31 @@ def home(request):
 def index(request):
 	return render(request, 'index.html')
 
-def signup_view(request):
-	if request.method == 'POST':
-		form = CustomUserCreationForm(request.POST)
-		if form.is_valid():
-			user = form.save()
-			login(request, user)
-			return redirect('index')
-	else:
-		form = CustomUserCreationForm()
-	return render(request, 'signup.html', {'form': form})
+# def signup_view(request):
+# 	if request.method == 'POST':
+# 		form = CustomUserCreationForm(request.POST)
+# 		if form.is_valid():
+# 			user = form.save()
+# 			login(request, user)
+# 			return redirect('index')
+# 	else:
+# 		form = CustomUserCreationForm()
+# 	return render(request, 'signup.html', {'form': form})
 
 # def login_view(request):
 # 	# Implémentez la logique de connexion ici
 # 	return render(request, 'login.html')
 
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomAuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('index')
-    else:
-        form = CustomAuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+# def login_view(request):
+#     if request.method == 'POST':
+#         form = CustomAuthenticationForm(data=request.POST)
+#         if form.is_valid():
+#             user = form.get_user()
+#             login(request, user)
+#             return redirect('index')
+#     else:
+#         form = CustomAuthenticationForm()
+#     return render(request, 'login.html', {'form': form})
 
 # def signup(request):
 # 	if request.method == 'POST':
