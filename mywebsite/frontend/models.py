@@ -42,54 +42,56 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-# ================================================================
-# ===                     FRIEND REQUEST                       ===
-# ================================================================
+# # ================================================================
+# # ===                     FRIEND REQUEST                       ===
+# # ================================================================
 
 class FriendList(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user")
-    friend = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="friends")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="friend_list")
+    friends = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="friend_lists")
 
     def __str__(self):
-        return self.user.display_name
+        return f"{self.user.username}'s Friend List"
 
     def add_friend(self, account):
-        if not account in self.friends.all():
+        if account != self.user and not account in self.friends.all():
             self.friends.add(account)
             self.save()
 
     def remove_friend(self, account):
-        if account in self.friends.all():
+        if account != self.user and account in self.friends.all():
             self.friends.remove(account)
-    
+            self.save()
+
     def unfriend(self, removee):
-        remover_friends_list = self
-        remover_friends_list.remove_friend(removee)
-        friends_list = FriendList.objects.get(user=removee)
-        friends_list.remove_friend(self.user)
-    
+        self.remove_friend(removee)
+        try:
+            friends_list = FriendList.objects.get(user=removee)
+            friends_list.remove_friend(self.user)
+        except FriendList.DoesNotExist:
+            pass
+
     def is_mutual_friend(self, friend):
-        if friend in self.friends.all():
-            return True
-        return False
+        return friend in self.friends.all()
 
 class FriendRequest(models.Model):
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sender")
-    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="receiver")
-    is_active = models.BooleanField(blank=True, null=False, default=True)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_requests")
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_requests")
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.sender.username
+        return f"{self.sender} -> {self.receiver} (Active: {self.is_active})"
     
     def accept(self):
-        receiver_friend_list = FriendList.objects.get(user=self.receiver)
-        if receiver_friend_list:
+        try:
+            receiver_friend_list = FriendList.objects.get(user=self.receiver)
             receiver_friend_list.add_friend(self.sender)
             sender_friend_list = FriendList.objects.get(user=self.sender)
-            if sender_friend_list:
-                sender_friend_list.add_friend(self.receiver)
-                self.is_active = False
-                self.save()
+            sender_friend_list.add_friend(self.receiver)
+            self.is_active = False
+            self.save()
+        except FriendList.DoesNotExist:
+            pass
     
     def decline(self):
         self.is_active = False

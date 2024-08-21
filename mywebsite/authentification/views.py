@@ -5,7 +5,12 @@ from django.http import HttpResponseBadRequest
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
+from datetime import timedelta
+from django.utils import timezone
+from frontend.models import FriendRequest
 
 # ================================================================
 # ===                       USER LOGS                          ===
@@ -13,6 +18,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+@require_POST
 def signin(request):
     if request.method == 'POST':
         print('**************************************')
@@ -44,6 +50,7 @@ def signin(request):
         messages.error(request, "Log in process failed.")
         return HttpResponse("Log in process failed.", status=401)
 
+@require_POST
 def signup(request):
     if request.method == 'POST':
         print('*************************************')
@@ -107,6 +114,8 @@ def signup(request):
         messages.error(request, "Sign up process failed.")
         return HttpResponse("Sign up process failed.", status=400)
 
+# @login_required
+@require_POST
 def signout(request):
     if request.user.is_authenticated:
         logout(request)
@@ -116,11 +125,168 @@ def signout(request):
         messages.warning(request, "You are not currently logged in.")
         return HttpResponse("You are not currently logged in.", status=403)
 
+def is_online(user):
+    if user.last_login:
+        return timezone.now() - user.last_login < timedelta(minutes=5)
+    return False
+
 def contact(request):
-    users = User.objects.all().values('id', 'email', 'first_name', 'last_name', 'password', 'display_name', 'avatar')
-    user_list = list(users)
-    return JsonResponse(user_list, safe=False)
+    def is_online(user):
+        if user.last_login:
+            return timezone.now() - user.last_login < timedelta(minutes=5)
+        return False
+
+    users = User.objects.all()
+    online_users = []
+    offline_users = []
+
+    for user in users:
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'display_name': getattr(user, 'display_name', ''),
+            'avatar': str(user.avatar.url) if user.avatar else '',
+            'last_login': user.last_login,
+        }
+
+        # Compter les demandes reçues par l'utilisateur
+        received_requests_count = FriendRequest.objects.filter(
+            receiver=user,
+            is_active=True
+        ).count()
+        user_data['received_requests_count'] = received_requests_count
+
+        # Compter les demandes envoyées par l'utilisateur
+        sent_requests_count = FriendRequest.objects.filter(
+            sender=user,
+            is_active=True
+        ).count()
+        user_data['sent_requests_count'] = sent_requests_count
+
+        # Vérifiez si l'utilisateur a une demande en attente envoyée à l'utilisateur actuel
+        has_pending_request = FriendRequest.objects.filter(
+            sender=user,
+            receiver=request.user,
+            is_active=True
+        ).exists()
+        user_data['has_pending_request'] = has_pending_request
+
+        if is_online(user):
+            online_users.append(user_data)
+        else:
+            offline_users.append(user_data)
+
+    return JsonResponse({
+        'online': online_users,
+        'offline': offline_users
+    })
 
 # ================================================================
 # ===              USER FRIEND REQUESTS                        ===
 # ================================================================
+
+@login_required
+@require_POST
+def send_friend_request(request):
+    receiver_email = request.POST.get('receiver_email')
+    
+    if not receiver_email:
+        # return HttpResponse("Invalid email address provided.", status=400)
+        return JsonResponse({"error": "Invalid email address provided."}, status=400)
+    
+    try:
+        receiver = User.objects.get(email=receiver_email)
+        if receiver == request.user:
+            # return HttpResonse("You cannot send a friend request to yourself.", status=400)
+            return JsonResponse({"error": "You cannot send a friend request to yourself."}, status=400)
+        
+        print('***********************************')
+        print(f"Sender: {request.user.email}")
+        print(f"Receiver: {receiver.email}")
+        print('***********************************')
+
+        FriendRequest.objects.create(sender=request.user, receiver=receiver)
+        messages.success(request, "Friend request sent.")
+        # return HttpResponse("Friend request sent", status=200)
+        return JsonResponse({"message": "Friend request sent."}, status=200)
+        
+    except User.DoesNotExist:
+        messages.error(request, "User with this email does not exist.")
+        # return HttpResponse("User with this email does not exist.", status=404)
+        return JsonResponse({"error": "User with this email does not exist."}, status=404)
+    except Exception as e:
+        # return HttpResponse(f"An error occurred: {str(e)}", status=500)
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+@login_required
+@require_POST
+def accept_friend_request(request, friend_request_id):
+    try:
+        friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
+        friend_request.accept()
+        messages.success(request, "Friend request accepted.")
+        return JsonResponse({"message": "Friend request accepted."}, status=200)
+    except ObjectDoesNotExist:
+        return JsonResponse({"error": "Friend request not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+    
+@login_required
+@require_POST
+def refuse_friend_request(request, friend_request_id):
+    try:
+        friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
+        friend_request.refuse()
+        messages.success(request, "Friend request refused.")
+        return JsonResponse({"message": "Friend request refused."}, status=200)
+    except ObjectDoesNotExist:
+        return JsonResponse({"error": "Friend request not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+@login_required
+@require_POST
+def cancel_friend_request(request, friend_request_id):
+    try:
+        friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
+        friend_request.cancel()
+        messages.success(request, "Friend request cancelled.")
+        return JsonResponse({"message": "Friend request cancelled."}, status=200)
+    except ObjectDoesNotExist:
+        return JsonResponse({"error": "Friend request not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+@login_required
+def view_received_requests(request):
+    received_requests = FriendRequest.objects.filter(receiver=request.user, is_accepted=False)
+    requests_list = [{"id": fr.id, "sender": str(fr.sender), "timestamp": fr.timestamp} for fr in received_requests]
+    return JsonResponse({"requests": requests_list})
+
+
+@login_required
+def debug_friend_requests(request):
+    try:
+        emi = User.objects.get(email='emilie@gmail.com')
+        zak = User.objects.get(email='zak@gmail.com')
+
+        # Créez une demande d'ami
+        fr = FriendRequest.objects.create(sender=emi, receiver=zak, is_active=True)
+        response_text = f"Created FriendRequest: {fr}\n"
+
+        # Vérifiez les demandes envoyées et reçues
+        sent_requests = FriendRequest.objects.filter(sender=emi)
+        received_requests = FriendRequest.objects.filter(receiver=zak)
+
+        # Impressions pour déboguer
+        response_text += f"Sent requests by emi: {list(sent_requests)}\n"
+        response_text += f"Received requests by zak: {list(received_requests)}\n"
+
+        return HttpResponse(response_text, content_type="text/plain")
+
+    except User.DoesNotExist as e:
+        return HttpResponse(f"Error: User not found: {str(e)}", status=404, content_type="text/plain")
+    except Exception as e:
+        return HttpResponse(f"Error: An error occurred: {str(e)}", status=500, content_type="text/plain")
