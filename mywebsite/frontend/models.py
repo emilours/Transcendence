@@ -34,6 +34,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     victories = models.PositiveIntegerField(default=0)
     defeats = models.PositiveIntegerField(default=0)
 
+    sent_requests_count = models.PositiveIntegerField(default=0)
+    received_requests_count = models.PositiveIntegerField(default=0)
+    accepted_requests_count = models.PositiveIntegerField(default=0)
+    declined_requests_count = models.PositiveIntegerField(default=0)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['display_name']
 
@@ -82,21 +87,63 @@ class FriendRequest(models.Model):
     def __str__(self):
         return f"{self.sender} -> {self.receiver} (Active: {self.is_active})"
     
-    def accept(self):
-        try:
-            receiver_friend_list = FriendList.objects.get(user=self.receiver)
-            receiver_friend_list.add_friend(self.sender)
-            sender_friend_list = FriendList.objects.get(user=self.sender)
-            sender_friend_list.add_friend(self.receiver)
-            self.is_active = False
-            self.save()
-        except FriendList.DoesNotExist:
-            pass
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.sender.sent_requests_count += 1
+            self.receiver.received_requests_count += 1
+            self.sender.save()
+            self.receiver.save()
+        super(FriendRequest, self).save(*args, **kwargs)
+
+def accept(self):
+    if not self.is_active:
+        return  # Request already processed or cancelled
+
+    try:
+        receiver_friend_list = FriendList.objects.get(user=self.receiver)
+        sender_friend_list = FriendList.objects.get(user=self.sender)
+        
+        receiver_friend_list.add_friend(self.sender)
+        sender_friend_list.add_friend(self.receiver)
+        
+        self.is_active = False
+        self.sender.accepted_requests_count += 1
+        self.receiver.accepted_requests_count += 1
+        
+        self.save()
+        self.sender.save()
+        self.receiver.save()
+
+    except FriendList.DoesNotExist:
+        print(f"Friend list does not exist for sender or receiver.")
+    except Exception as e:
+        print(f"An error occurred while accepting the friend request: {str(e)}")
     
     def decline(self):
-        self.is_active = False
-        self.save()
+        if self.is_active:
+            self.is_active = False
+            self.sender.declined_requests_count += 1
+            self.receiver.declined_requests_count += 1
+            
+            self.save()
+            self.sender.save()
+            self.receiver.save()
     
     def cancel(self):
-        self.is_active = False
-        self.save()
+        if self.is_active:
+            self.is_active = False
+            self.sender.sent_requests_count -= 1
+            self.receiver.received_requests_count -= 1
+            
+            self.save()
+            self.sender.save()
+            self.receiver.save()
+    
+    def delete(self, *args, **kwargs):
+        if self.is_active:
+            self.sender.sent_requests_count -= 1
+            self.receiver.received_requests_count -= 1
+            self.sender.save()
+            self.receiver.save()
+        super(FriendRequest, self).delete(*args, **kwargs)
+
