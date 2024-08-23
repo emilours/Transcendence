@@ -2,9 +2,9 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.conf import settings
 
-# ================================================================
-# ===                       CUSTOM USER                        ===
-# ================================================================
+# ================================================================================================================================================================
+# ===                                                                 CUSTOM USER                                                                             ====
+# ================================================================================================================================================================
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -14,6 +14,8 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        # Create the user's FriendList
+        FriendList.objects.create(user=user)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
@@ -47,9 +49,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-# # ================================================================
-# # ===                     FRIEND REQUEST                       ===
-# # ================================================================
+# # ================================================================================================================================================================
+# # ===                                                      FRIEND LIST                                                                                         ===
+# # ================================================================================================================================================================
 
 class FriendList(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="friend_list")
@@ -59,7 +61,7 @@ class FriendList(models.Model):
         return f"{self.user.username}'s Friend List"
 
     def add_friend(self, account):
-        if account != self.user and not account in self.friends.all():
+        if account != self.user and account not in self.friends.all():
             self.friends.add(account)
             self.save()
 
@@ -79,6 +81,13 @@ class FriendList(models.Model):
     def is_mutual_friend(self, friend):
         return friend in self.friends.all()
 
+    def friend_count(self):
+        return self.friends.count()
+
+# # ================================================================================================================================================================
+# # ===                                                      FRIEND REQUEST                                                                                      ===
+# # ================================================================================================================================================================
+
 class FriendRequest(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_requests")
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_requests")
@@ -86,59 +95,55 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.sender} -> {self.receiver} (Active: {self.is_active})"
-    
+
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if not self.pk:  # Only update counters when the request is first created
             self.sender.sent_requests_count += 1
             self.receiver.received_requests_count += 1
             self.sender.save()
             self.receiver.save()
         super(FriendRequest, self).save(*args, **kwargs)
 
-def accept(self):
-    if not self.is_active:
-        return  # Request already processed or cancelled
+    def accept(self):
+        if self.is_active:
+            try:
+                receiver_friend_list = FriendList.objects.get(user=self.receiver)
+                sender_friend_list = FriendList.objects.get(user=self.sender)
 
-    try:
-        receiver_friend_list = FriendList.objects.get(user=self.receiver)
-        sender_friend_list = FriendList.objects.get(user=self.sender)
-        
-        receiver_friend_list.add_friend(self.sender)
-        sender_friend_list.add_friend(self.receiver)
-        
-        self.is_active = False
-        self.sender.accepted_requests_count += 1
-        self.receiver.accepted_requests_count += 1
-        
-        self.save()
-        self.sender.save()
-        self.receiver.save()
+                receiver_friend_list.add_friend(self.sender)
+                sender_friend_list.add_friend(self.receiver)
 
-    except FriendList.DoesNotExist:
-        print(f"Friend list does not exist for sender or receiver.")
-    except Exception as e:
-        print(f"An error occurred while accepting the friend request: {str(e)}")
-    
+                self.is_active = False  # Deactivate the friend request
+                self.sender.friends_count += 1
+                self.receiver.friends_count += 1
+
+                self.save()
+                self.sender.save()
+                self.receiver.save()
+
+            except FriendList.DoesNotExist:
+                print(f"Friend list does not exist for sender or receiver.")
+            except Exception as e:
+                print(f"An error occurred while accepting the friend request: {str(e)}")
+
     def decline(self):
         if self.is_active:
             self.is_active = False
-            self.sender.declined_requests_count += 1
             self.receiver.declined_requests_count += 1
-            
+
             self.save()
-            self.sender.save()
             self.receiver.save()
-    
+
     def cancel(self):
         if self.is_active:
             self.is_active = False
             self.sender.sent_requests_count -= 1
             self.receiver.received_requests_count -= 1
-            
+
             self.save()
             self.sender.save()
             self.receiver.save()
-    
+
     def delete(self, *args, **kwargs):
         if self.is_active:
             self.sender.sent_requests_count -= 1
@@ -147,3 +152,9 @@ def accept(self):
             self.receiver.save()
         super(FriendRequest, self).delete(*args, **kwargs)
 
+    @staticmethod
+    def count_declined_requests(user):
+        return (
+            FriendRequest.objects.filter(sender=user, is_active=False).count() +
+            FriendRequest.objects.filter(receiver=user, is_active=False).count()
+        )

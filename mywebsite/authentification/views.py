@@ -10,13 +10,13 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import timedelta
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList
+from frontend.models import FriendRequest, FriendList, CustomUser
 
 User = get_user_model()
 
-# ================================================================
-# ===                       USER LOGS                          ===
-# ================================================================
+# # ================================================================================================================================================================
+# # ===                                                      USER LOGS                                                                                           ===
+# # ================================================================================================================================================================
 
 @require_POST
 def signin(request):
@@ -91,21 +91,26 @@ def is_online(user):
 
 @login_required
 def contact(request):
-    users = User.objects.all()
+    users = CustomUser.objects.all()
     online_users = []
     offline_users = []
 
     for user in users:
+        friend_list = getattr(user, 'friend_list', None)
+        friends_count = friend_list.friend_count() if friend_list else 0
+
         user_data = {
             'id': user.id,
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'display_name': getattr(user, 'display_name', ''),
+            'display_name': user.display_name,
             'avatar': str(user.avatar.url) if user.avatar else '',
             'last_login': user.last_login,
-            'received_requests_count': FriendRequest.objects.filter(receiver=user, is_active=True).count(),
-            'sent_requests_count': FriendRequest.objects.filter(sender=user, is_active=True).count(),
+            'received_requests_count': user.received_requests_count,
+            'sent_requests_count': user.sent_requests_count,
+            'friends_count': friends_count,
+            'declined_requests_count': user.declined_requests_count,
         }
 
         if is_online(user):
@@ -115,9 +120,9 @@ def contact(request):
 
     return JsonResponse({'online': online_users, 'offline': offline_users})
 
-# ================================================================
-# ===              USER FRIEND REQUESTS                        ===
-# ================================================================
+# # ================================================================================================================================================================
+# # ===                                                      FRIEND REQUESTS                                                                                     ===
+# # ================================================================================================================================================================
 
 @login_required
 @require_POST
@@ -146,13 +151,6 @@ def send_friend_request(request):
         FriendRequest.objects.create(sender=request.user, receiver=receiver)
         print('Friend request created.')
         
-        request.user.sent_requests_count += 1
-        receiver.received_requests_count += 1
-        request.user.save()
-        receiver.save()
-        
-        print('User counts updated.')
-        
         return JsonResponse({"message": "Friend request sent."}, status=200)
         
     except User.DoesNotExist:
@@ -161,9 +159,6 @@ def send_friend_request(request):
     except Exception as e:
         print(f'An error occurred: {str(e)}')
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
-
-import logging
-logger = logging.getLogger(__name__)
 
 @login_required
 @require_POST
@@ -207,8 +202,3 @@ def cancel_friend_request(request, friend_request_id):
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
-@login_required
-def view_received_requests(request):
-    received_requests = FriendRequest.objects.filter(receiver=request.user, is_active=True)
-    requests_list = [{"id": fr.id, "sender": str(fr.sender), "timestamp": fr.timestamp} for fr in received_requests]
-    return JsonResponse({"requests": requests_list})
