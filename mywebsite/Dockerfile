@@ -25,9 +25,3 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 
 # copy project
 COPY . .
-
-# Gunicorn configuration
-# EXPOSE 8000
-
-# Run the application
-# CMD [ "gunicorn", mywebsite.wsgi:application, "--bind", "0.0.0.0:8000" ]

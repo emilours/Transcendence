@@ -40,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-	'rest_framework',
+    'rest_framework',
     'frontend',
+    'invaders',
 ]
 
 MIDDLEWARE = [
@@ -162,5 +163,5 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Custom user model
-# AUTH_USER_MODEL = 'frontend.User'
+AUTH_USER_MODEL = 'frontend.User'
 

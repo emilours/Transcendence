@@ -14,6 +14,9 @@
 │   │   │   └── video/
 │   │   ├── templates/
 │   │   │   └── base.html
+│   │   │   └── home.html
+│   │   │   └── login.html
+│   │   │   └── signup.html
 │   │   ├── __init__.py
 │   │   ├── admin.py
 │   │   ├── apps.py

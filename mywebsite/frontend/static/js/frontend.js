@@ -56,10 +56,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		loadContent('/signup/');
 	});
 
+
 	function attachListeners() {
 		// const homeLink = document.getElementById('home');
 		const loginLink = document.getElementById('login');
 		const signupLink = document.getElementById('signup');
+		const gameLink = document.getElementById('games');
+		const invadersLink = document.getElementById('invaders');
 
 		// if (homeLink) {
 		// 	homeLink.addEventListener('click', function (event) {
@@ -79,6 +82,22 @@ document.addEventListener("DOMContentLoaded", () => {
 			signupLink.addEventListener('click', function (event) {
 				event.preventDefault();
 				loadContent('/signup/');
+			});
+		}
+
+		if (gameLink)
+		{
+			gameLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/games/');
+			});
+		}
+
+		if (invadersLink)
+		{
+			invadersLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/invaders/');
 			});
 		}
 	}
