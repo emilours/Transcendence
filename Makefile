@@ -13,6 +13,12 @@ all:
 	@docker compose -f ./docker-compose.yml up -d
 	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"
 
+up:
+	@echo "$(YELLOW)\n. . . Launching . . .\n$(RESET)"
+#	@mkdir -p $(DATA_DIR)
+	@docker compose -f ./docker-compose.yml up
+	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"
+
 start:
 	@echo "$(YELLOW)\n. . . starting containers . . . \n$(RESET)";
 	@if [ -n "$$(docker ps -aq)" ]; then \

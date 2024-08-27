@@ -29,7 +29,9 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 
 # ALLOWED_HOSTS = []
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'frontend',
+    'authentification',
     'invaders',
 ]
 
@@ -163,5 +166,4 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Custom user model
-AUTH_USER_MODEL = 'frontend.User'
-
+AUTH_USER_MODEL = 'frontend.CustomUser'
