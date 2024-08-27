@@ -7,10 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
 from frontend.models import FriendRequest, FriendList, CustomUser
+from frontend.forms import UserUpdateForm
 
 User = get_user_model()
 
@@ -202,3 +203,27 @@ def cancel_friend_request(request, friend_request_id):
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
+# # ================================================================================================================================================================
+# # ===                                                      USER UPDATE FORM                                                                                    ===
+# # ================================================================================================================================================================
+
+@login_required
+@require_POST
+def update_profile(request):
+    form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
+    if form.is_valid():
+        updated_user = form.save(commit=False)
+        if 'email' not in form.cleaned_data:
+            updated_user.email = request.user.email
+        if 'first_name' not in form.cleaned_data:
+            updated_user.first_name = request.user.first_name
+        if 'last_name' not in form.cleaned_data:
+            updated_user.last_name = request.user.last_name
+        if 'display_name' not in form.cleaned_data:
+            updated_user.display_name = request.user.display_name
+        if 'avatar' not in form.cleaned_data:
+            updated_user.avatar = request.user.avatar
+        updated_user.save()
+        return JsonResponse({"message": "Profile successfully updated"}, status=200)
+    else:
+        return JsonResponse({"error": "An error occurred, update failed", "errors": form.errors.as_json()}, status=400)

@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+# from django.contrib.auth.forms import UserChangeForm
 from django.db import models
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 
 # ================================================================================================================================================================
 # ===                                                                 CUSTOM USER                                                                             ====
@@ -14,7 +17,6 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-        # Create the user's FriendList
         FriendList.objects.create(user=user)
         return user
 
@@ -48,6 +50,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    # TESTS TO BE DONE
+    def clean(self):
+        if CustomUser.objects.filter(email=self.email).exclude(pk=self.pk).exists():
+            raise ValidationError({'email': 'This mail address is already in use.'})
+        
+        if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
+            raise ValidationError({'display_name': 'This display name is already in use.'})
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND LIST                                                                                         ===
@@ -97,7 +107,7 @@ class FriendRequest(models.Model):
         return f"{self.sender} -> {self.receiver} (Active: {self.is_active})"
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Only update counters when the request is first created
+        if not self.pk:
             self.sender.sent_requests_count += 1
             self.receiver.received_requests_count += 1
             self.sender.save()
@@ -113,7 +123,7 @@ class FriendRequest(models.Model):
                 receiver_friend_list.add_friend(self.sender)
                 sender_friend_list.add_friend(self.receiver)
 
-                self.is_active = False  # Deactivate the friend request
+                self.is_active = False
                 self.sender.friends_count += 1
                 self.receiver.friends_count += 1
 
@@ -158,3 +168,27 @@ class FriendRequest(models.Model):
             FriendRequest.objects.filter(sender=user, is_active=False).count() +
             FriendRequest.objects.filter(receiver=user, is_active=False).count()
         )
+
+# ================================================================================================================================================================
+# ===                                                                 USER UPDATE FORM                                                                        ====
+# ================================================================================================================================================================
+
+# TESTS TO BE DONE
+# class UserUpdateForm(UserChangeForm):
+#     password = None
+
+#     class Meta:
+#         model = CustomUser
+#         fields = ['email', 'first_name', 'last_name', 'display_name', 'avatar']
+
+#     def clean_email(self):
+#         email = self.cleaned_data.get('email')
+#         if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+#             raise forms.ValidationError('This mail address is already in use.')
+#         return email
+
+#     def clean_display_name(self):
+#         display_name = self.cleaned_data.get('display_name')
+#         if CustomUser.objects.filter(display_name=display_name).exclude(pk=self.instance.pk).exists():
+#             raise forms.ValidationError('This display name is already in use.')
+#         return display_name
