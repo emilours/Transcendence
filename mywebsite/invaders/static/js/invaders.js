@@ -6,6 +6,37 @@ import { createElement, createButton, createPlayerContainer, backButton,
 	shuffleArray, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import Tournament from "./Tournament.js";
 
+export function cleanupInvaders() {
+    // Arrêter le jeu en annulant l'animation en cours
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+
+    // Supprimer le canvas du jeu pour éviter des résidus visuels
+    if (canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.remove(); // Supprime le canvas du DOM
+    }
+
+    // Supprimer tous les éléments ajoutés dynamiquement (menus, leaderboard, etc.)
+    const dynamicElements = document.querySelectorAll('.menu, .player-list, .list-leader, #game');
+    dynamicElements.forEach(element => element.remove());
+
+    // Réinitialiser toutes les variables globales à leur état initial
+    enemyController = null;
+    enemyBulletController = null;
+    isGameOver = false;
+    didWin = false;
+
+    // Supprimer les éléments liés à gifler
+    if (gifCanvas) {
+        gifCanvas.remove();
+    }
+}
+
+
+
 // Config canvas
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -232,6 +263,17 @@ export function startGame(selectedMode, player1, player2, tournament) {
 
 	// Launche the function to initialize the game
 	function initializeGame(mode, player1, player2) {
+
+		// Si le canvas a été supprimé, recréez-le
+		if (!document.getElementById('game')) {
+			const newCanvas = document.createElement('canvas');
+			newCanvas.id = 'game';
+			newCanvas.width = 700;
+			newCanvas.height = 700;
+			document.body.appendChild(newCanvas);
+			canvas = newCanvas;
+			ctx = canvas.getContext('2d');
+		}
 
 		enemyBulletController = new BulletController(canvas, 4, "yellow", false);
 

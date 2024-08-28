@@ -6,6 +6,7 @@ def invaders(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('invaders.html', request=request)
 		return JsonResponse({'html': html})
+	return render(request, 'base.html')
 
 # def invaders(request):
 # 	return render(request, 'invaders.html')

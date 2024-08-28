@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			script.type = "module";
 			script.onload = resolve;
 			script.onerror = reject;
+			script.dataset.dynamic = true;
 			document.head.appendChild(script);
 		});
 	}
@@ -40,11 +41,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			link.href = url;
 			link.onload = resolve;
 			link.onerror = reject;
+			link.dataset.dynamic = true;
 			document.head.appendChild(link);
 		});
 	}
 
+	function cleanupResources() {
+		// Supprimer les scripts et CSS ajoutés dynamiquement
+		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
+		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+
+		// Nettoyer les résidus de l'animation ou du contenu
+		if (typeof cleanupInvaders === 'function') {
+			cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
+		}
+	}
+
 	function loadContent(url, addToHistory = true) {
+		cleanupResources();
 		fetch(url, {
 			headers: {
 				'X-Requested-With': 'XMLHttpRequest'
@@ -60,17 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
 			app.innerHTML = data.html;
 
 			if (url.includes('invaders')) {
-				// Charger dynamiquement gifler avant invaders.js
 				loadScript('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js')
 				.then(() => loadCSS('/static/css/invaders.css'))
 				.then(() => loadScript('/static/js/invaders.js'))
 				.catch(error => console.error('Error loading scripts:', error));
 			}
-
-			// if (url.includes('invaders')) {
-			// 	loadScript('/static/js/invaders.js');
-			// 	loadCSS('/static/css/invaders.css');
-			// }
 
 			attachListeners();
 
@@ -80,12 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		})
 		.catch(error => console.error('Error:', error));
 	}
-
-
-	// document.getElementById('home').addEventListener('click', function (event) {
-	// 	event.preventDefault();
-	// 	loadContent('/home/');
-	// });
 
 	document.getElementById('navbar-login').addEventListener('click', function (event) {
 		event.preventDefault();
@@ -160,17 +162,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	// window.addEventListener('popstate', (event) => {
+	// 	if (event.state && event.state.route) {
+	// 		loadContent(event.state.route, false);
+	// 	} else {
+	// 		loadContent('/home/', false);
+	// 	}
+	// });
+
+	// loadContent('/home/');
+
 	window.addEventListener('popstate', (event) => {
-		if (event.state && event.state.route) {
-			loadContent(event.state.route, false);
-		} else {
-			loadContent('/home/', false);
-		}
+		const currentPath = window.location.pathname;
+		loadContent(currentPath, false);
 	});
 
+	function loadInitialContent() {
+		const currentPath = window.location.pathname;
+		loadContent(currentPath, false);
+	}
 
-	// Initial load
-	loadContent('/home/');
-
-
+	loadInitialContent();
 });
