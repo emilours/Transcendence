@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
-from .forms import LoginForm, SignUpForm
+# from .forms import LoginForm, SignUpForm
 
 def home(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -40,4 +40,8 @@ def home(request):
 def leaderboard(request):
 	return render(request, 'leaderboard.html')
 
-
+def games(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('games.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')

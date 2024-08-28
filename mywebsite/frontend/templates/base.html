@@ -9,7 +9,8 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Potta+One&display=swap">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 	<!-- Font Awesome -->
-	<script src="https://kit.fontawesome.com/14273d579a.js" crossorigin="anonymous"></script>
+	<!-- <script src="https://kit.fontawesome.com/14273d579a.js" crossorigin="anonymous"></script> -->
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 </head>
 <body class="d-flex flex-fill flex-column vh-100">
 	<header class="font-potta">
@@ -55,7 +56,7 @@
 						</li>
 					</ul>
 					<div class="d-flex justify-content-center">
-						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login" action="{% url 'login' %}">Login</button>
+						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login" action="{% url 'signin' %}">Login</button>
 						<button type="button" class="btn btn-primary rounded-pill ms-2" id="navbar-signup">Sign up</button>
 					</div>
 				</div>
@@ -91,7 +92,7 @@
 							</a>
 						</li>
 						<li class="list-inline-item">
-							<a href="https://github.com/emilours/Transcendence/tree/main" target="_blank" class="text-decoration-none text-dark" data-bs-toggle="tooltip" title="github">
+							<a href="https://github.com/Ariti-87/ft_transcendence" target="_blank" class="text-decoration-none text-dark" data-bs-toggle="tooltip" title="github">
 								<i class="bi bi-github fs-5"></i>
 							</a>
 						</li>
@@ -125,6 +126,5 @@
 	crossorigin="anonymous"></script>
 	<script src="{% static 'js/bootstrap.js' %}"></script>
 	<script src="{% static 'js/frontend.js' %}"></script>
-	<!-- <script type="module" src="{% static 'js/invaders.js' %}"></script> -->
 </body>
 </html>

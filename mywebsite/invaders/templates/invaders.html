@@ -1,32 +1,11 @@
-<!-- {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Pusheen Invaders</title>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
-	<link rel="stylesheet" href="{% static 'css/invaders.css' %}">>
-	<script src="https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js"></script>
-</head>
-<body>
+{% load static %}
+<section>
+	<style>
+		@import url("{% static 'css/invaders.css' %}");
+	</style>
 	<div class="canvas-container">
 		<canvas id="game"></canvas>
-		</div class="menu"></div>
 	</div>
-	<script type="module" src="{% static 'js/invaders.js' %}"></script>
-</body>
-</html> -->
-
-{% load static %}
-<head>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
-    <link rel="stylesheet" href="{% static 'css/invaders.css' %}">
-    <script src="https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js"></script>
-</head>
-<section>
-    <div class="canvas-container">
-        <canvas id="game"></canvas>
-    </div>
 </section>
+<script type="module" src="{% static 'js/invaswders.js' %}"></script>
+

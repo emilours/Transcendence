@@ -1,7 +1,7 @@
 import Player from './Player.js';
 import { createElement, appendChildren, createButton, createButtonGreen } from './GameUtils.js';
-// import { resetGame, drawMenu, startGame } from './invaders.js';
-import { resetGame, drawMenu, startGame } from './frontend.js';
+import { resetGame, drawMenu, startGame } from './invaders.js';
+// import { resetGame, drawMenu, startGame } from './frontend.js';
 
 
 export default class Tournament {

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	document.getElementById('navbar-login').addEventListener('click', function (event) {
 		event.preventDefault();
-		loadContent('/login/', true);
+		loadContent('/signin/', true);
 	});
 
 	document.getElementById('navbar-signup').addEventListener('click', function (event) {
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (loginLink) {
 			loginLink.addEventListener('click', function (event) {
 				event.preventDefault();
-				loadContent('/login/', true);
+				loadContent('/sigin/', true);
 			});
 		}
 
