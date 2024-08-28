@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-# from django.contrib.auth.forms import UserChangeForm
 from django.db import models
 from django.conf import settings
 from django.dispatch import receiver
@@ -168,27 +167,3 @@ class FriendRequest(models.Model):
             FriendRequest.objects.filter(sender=user, is_active=False).count() +
             FriendRequest.objects.filter(receiver=user, is_active=False).count()
         )
-
-# ================================================================================================================================================================
-# ===                                                                 USER UPDATE FORM                                                                        ====
-# ================================================================================================================================================================
-
-# TESTS TO BE DONE
-# class UserUpdateForm(UserChangeForm):
-#     password = None
-
-#     class Meta:
-#         model = CustomUser
-#         fields = ['email', 'first_name', 'last_name', 'display_name', 'avatar']
-
-#     def clean_email(self):
-#         email = self.cleaned_data.get('email')
-#         if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-#             raise forms.ValidationError('This mail address is already in use.')
-#         return email
-
-#     def clean_display_name(self):
-#         display_name = self.cleaned_data.get('display_name')
-#         if CustomUser.objects.filter(display_name=display_name).exclude(pk=self.instance.pk).exists():
-#             raise forms.ValidationError('This display name is already in use.')
-#         return display_name

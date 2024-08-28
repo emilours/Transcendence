@@ -11,7 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
 from frontend.models import FriendRequest, FriendList, CustomUser
-from frontend.forms import UserUpdateForm
+from django.db import IntegrityError
 
 User = get_user_model()
 
@@ -208,22 +208,87 @@ def cancel_friend_request(request, friend_request_id):
 # # ================================================================================================================================================================
 
 @login_required
-@require_POST
 def update_profile(request):
-    form = UserUpdateForm(request.POST, request.FILES, instance=request.user)
-    if form.is_valid():
-        updated_user = form.save(commit=False)
-        if 'email' not in form.cleaned_data:
-            updated_user.email = request.user.email
-        if 'first_name' not in form.cleaned_data:
-            updated_user.first_name = request.user.first_name
-        if 'last_name' not in form.cleaned_data:
-            updated_user.last_name = request.user.last_name
-        if 'display_name' not in form.cleaned_data:
-            updated_user.display_name = request.user.display_name
-        if 'avatar' not in form.cleaned_data:
-            updated_user.avatar = request.user.avatar
-        updated_user.save()
-        return JsonResponse({"message": "Profile successfully updated"}, status=200)
-    else:
-        return JsonResponse({"error": "An error occurred, update failed", "errors": form.errors.as_json()}, status=400)
+    if request.method == 'POST':
+        user = request.user
+
+        email = request.POST.get('email', user.email).strip()
+        first_name = request.POST.get('first_name', user.first_name).strip()
+        last_name = request.POST.get('last_name', user.last_name).strip()
+        display_name = request.POST.get('display_name', user.display_name).strip()
+        avatar = request.FILES.get('avatar', None)
+
+        if email == '':
+            email = user.email
+
+        if email != user.email:
+            if CustomUser.objects.filter(email=email).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This email address is already in use.',
+                    'email': email
+                }, status=400)
+        
+        if display_name == '':
+            display_name = user.display_name
+
+        if display_name != user.display_name:
+            if CustomUser.objects.filter(display_name=display_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'display_name': display_name
+                }, status=400)
+
+        if first_name == '':
+            first_name = user.first_name
+
+        if first_name != user.first_name:
+            if CustomUser.objects.filter(first_name=first_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'first_name': first_name
+                }, status=400)
+        
+        if last_name == '':
+            last_name = user.last_name
+
+        if last_name != user.last_name:
+            if CustomUser.objects.filter(last_name=last_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'last_name': last_name
+                }, status=400)
+
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.display_name = display_name
+
+        if avatar:
+            user.avatar = avatar
+
+        try:
+            user.save()
+            return JsonResponse({
+                'message': 'Profile successfully updated',
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'display_name': user.display_name,
+                    'avatar': user.avatar.url if user.avatar else None,
+                }
+            }, status=200)
+        except IntegrityError as e:
+            return JsonResponse({
+                'error': 'An error occurred while updating the profile.',
+                'details': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': 'An unexpected error occurred.',
+                'details': str(e)
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
