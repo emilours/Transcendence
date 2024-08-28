@@ -22,6 +22,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const app = document.getElementById('app');
 
+	function loadScript(url) {
+		return new Promise((resolve, reject) => {
+			const script = document.createElement('script');
+			script.src = url;
+			script.type = "module";
+			script.onload = resolve;
+			script.onerror = reject;
+			document.head.appendChild(script);
+		});
+	}
+
+	function loadCSS(url) {
+		return new Promise((resolve, reject) => {
+			const link = document.createElement('link');
+			link.rel = 'stylesheet';
+			link.href = url;
+			link.onload = resolve;
+			link.onerror = reject;
+			document.head.appendChild(link);
+		});
+	}
+
 	function loadContent(url, addToHistory = true) {
 		fetch(url, {
 			headers: {
@@ -36,6 +58,20 @@ document.addEventListener("DOMContentLoaded", () => {
 		})
 		.then(data => {
 			app.innerHTML = data.html;
+
+			if (url.includes('invaders')) {
+				// Charger dynamiquement gifler avant invaders.js
+				loadScript('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js')
+				.then(() => loadCSS('/static/css/invaders.css'))
+				.then(() => loadScript('/static/js/invaders.js'))
+				.catch(error => console.error('Error loading scripts:', error));
+			}
+
+			// if (url.includes('invaders')) {
+			// 	loadScript('/static/js/invaders.js');
+			// 	loadCSS('/static/css/invaders.css');
+			// }
+
 			attachListeners();
 
 			if (addToHistory) {

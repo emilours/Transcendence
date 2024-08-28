@@ -37,11 +37,12 @@ def home(request):
 # 		return JsonResponse({'html': html})
 # 	return render(request, 'base.html', {'form': form})
 
-def leaderboard(request):
-	return render(request, 'leaderboard.html')
 
 def games(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('games.html', request=request)
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
+
+def leaderboard(request):
+	return render(request, 'leaderboard.html')
