@@ -6,7 +6,7 @@
 				<div class="card shadow">
 					<div class="card-body p-5">
 						<h3 class="card-title text-center mb-4 font-potta">Login</h3>
-						<form class="font-roboto" method="POST" action="{% url 'home' %}">
+						<form id="login-form" class="font-roboto" method="POST" action="{% url 'home' %}">
 							{% csrf_token %}
 							<div class="mb-3">
 								<label for="email" class="form-label"></label>

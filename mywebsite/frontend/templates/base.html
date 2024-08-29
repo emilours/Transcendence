@@ -31,6 +31,10 @@
 						<li class="nav-item">
 							<a class="nav-link" href="#footer">About Us</a>
 						</li>
+						{% if user.is_authenticated %}
+						<li class="nav-item">
+							<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+						{% endif %}
 						<li class="nav-item">
 							<button id="decrease-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
 								<i class="bi bi-dash-circle"></i>
@@ -55,10 +59,19 @@
 							</ul>
 						</li>
 					</ul>
-					<div class="d-flex justify-content-center">
-						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login" action="{% url 'signin' %}">Login</button>
-						<button type="button" class="btn btn-primary rounded-pill ms-2" id="navbar-signup">Sign up</button>
+					{% if user.is_authenticated %}
+					<div class="d-flex align-items-center">
+						<img src="../{{ user.avatar }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
+						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
+						<form id="logout-form" method="POST" action="{% url 'home' %}">
+							{% csrf_token %}
+							<button type="submit" class="btn btn-primary rounded-pill ms-2">Sign out</button>
+						</form>
 					</div>
+					{% else %}
+					<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login">Login</button>
+					<button type="button" class="btn btn-primary rounded-pill ms-2" id="navbar-signup">Sign up</button>
+					{% endif %}
 				</div>
 			</div>
 		</nav>

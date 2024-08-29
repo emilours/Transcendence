@@ -3,40 +3,14 @@ from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
 # from .forms import LoginForm, SignUpForm
 
+def index(request):
+	redirect('home')
+
 def home(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('home.html', request=request)
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
-
-# def login(request):
-# 	if request.method == 'POST':
-# 		form = LoginForm(request, data=request.POST)
-# 		if form.is_valid():
-# 			# Authentication logic here
-# 			return redirect('home')
-# 	else:
-# 		form = LoginForm()
-
-# 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-# 		html = render_to_string('login.html', {'form': form}, request=request)
-# 		return JsonResponse({'html': html})
-# 	return render(request, 'base.html', {'form': form})
-
-# def signup(request):
-# 	if request.method == 'POST':
-# 		form = SignUpForm(request.POST)
-# 		if form.is_valid():
-# 			form.save()
-# 			return redirect('login')
-# 	else:
-# 		form = SignUpForm()
-
-# 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-# 		html = render_to_string('signup.html', {'form': form}, request=request)
-# 		return JsonResponse({'html': html})
-# 	return render(request, 'base.html', {'form': form})
-
 
 def games(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -44,5 +18,36 @@ def games(request):
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
+
+def login(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('login.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
+def signup(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('signup.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
+# def logout(request):
+# 	return redirect('home')
+
+def logout(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('logout.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
+def profile(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('profile.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
 def leaderboard(request):
-	return render(request, 'leaderboard.html')
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('leaderboard.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')

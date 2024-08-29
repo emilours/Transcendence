@@ -89,23 +89,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		.catch(error => console.error('Error:', error));
 	}
 
-	document.getElementById('navbar-login').addEventListener('click', function (event) {
-		event.preventDefault();
-		loadContent('/signin/', true);
-	});
-
-	document.getElementById('navbar-signup').addEventListener('click', function (event) {
-		event.preventDefault();
-		loadContent('/signup/', true);
-	});
-
-
 	function attachListeners() {
 		const homeLink = document.getElementById('home');
 		const loginLink = document.getElementById('login');
 		const signupLink = document.getElementById('signup');
-		// const loginLinks = document.querySelectorAll('login', 'navbar-login');
-		// const signupLinks = document.querySelectorAll('signup', 'navbar-signup');
+		const signupNavLink = document.getElementById('navbar-signup');
+		const loginNavLink = document.getElementById('navbar-login');
+		const profileNavLink = document.getElementById('navbar-profile');
+		const leaderNavLink = document.getElementById('navbar-leaderboard');
+		const signupForm = document.getElementById('signup-form');
+		const loginForm = document.getElementById('login-form');
+		const logoutForm = document.getElementById('logout-form');
 		const gameLink = document.getElementById('games');
 		const invadersLink = document.getElementById('invaders');
 
@@ -119,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (loginLink) {
 			loginLink.addEventListener('click', function (event) {
 				event.preventDefault();
-				loadContent('/sigin/', true);
+				loadContent('/login/', true);
 			});
 		}
 
@@ -129,23 +123,34 @@ document.addEventListener("DOMContentLoaded", () => {
 				loadContent('/signup/', true);
 			});
 		}
-		// if (loginLinks.length > 0) {
-		// 	loginLinks.forEach(link => {
-		// 		link.addEventListener('click', function (event) {
-		// 			event.preventDefault();
-		// 			loadContent('/login/', true);
-		// 		});
-		// 	});
-		// }
 
-		// if (signupLinks.length > 0) {
-		// 	signupLinks.forEach(link => {
-		// 		link.addEventListener('click', function (event) {
-		// 			event.preventDefault();
-		// 			loadContent('/signup/', true);
-		// 		});
-		// 	});
-		// }
+		if (signupNavLink) {
+			signupNavLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/signup/', true);
+			});
+		}
+
+		if (loginNavLink) {
+			loginNavLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/login/', true);
+			});
+		}
+
+		if (profileNavLink) {
+			profileNavLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/profile/', true);
+			});
+		}
+
+		if (leaderNavLink) {
+			leaderNavLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/leaderboard/', true);
+			});
+		}
 
 		if (gameLink) {
 			gameLink.addEventListener('click', function (event) {
@@ -160,17 +165,81 @@ document.addEventListener("DOMContentLoaded", () => {
 				loadContent('/invaders/', true);
 			});
 		}
+
+		if (signupForm) {
+			signupForm.addEventListener('submit', function(event) {
+				event.preventDefault();
+
+				const formData = new FormData(signupForm);
+
+				fetch('/auth/signup/', {
+					method: 'POST',
+					body: formData,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);  // Gérer les erreurs de validation ici
+					} else {
+						window.location.href = '/home/';
+					}
+				})
+				.catch(error => console.error('Error:', error));
+			});
+		}
+
+		if (loginForm) {
+			loginForm.addEventListener('submit', function(event) {
+				event.preventDefault();
+
+				const formData = new FormData(loginForm);
+
+				fetch('/auth/signin/', {
+					method: 'POST',
+					body: formData,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);  // Gérer les erreurs de validation ici
+					} else {
+						window.location.href = '/home/';
+					}
+				})
+				.catch(error => console.error('Error:', error));
+			});
+		}
+
+		if (logoutForm)	{
+			logoutForm.addEventListener('submit', function(event) {
+				event.preventDefault();
+
+				fetch('/auth/signout/', {
+					method: 'POST',
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest',
+						// "X-CSRFToken": ???
+					},
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);  // Gérer les erreurs de validation ici
+					} else {
+						window.location.href = '/home/';
+					}
+				})
+				.catch(error => console.error('Error:', error));
+			});
+		}
 	}
 
-	// window.addEventListener('popstate', (event) => {
-	// 	if (event.state && event.state.route) {
-	// 		loadContent(event.state.route, false);
-	// 	} else {
-	// 		loadContent('/home/', false);
-	// 	}
-	// });
-
-	// loadContent('/home/');
 
 	window.addEventListener('popstate', (event) => {
 		const currentPath = window.location.pathname;
