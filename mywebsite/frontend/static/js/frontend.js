@@ -97,11 +97,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		const loginNavLink = document.getElementById('navbar-login');
 		const profileNavLink = document.getElementById('navbar-profile');
 		const leaderNavLink = document.getElementById('navbar-leaderboard');
+		const gameLink = document.getElementById('games');
+		const invadersLink = document.getElementById('invaders');
+
 		const signupForm = document.getElementById('signup-form');
 		const loginForm = document.getElementById('login-form');
 		const logoutForm = document.getElementById('logout-form');
-		const gameLink = document.getElementById('games');
-		const invadersLink = document.getElementById('invaders');
+		const addFriendForm = document.getElementById('add-friend-form');
 
 		if (homeLink) {
 			homeLink.addEventListener('click', function (event) {
@@ -184,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					if (data.error) {
 						alert(data.error);  // Gérer les erreurs de validation ici
 					} else {
-						window.location.href = '/home/';
+						window.location.href = '/profile/';
 					}
 				})
 				.catch(error => console.error('Error:', error));
@@ -209,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					if (data.error) {
 						alert(data.error);  // Gérer les erreurs de validation ici
 					} else {
-						window.location.href = '/home/';
+						window.location.href = '/profile/';
 					}
 				})
 				.catch(error => console.error('Error:', error));
@@ -224,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					method: 'POST',
 					headers: {
 						'X-Requested-With': 'XMLHttpRequest',
-						// "X-CSRFToken": ???
+						"X-CSRFToken": getCookie("csrftoken")
 					},
 				})
 				.then(response => response.json())
@@ -238,8 +240,47 @@ document.addEventListener("DOMContentLoaded", () => {
 				.catch(error => console.error('Error:', error));
 			});
 		}
+
+		if (addFriendForm) {
+			loginForm.addEventListener('submit', function(event) {
+				event.preventDefault();
+
+				const formData = new FormData(loginForm);
+
+				fetch('/auth/send_friend_request/', {
+					method: 'POST',
+					body: formData,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);  // Gérer les erreurs de validation ici
+					} else {
+						window.location.href = '/profile/';
+					}
+				})
+				.catch(error => console.error('Error:', error));
+			});
+		}
 	}
 
+	function getCookie(name) {
+		let cookieValue = null;
+		if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+				const cookie = cookies[i].trim();
+				if (cookie.substring(0, name.length + 1) === (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+					break;
+				}
+			}
+		}
+		return cookieValue;
+	}
 
 	window.addEventListener('popstate', (event) => {
 		const currentPath = window.location.pathname;

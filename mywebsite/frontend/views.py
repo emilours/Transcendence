@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
-# from .forms import LoginForm, SignUpForm
+from django.contrib.auth.decorators import login_required
 
 def index(request):
 	redirect('home')
@@ -34,12 +34,13 @@ def signup(request):
 # def logout(request):
 # 	return redirect('home')
 
-def logout(request):
-	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('logout.html', request=request)
-		return JsonResponse({'html': html})
-	return render(request, 'base.html')
+# def logout(request):
+# 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+# 		html = render_to_string('logout.html', request=request)
+# 		return JsonResponse({'html': html})
+# 	return render(request, 'base.html')
 
+@login_required
 def profile(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('profile.html', request=request)

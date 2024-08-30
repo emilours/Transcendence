@@ -13,12 +13,12 @@
 					</tr>
 				</thead>
 				<tbody>
-					{% for entry in leaderboard_entries %}
+					{% for entry in frontend_customuser %}
 					<tr>
 						<td>{{ forloop.counter }}</td>
-						<td>{{ entry.player_name }}</td>
-						<td>{{ entry.score }}</td>
-						<td>{{ entry.date }}</td>
+						<td>{{ entry.display_name }}</td>
+						<td>{{ entry.victories }}</td>
+						<td>{{ entry.defeats }}</td>
 					</tr>
 					{% endfor %}
 				</tbody>
