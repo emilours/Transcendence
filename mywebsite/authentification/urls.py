@@ -12,4 +12,7 @@ urlpatterns = [
     path('cancel_friend_request/<int:friend_request_id>/', auth_views.cancel_friend_request, name='cancel_friend_request'),
     path('update_profile/', auth_views.update_profile, name='update_profile'),
     path('update_password/', auth_views.update_password, name='update_password'),
+
+    # Vues API -- exemple
+    # path('api/obtain_auth_token/', api_views.obtain_auth_token, name='obtain_auth_token'),
 ]

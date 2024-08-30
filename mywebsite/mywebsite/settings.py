@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'rest_framework',
+	'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'frontend',
     'authentification',
 ]
@@ -120,6 +122,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# API 42 AUTHENTIFICATION
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': (
+#         'rest_framework.authentication.TokenAuthentication',
+#     ),
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#     ),
+# }
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -129,7 +140,6 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -156,8 +166,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Redirect after login
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
-# LOGOUT_REDIRECT_URL = '/',
 
 
 # Custom user model
 AUTH_USER_MODEL = 'frontend.CustomUser'
+
+# API 42 AUTHENTIFICATION
+# CLIENT_ID = os.getenv('CLIENT_ID')
+# CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+# REDIRECT_URI = os.getenv('API_42_REDIRECT_URI')
+
+TIME_ZONE = 'Europe/Paris'

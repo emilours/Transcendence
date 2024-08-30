@@ -167,3 +167,31 @@ class FriendRequest(models.Model):
             FriendRequest.objects.filter(sender=user, is_active=False).count() +
             FriendRequest.objects.filter(receiver=user, is_active=False).count()
         )
+
+# # ================================================================================================================================================================
+# # ===                                                      MATCH HISTORY                                                                                     ===
+# # ================================================================================================================================================================
+
+# class Game(models.Model):
+#     name = models.CharField(max_length=100)
+#     description = models.TextField()
+
+#     def __str__(self):
+#         return self.name
+
+# class Match(models.Model):
+#     GAME_CHOICES = [
+#         ('game1', 'Game 1'),
+#         ('game2', 'Game 2'),
+#     ]
+#     game = models.CharField(max_length=5, choices=GAME_CHOICES)
+#     player1 = models.ForeignKey(CustomUser, related_name='player1_matches', on_delete=models.CASCADE)
+#     player2 = models.ForeignKey(CustomUser, related_name='player2_matches', on_delete=models.CASCADE)
+#     date = models.DateTimeField(auto_now_add=True)
+#     player1_score = models.IntegerField()
+#     player2_score = models.IntegerField()
+#     winner = models.ForeignKey(CustomUser, related_name='won_matches', on_delete=models.CASCADE)
+#     details = models.TextField()
+
+#     def __str__(self):
+#         return f"{self.get_game_display()} match between {self.player1} and {self.player2} on {self.date}"
