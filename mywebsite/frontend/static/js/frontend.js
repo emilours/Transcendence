@@ -20,6 +20,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	function showAlert(message) {
+		const alertContainer = document.getElementById('alert-container');
+		const alertMessage = document.getElementById('alert-message');
+
+		alertMessage.textContent = message;
+		alertContainer.classList.remove('d-none');
+
+		// Masquer l'alerte après 5 secondes
+		setTimeout(() => {
+			alertContainer.classList.add('d-none');
+		}, 500000);
+	}
+
+	function closeAlert() {
+		document.getElementById('alert-container').classList.add('d-none');
+	}
+
+
+
 	const app = document.getElementById('app');
 
 	function loadScript(url) {
@@ -178,13 +197,14 @@ document.addEventListener("DOMContentLoaded", () => {
 					method: 'POST',
 					body: formData,
 					headers: {
-						'X-Requested-With': 'XMLHttpRequest'
+						'X-Requested-With': 'XMLHttpRequest',
+						"X-CSRFToken": csrftoken
 					},
 				})
 				.then(response => response.json())
 				.then(data => {
 					if (data.error) {
-						alert(data.error);  // Gérer les erreurs de validation ici
+						alert(data.error);
 					} else {
 						window.location.href = '/profile/';
 					}
@@ -203,7 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					method: 'POST',
 					body: formData,
 					headers: {
-						'X-Requested-With': 'XMLHttpRequest'
+						'X-Requested-With': 'XMLHttpRequest',
+						"X-CSRFToken": csrftoken
 					},
 				})
 				.then(response => response.json())
@@ -226,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					method: 'POST',
 					headers: {
 						'X-Requested-With': 'XMLHttpRequest',
-						"X-CSRFToken": getCookie("csrftoken")
+						"X-CSRFToken": csrftoken
 					},
 				})
 				.then(response => response.json())
@@ -242,22 +263,23 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		if (addFriendForm) {
-			loginForm.addEventListener('submit', function(event) {
+			addFriendForm.addEventListener('submit', function(event) {
 				event.preventDefault();
 
-				const formData = new FormData(loginForm);
+				const formData = new FormData(addFriendForm);
 
 				fetch('/auth/send_friend_request/', {
 					method: 'POST',
 					body: formData,
 					headers: {
-						'X-Requested-With': 'XMLHttpRequest'
+						'X-Requested-With': 'XMLHttpRequest',
+						'X-CSRFToken': csrftoken
 					},
 				})
 				.then(response => response.json())
 				.then(data => {
 					if (data.error) {
-						alert(data.error);  // Gérer les erreurs de validation ici
+						showAlert(data.error);
 					} else {
 						window.location.href = '/profile/';
 					}
@@ -281,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		return cookieValue;
 	}
+	const csrftoken = getCookie('csrftoken');
 
 	window.addEventListener('popstate', (event) => {
 		const currentPath = window.location.pathname;

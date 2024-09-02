@@ -162,7 +162,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8080',  # Nginx is serving the app here
     'http://127.0.0.1:8080',  # Ensure this is included if you're using localhost
-    # Add other domains as needed
+    'http://paul-f4ar5s4:8080',# Add other domains as needed
 ]
 
 # Custom user model

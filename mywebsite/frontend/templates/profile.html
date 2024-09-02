@@ -1,91 +1,7 @@
-<!-- {% load static %}
-<section class="d-flex align-items-center justify-content-center mt-5">
-	<div class="container">
-		<div class="row justify-content-center">
-			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
-						<h2>Profile</h2>
-					</div>
-					<div class="card-body p-5">
-						<div class="text-center mb-4">
-							<img src="../{{ user.avatar }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
-						</div>
-						<h3 class="card-title text-center mb-4 font-potta">{{ user.display_name }}</h3>
-						<p class="text-center mb-4"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-						<p class="text-center mb-4"><strong>Email:</strong> {{ user.email }}</p>
-
-						<hr>
-
-						<h4 class="text-center font-roboto mb-4">Pong Stats</h4>
-						<div class="d-flex justify-content-around mb-4">
-							<div>
-								<h5 class="text-center">Victories</h5>
-								<p class="text-center">{{ user.victories }}</p>
-							</div>
-							<div>
-								<h5 class="text-center">Defeats</h5>
-								<p class="text-center">{{ user.defeats }}</p>
-							</div>
-							<div>
-								<h5 class="text-center">Score</h5>
-								<p class="text-center">Not def in mb</p>
-							</div>
-						</div>
-
-						<hr>
-
-						<h4 class="text-center font-roboto mb-4">Invaders Stats</h4>
-						<div class="d-flex justify-content-around mb-4">
-							<div>
-								<h5 class="text-center">Victories</h5>
-								<p class="text-center">{{ user.victories }}</p>
-							</div>
-							<div>
-								<h5 class="text-center">Defeats</h5>
-								<p class="text-center">{{ user.defeats }}</p>
-							</div>
-							<div>
-								<h5 class="text-center">Score</h5>
-								<p class="text-center">Not def in mb</p>
-							</div>
-						</div>
-
-					</div>
-				</div>
-			</div>
-			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
-						<h2>Friends</h2>
-					</div>
-					<div class="d-flex justify-content-around mb-4">
-						<div>
-							<h5 class="text-center">Sent</h5>
-							<p class="text-center">{{ user.sent_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Received</h5>
-							<p class="text-center">{{ user.received_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Accepted</h5>
-							<p class="text-center">{{ user.accepted_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Declined</h5>
-							<p class="text-center">{{ user.declined_requests_count }}</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</section> -->
 {% load static %}
 <section class="d-flex align-items-center justify-content-center mt-5">
 	<div class="container">
-		<div class="row justify-content-center">
+		<div class="row justify-content-center mt-2">
 			<!-- Profil utilisateur -->
 			<div class="col-12 col-md-8 col-lg-6">
 				<div class="card shadow">
@@ -106,11 +22,11 @@
 						<div class="d-flex justify-content-around mb-4">
 							<div>
 								<h5 class="text-center">Victories</h5>
-								<p class="text-center">{{ user.victories }}</p>
+								<p class="text-center">Not defined in model</p>
 							</div>
 							<div>
 								<h5 class="text-center">Defeats</h5>
-								<p class="text-center">{{ user.defeats }}</p>
+								<p class="text-center">Not defined in model</p>
 							</div>
 							<div>
 								<h5 class="text-center">Score</h5>
@@ -165,7 +81,7 @@
 					</div>
 					<div class="card-body p-4">
 						<!-- Formulaire pour ajouter des amis -->
-						<form id="add-Friend-form" method="POST" action="{% url 'profile' %}">
+						<form id="add-friend-form" method="POST" action="{% url 'profile' %}">
 							{% csrf_token %}
 							<div class="input-group mb-3">
 								<input id="receiver_email" type="email" name="receiver_email" class="form-control" placeholder="Enter friend's email" required>
@@ -192,7 +108,41 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Demandes d'amis en attente -->
+			<div class="col-12 col-md-8 col-lg-6 mt-4">
+				<div class="card shadow">
+					<div class="card-header text-center bg-secondary font-potta">
+						<h2>Pending Friend Requests</h2>
+					</div>
+					<div class="card-body p-4">
+						{% if user.pending_requests.all %}
+							<ul class="list-group">
+								{% for request in user.pending_requests.all %}
+									<li class="list-group-item d-flex justify-content-between align-items-center">
+										<div>
+											<img src="../{{ request.sender.avatar }}" alt="{{ request.sender.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
+											<strong>{{ request.sender.display_name }}</strong>
+										</div>
+										<div>
+											<form method="POST" action="{% url 'accept_friend_request' request.id %}" class="d-inline">
+												{% csrf_token %}
+												<button type="submit" class="btn btn-success btn-sm">Accept</button>
+											</form>
+											<form method="POST" action="{% url 'decline_friend_request' request.id %}" class="d-inline">
+												{% csrf_token %}
+												<button type="submit" class="btn btn-danger btn-sm">Decline</button>
+											</form>
+										</div>
+									</li>
+								{% endfor %}
+							</ul>
+						{% else %}
+							<p class="text-center">You have no pending friend requests.</p>
+						{% endif %}
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
-

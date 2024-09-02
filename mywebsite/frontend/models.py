@@ -46,6 +46,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
+    def get_pending_friend_requests(self):
+        return FriendRequest.objects.filter(receiver=self, is_active=True)
+
     def __str__(self):
         return self.email
 

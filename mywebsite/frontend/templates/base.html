@@ -13,6 +13,13 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 </head>
 <body class="d-flex flex-fill flex-column vh-100">
+	<!-- <div class="alert alert-danger d-flex align-items-center" role="alert">
+		<svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+		<div>
+			<strong>Warning!</strong> This is a demo website. Do not use real credentials.
+		</div>
+	  </div> -->
+
 	<header class="font-potta">
 		<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
 			<div class="container-fluid bg-secondary">
@@ -63,7 +70,7 @@
 					<div class="d-flex align-items-center">
 						<img src="../{{ user.avatar }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
 						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
-						<form id="logout-form" method="POST" action="{% url 'home' %}">
+						<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 							{% csrf_token %}
 							<button type="submit" class="btn btn-primary rounded-pill ms-2">Sign out</button>
 						</form>
@@ -76,6 +83,7 @@
 			</div>
 		</nav>
 	</header>
+
 
 	<main class="flex-grow-1 d-flex flex-column">
 		<div id="app" class="container mt-5 pt-2">
