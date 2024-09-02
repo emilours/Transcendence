@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = True
 # DEBUG = os.environ.get('DEBUG')
 
-# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ["127.0.0.1"]
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
@@ -51,10 +51,21 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'mywebsite.asgi.application'
 
 # in production we would use redis for in-memory database
-CHANNEL_LAYERS={
-	'default':{
-		'BACKEND':'channels.layers.InMemoryChannelLayer'
-	}
+# CHANNEL_LAYERS={
+# 	'default':{
+# 		'BACKEND':'channels.layers.InMemoryChannelLayer'
+# 	}
+# }
+
+# For production (using redis)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("127.0.0.1", 6380)],
+			# "hosts": [('redis://default:IUNiWfxeTzDbVdtFlSglIEVaokQaSOhi@redis.railway.internal:6379')]
+        },
+    },
 }
 
 MIDDLEWARE = [

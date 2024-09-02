@@ -51,6 +51,12 @@ services:
     networks:
       - ft_transcendence
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6380:6379"
+
 volumes:
   db_volume:
     name: db_volume
