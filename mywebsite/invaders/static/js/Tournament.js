@@ -60,7 +60,7 @@ export default class Tournament {
 				drawMenu();
 			}),
 		);
-		document.body.appendChild(winnerScreen);
+		document.querySelector('.invaders-container').appendChild(winnerScreen);
 	}
 
 	showRoundMatches() {
@@ -92,7 +92,7 @@ export default class Tournament {
 				startGame('tournament', this.nextPlayer1, this.nextPlayer2, this);
 			})
 		);
-		document.body.appendChild(tieScreen);
+		document.querySelector('.invaders-container').appendChild(tieScreen);
 	}
 
 	onMatchEnd(player1, player2) {
@@ -133,7 +133,7 @@ export default class Tournament {
 					})
 				)
 			);
-			document.body.appendChild(winnerScreen);
+			document.querySelector('.invaders-container').appendChild(winnerScreen);
 		}
 	}
 
@@ -165,7 +165,7 @@ export default class Tournament {
 				})
 			);
 			tournamentStatusScreen.appendChild(nextMatch);
-			document.body.appendChild(tournamentStatusScreen);
+			document.querySelector('.invaders-container').appendChild(tournamentStatusScreen);
 		}
 	}
 }

@@ -5,64 +5,71 @@ import { Color } from "./Colors.js";
 import { createElement, createButton, createPlayerContainer, backButton,
 	shuffleArray, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import Tournament from "./Tournament.js";
+import gifler from 'gifler';
 
-export function cleanupInvaders() {
-    // Arrêter le jeu en annulant l'animation en cours
-    if (gameInterval) {
-        clearInterval(gameInterval);
-        gameInterval = null;
-    }
+// // Config canvas
+// if (document.getElementById('game')) {
+// 	const canvas = document.getElementById('game');
+// }
+// const ctx = canvas.getContext('2d');
+// canvas.width = 700;
+// canvas.height = 700;
 
-    // Supprimer le canvas du jeu pour éviter des résidus visuels
-    if (canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.remove(); // Supprime le canvas du DOM
-    }
+// // Gif background
+// const gifCanvas = document.createElement('canvas');
+// const gifAnimation = gifler('../../static/img/background.gif');
+// gifCanvas.width = canvas.width;
+// gifCanvas.height = canvas.height;
+// gifAnimation.get(function (a) {
+// 	a.animateInCanvas(gifCanvas);
+// });
 
-    // Supprimer tous les éléments ajoutés dynamiquement (menus, leaderboard, etc.)
-    const dynamicElements = document.querySelectorAll('.menu, .player-list, .list-leader, #game');
-    dynamicElements.forEach(element => element.remove());
+// // Game variables
+// let	mode;
+// let	enemyController;
+// let	enemyBulletController;
+// let	isGameOver = false;
+// let	didWin = false;
+// let	gameInterval;
+// let	userName = typeof userDisplayName === 'undefined' ? 'Player' : userDisplayName;
 
-    // Réinitialiser toutes les variables globales à leur état initial
-    enemyController = null;
-    enemyBulletController = null;
-    isGameOver = false;
-    didWin = false;
+let canvas = document.createElement('canvas');
+let	gameInterval = null;
 
-    // Supprimer les éléments liés à gifler
-    if (gifCanvas) {
-        gifCanvas.remove();
-    }
+// Función para inicializar el juego
+export function initializeGame() {
+
+	// Config canvas
+	// const canvas = document.createElement('canvas');
+	canvas.id = 'game';
+	document.body.appendChild(canvas);
+	const ctx = canvas.getContext('2d');
+	canvas.width = 700;
+	canvas.height = 700;
+
+	// Gif background
+	const gifCanvas = document.createElement('canvas');
+	const gifAnimation = gifler('../../static/img/background.gif');
+	gifCanvas.width = canvas.width;
+	gifCanvas.height = canvas.height;
+	gifAnimation.get(function (a) {
+		a.animateInCanvas(gifCanvas);
+	});
+
+	// Inicializar variables del juego
+	enemyController = new EnemyController(canvas);
+	enemyBulletController = new BulletController(canvas);
+	isGameOver = false;
+	didWin = false;
+	// gameInterval = null;
+	userName = typeof userDisplayName === 'undefined' ? 'Player' : userDisplayName;
+
+	drawMenu();
 }
-
-
-
-// Config canvas
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = 700;
-canvas.height = 700;
-
-// Gif background
-const gifCanvas = document.createElement('canvas');
-const gifAnimation = gifler('../../static/img/background.gif');
-gifCanvas.width = canvas.width;
-gifCanvas.height = canvas.height;
-gifAnimation.get(function (a) {
-	a.animateInCanvas(gifCanvas);
-});
-
-// Game variables
-let		mode;
-let		enemyController;
-let		enemyBulletController;
-let		isGameOver = false;
-let		didWin = false;
-let		gameInterval;
-let		userName = 'USERNAME';
 
 // Main menu
 export function drawMenu() {
+	let mode = null;
 	ctx.drawImage(gifCanvas, 0, 0, canvas.width, canvas.height);
 
 	const menuScreen = createElement('div', { className: 'menu', id: 'menuScreen' },
@@ -91,11 +98,11 @@ export function drawMenu() {
 			})
 			// ,createButton('HISTORY', () => {
 			// 	menuScreen.remove();
-			// 	displayLeaderboard();
+			// 	displayHistory();
 			// })
 		)
 	);
-	document.body.appendChild(menuScreen);
+	document.querySelector('.invaders-container').appendChild(menuScreen);
 }
 
 // Create the setup tournament screen
@@ -130,7 +137,7 @@ function tournamentSetup() {
 		innerText: 'Select a size before continue!',
 		style: 'color: transparent; font-size: 0.8em;' });
 	tournamentScreen.appendChild(alertBox);
-	document.body.appendChild(tournamentScreen);
+	document.querySelector('.invaders-container').appendChild(tournamentScreen);
 
 	function setupPlayers(num) {
 		playerListContainer.innerHTML = '';
@@ -177,7 +184,7 @@ export function startGame(selectedMode, player1, player2, tournament) {
 			setTimeout(() => { alertBox.style.color = 'transparent';}, 3000);
 		} else {
 			controlsScreen.remove();
-			initializeGame(mode, player1, player2);
+			initializeMatch(mode, player1, player2);
 		}
 	});
 
@@ -194,7 +201,7 @@ export function startGame(selectedMode, player1, player2, tournament) {
 		style: 'color: transparent; font-size: 0.8em;' });
 	controlsScreen.appendChild(alertBox);
 
-	document.body.appendChild(controlsScreen);
+	document.querySelector('.invaders-container').appendChild(controlsScreen);
 
 	const enemyInfo = createElement('div', { className: 'button-horizontal', style: 'margin-top: 60px;' },
 		createElement('div', { className: 'button-vertical', style: 'width: 150px;' },
@@ -262,7 +269,7 @@ export function startGame(selectedMode, player1, player2, tournament) {
 
 
 	// Launche the function to initialize the game
-	function initializeGame(mode, player1, player2) {
+	function initializeMatch(mode, player1, player2) {
 
 		// Si le canvas a été supprimé, recréez-le
 		if (!document.getElementById('game')) {
@@ -270,7 +277,7 @@ export function startGame(selectedMode, player1, player2, tournament) {
 			newCanvas.id = 'game';
 			newCanvas.width = 700;
 			newCanvas.height = 700;
-			document.body.appendChild(newCanvas);
+			document.querySelector('.invaders-container').appendChild(newCanvas);
 			canvas = newCanvas;
 			ctx = canvas.getContext('2d');
 		}
@@ -370,7 +377,7 @@ export function startGame(selectedMode, player1, player2, tournament) {
 					}
 				}
 			}
-			document.body.appendChild(gameOverScreen);
+			document.querySelector('.invaders-container').appendChild(gameOverScreen);
 		}
 	}
 
@@ -448,8 +455,73 @@ function displayLeaderboard() {
 		drawMenu();
 	});
 	leaderboardScreen.appendChild(backButton);
-	document.body.appendChild(leaderboardScreen);
+	document.querySelector('.invaders-container').appendChild(leaderboardScreen);
 }
+
+// export function cleanupInvaders() {
+// 	// Detener el juego cancelando la animación en curso
+// 	if (gameInterval) {
+// 		clearInterval(gameInterval);
+// 		gameInterval = null;
+// 	}
+
+// 	// Detener cualquier otra animación en curso
+// 	if (window.requestAnimationFrame) {
+// 		let id = window.requestAnimationFrame(() => {});
+// 		while (id--) {
+// 			window.cancelAnimationFrame(id);
+// 		}
+// 	}
+
+// 	// Detener todos los temporizadores
+// 	let highestTimeoutId = setTimeout(() => {});
+// 	for (let i = 0; i < highestTimeoutId; i++) {
+// 		clearTimeout(i);
+// 	}
+
+// 	// Detener todos los intervalos
+// 	let highestIntervalId = setInterval(() => {});
+// 	for (let i = 0; i < highestIntervalId; i++) {
+// 		clearInterval(i);
+// 	}
+
+// 	// Limpiar el canvas del juego para evitar residuos visuales
+// 	// if (canvas) {
+// 	// 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+// 	// 	canvas.remove(); // Eliminar el canvas del DOM
+// 	// }
+
+// 	// Eliminar todos los elementos añadidos dinámicamente (menús, leaderboard, etc.)
+// 	const dynamicElements = document.querySelectorAll('.menu, .player-list, .list-leader, #game');
+// 	dynamicElements.forEach(element => element.remove());
+
+// 	// Reiniciar todas las variables globales a su estado inicial
+// 	enemyController = null;
+// 	enemyBulletController = null;
+// 	isGameOver = false;
+// 	didWin = false;
+
+// 	// Eliminar los elementos relacionados con gifler
+// 	if (gifCanvas) {
+// 		gifCanvas.remove();
+// 	}
+
+// 	// Limpiar cualquier otro recurso que pueda estar en uso
+// 	if (player1 && player1.bulletController) {
+// 		player1.bulletController.clearBullets();
+// 	}
+// 	if (player2 && player2.bulletController) {
+// 		player2.bulletController.clearBullets();
+// 	}
+
+// 	// Reiniciar cualquier otra variable o estado del juego
+// 	player1 = null;
+// 	player2 = null;
+// 	mode = null;
+// }
+
+// Add event listener to stop the game when navigating away
+// window.addEventListener('beforeunload', cleanupInvaders);
 
 // Start again from the main menu
 export function resetGame() {
@@ -461,4 +533,9 @@ export function resetGame() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-drawMenu();
+// Llamar a la función de inicialización cuando se cargue la página del juego
+document.addEventListener('DOMContentLoaded', () => {
+	if (window.location.pathname.includes('invaders')) {
+		initializeGame();
+	}
+});

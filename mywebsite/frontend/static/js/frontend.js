@@ -1,3 +1,5 @@
+import { initializeGame } from '/static/js/invaders.js';
+
 document.addEventListener("DOMContentLoaded", () => {
 	// Fontsize + or -
 	const increaseFontBtn = document.getElementById('increase-font');
@@ -52,9 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 
 		// Nettoyer les résidus de l'animation ou du contenu
-		if (typeof cleanupInvaders === 'function') {
-			cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
-		}
+		// if (typeof cleanupInvaders === 'function') {
+		// 	cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
+		// }
 	}
 
 	function loadContent(url, addToHistory = true) {
@@ -77,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				loadScript('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js')
 				.then(() => loadCSS('/static/css/invaders.css'))
 				.then(() => loadScript('/static/js/invaders.js'))
+				.then(() => initializeGame())
 				.catch(error => console.error('Error loading scripts:', error));
 			}
 
