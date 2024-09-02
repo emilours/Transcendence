@@ -25,6 +25,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
 		global game_state, game_task, consumer_id
 
+		print("Trying to connect  client...")
 		self.game_id = len(consumer_id) // 2
 		print(f"[Game id #{self.game_id}]")
 		game_state[self.game_id] = None
