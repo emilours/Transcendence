@@ -99,6 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
 				.catch(error => console.error('Error loading scripts:', error));
 			}
 
+			if (url.includes('pong')) {
+				loadScript('/static/js/pong.js')
+				// .then(() => loadScript('/static/js/pong.js'))
+				.catch(error => console.error('Error loading scripts:', error));
+			}
+
 			attachListeners();
 
 			if (addToHistory) {
@@ -118,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const leaderNavLink = document.getElementById('navbar-leaderboard');
 		const gameLink = document.getElementById('games');
 		const invadersLink = document.getElementById('invaders');
+		const pongLink = document.getElementById('pong');
 
 		const signupForm = document.getElementById('signup-form');
 		const loginForm = document.getElementById('login-form');
@@ -184,6 +191,13 @@ document.addEventListener("DOMContentLoaded", () => {
 			invadersLink.addEventListener('click', function (event) {
 				event.preventDefault();
 				loadContent('/invaders/', true);
+			});
+		}
+
+		if (pongLink) {
+			pongLink.addEventListener('click', function (event) {
+				event.preventDefault();
+				loadContent('/pong/', true);
 			});
 		}
 
