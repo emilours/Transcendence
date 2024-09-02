@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views as auth_views
+from . import api_views 
 
 urlpatterns = [
     path('signup/', auth_views.signup, name='signup'),
@@ -13,6 +14,6 @@ urlpatterns = [
     path('update_profile/', auth_views.update_profile, name='update_profile'),
     path('update_password/', auth_views.update_password, name='update_password'),
 
-    # Vues API -- exemple
-    # path('api/obtain_auth_token/', api_views.obtain_auth_token, name='obtain_auth_token'),
+    # Vues API OAuth 2.0
+   path('oauth/complete/42/', api_views.callback_42, name='callback_42'),
 ]

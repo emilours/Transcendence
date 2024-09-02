@@ -1,6 +1,4 @@
-# from rest_framework import serializers
+from rest_framework import serializers
 
-# puis je importer un serializer ou non ?
-# class AuthTokenSerializer(serializers.Serializer):
-#     username = serializers.CharField()
-#     password = serializers.CharField()
+class AuthorizationCodeSerializer(serializers.Serializer):
+    code = serializers.CharField(required=True, max_length=255)

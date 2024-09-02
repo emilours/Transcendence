@@ -122,16 +122,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# API 42 AUTHENTIFICATION
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': (
-#         'rest_framework.authentication.TokenAuthentication',
-#     ),
-#     'DEFAULT_PERMISSION_CLASSES': (
-#         'rest_framework.permissions.IsAuthenticated',
-#     ),
-# }
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -141,7 +131,6 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -167,13 +156,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-
 # Custom user model
 AUTH_USER_MODEL = 'frontend.CustomUser'
 
-# API 42 AUTHENTIFICATION
-# CLIENT_ID = os.getenv('CLIENT_ID')
-# CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-# REDIRECT_URI = os.getenv('API_42_REDIRECT_URI')
+# Configuration de l'API 42
+FORTYTWO_AUTHORIZATION_BASE_URL = 'https://api.intra.42.fr/oauth/authorize'
+FORTYTWO_TOKEN_URL = 'https://api.intra.42.fr/v2/oauth/token'
+FORTYTWO_USER_URL = 'https://api.intra.42.fr/v2/me'
 
-TIME_ZONE = 'Europe/Paris'
+# API 42 AUTHENTIFICATION
+FORTYTWO_CLIENT_ID = os.getenv('CLIENT_ID')
+FORTYTWO_CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+FORTYTWO_REDIRECT_URI = os.getenv('API_42_REDIRECT_URI')
+
+# Configuration de REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
