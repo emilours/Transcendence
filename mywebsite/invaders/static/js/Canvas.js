@@ -10,9 +10,6 @@ export default class Canvas {
 			this.canvas.id = 'game';
 			document.body.appendChild(this.canvas);
 		}
-
-		this.canvas.id = 'game';
-		document.body.appendChild(this.canvas);
 		this.ctx = this.canvas.getContext('2d');
 		this.gameInterval = null;
 		this.canvas.width = 700;
@@ -22,8 +19,7 @@ export default class Canvas {
 		this.gifCanvas = document.createElement('canvas');
 		this.gifCanvas.width = this.canvas.width;
 		this.gifCanvas.height = this.canvas.height;
-
-		this.gifAnimation = gifler("../img/background.gif").get((a) => {
+		this.gifAnimation = gifler("../../static/img/background.gif").get((a) => {
 			a.animateInCanvas(this.gifCanvas);
 		});
 

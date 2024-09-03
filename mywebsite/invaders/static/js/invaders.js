@@ -94,15 +94,15 @@ export function initializeGame() {
 
 		const enemyInfo = createElement('div', { className: 'button-horizontal', style: 'margin-top: 60px;' },
 			createElement('div', { className: 'button-vertical', style: 'width: 150px;' },
-				createElement('img', { src: 'assets/images/enemy1.png', width: 54, height: 54 }),
+				createElement('img', { src: '../../static/img/enemy1.png', width: 54, height: 54 }),
 				createElement('p', { innerText: '10 PTS'})
 			),
 			createElement('div', { className: 'button-vertical', style: 'width: 150px;' },
-				createElement('img', { src: 'assets/images/enemy2.png', width: 54, height: 54 }),
+				createElement('img', { src: '../../static/img/enemy2.png', width: 54, height: 54 }),
 				createElement('p', { innerText: '20 PTS'})
 			),
 			createElement('div', { className: 'button-vertical', style: 'width: 150px;' },
-				createElement('img', { src: 'assets/images/enemy3.png', width: 54, height: 54 }),
+				createElement('img', { src: '../../static/img/enemy3.png', width: 54, height: 54 }),
 				createElement('p', { innerText: '30 PTS'})
 			)
 		);
@@ -117,7 +117,7 @@ export function initializeGame() {
 				if (player.id === 'player2')
 					index = 2;
 
-				let playerImage = createElement('img', { src: `assets/images/${player.id}.png`,
+				let playerImage = createElement('img', { src: `../../static/img/${player.id}.png`,
 					width: 62, height: 70 });
 
 				const leftButton = createArrowButton('<', () => {
@@ -138,16 +138,16 @@ export function initializeGame() {
 
 				function updatePlayerId(index) {player.updateId(index);}
 				function updatePlayerTitleColor(color) { playerTitle.style.color = color;}
-				function updatePlayerImage(index) { playerImage.src = `assets/images/player${index}.png`;}
+				function updatePlayerImage(index) { playerImage.src = `../../static/img/player${index}.png`;}
 			}
 			else {
-				playerImageContainer = createElement('img', { src: `assets/images/${player.id}.png`,
+				playerImageContainer = createElement('img', { src: `../../static/img/${player.id}.png`,
 					width: 62, height: 70 });
 				playerTitle = createElement('h3', { innerText: player.name, style: `color: ${player.color};` });
 			}
 
 			const moveImage = createElement('img', {
-				src: `assets/images/move${player.control}.png`,
+				src: `../../static/img/move${player.control}.png`,
 				width: 124,
 				height: 50,
 				style: 'margin: 20px;'
@@ -348,4 +348,4 @@ export function resetGame(game) {
 	game.enemyBulletController = null;
 }
 
-initializeGame();
+// initializeGame();
