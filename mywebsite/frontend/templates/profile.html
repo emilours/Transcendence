@@ -10,7 +10,7 @@
 					</div>
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="../{{ user.avatar }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
+							<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 						</div>
 						<h3 class="card-title text-center mb-4 font-potta">{{ user.display_name }}</h3>
 						<p class="text-center mb-4"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>

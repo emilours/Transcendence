@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from datetime import timedelta
 from django.utils import timezone
 from frontend.models import FriendRequest, FriendList, CustomUser
+import os
 
 User = get_user_model()
 
@@ -55,6 +56,16 @@ def signup(request):
 
     if User.objects.filter(display_name=display_name).exists():
         return JsonResponse({"error": "Username is already taken."}, status=400)
+
+    if avatar:
+        valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+        ext = os.path.splitext(avatar.name)[1].lower()
+        if ext not in valid_extensions:
+            return JsonResponse({"error": f"Unsupported file extension: {ext}. Allowed extensions are: .jpg, .jpeg, .png, .gif."}, status=400)
+
+    max_avatar_size = 2 * 1024 * 1024
+    if avatar and avatar.size > max_avatar_size:
+        return JsonResponse({"error": f"File size exceeds the maximum limit of 2MB."}, status=400)
 
     user = User.objects.create_user(email=email, password=password1)
     user.first_name = firstname

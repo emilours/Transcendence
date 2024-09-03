@@ -78,7 +78,7 @@
 					</ul>
 					{% if user.is_authenticated %}
 					<div class="d-flex align-items-center">
-						<img src="../{{ user.avatar }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
+						<img src="{{ user.avatar.url }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
 						<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
 						<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 							{% csrf_token %}
