@@ -36,6 +36,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,9 +45,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'frontend',
-    'authentification',
-    'invaders',
+    'pong',
 ]
+
+ASGI_APPLICATION = 'mywebsite.asgi.application'
+
+# in production we would use redis for in-memory database
+CHANNEL_LAYERS={
+	'default':{
+		'BACKEND':'channels.layers.InMemoryChannelLayer'
+	}
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

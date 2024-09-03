@@ -1,6 +1,7 @@
 Django==4.2.3
 psycopg2-binary==2.9.6
 gunicorn==21.2.0
+channels==3.0.5
 djangorestframework>=3.12
 
 # Django==5.0.7
