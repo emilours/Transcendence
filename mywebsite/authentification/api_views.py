@@ -6,17 +6,27 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.models import User
 from frontend.models import CustomUser
+from .serializers import AuthorizationCodeSerializer
+from rest_framework import serializers
 import requests
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from urllib.parse import urlparse
+import os
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def callback_42(request):
     token_url = settings.FORTYTWO_TOKEN_URL
-    code = request.GET.get('code')
+    serializer = AuthorizationCodeSerializer(data=request.GET)
+    
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
+
+    code = serializer.validated_data.get('code')
     if not code:
         return Response({'error': 'Code not provided'}, status=400)
     
-    # Échange du code contre un jeton d'accès
     token_data = {
         'grant_type': 'authorization_code',
         'client_id': settings.FORTYTWO_CLIENT_ID,
@@ -25,7 +35,7 @@ def callback_42(request):
         'redirect_uri': settings.FORTYTWO_REDIRECT_URI,
     }
     
-    token_response = requests.post(settings.FORTYTWO_TOKEN_URL, data=token_data)
+    token_response = requests.post(token_url, data=token_data)
     
     if token_response.status_code != 200:
         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
@@ -36,7 +46,6 @@ def callback_42(request):
     if not access_token:
         return Response({'error': 'Access token not provided'}, status=400)
     
-    # Récupération des informations utilisateur
     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
         'Authorization': f'Bearer {access_token}'
     })
@@ -45,17 +54,46 @@ def callback_42(request):
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
     
     user_info = user_info_response.json()
+    print("User Info from 42 API:", user_info)
 
-    # Création ou récupération de l'utilisateur Django
     email = user_info.get('email')
     display_name = user_info.get('login')
+    first_name = user_info.get('first_name')
+    last_name = user_info.get('last_name')
+
+    avatar_url = user_info.get('image', {}).get('link')
     
     if not email or not display_name:
         return Response({'error': 'Incomplete user info'}, status=400)
     
-    user, created = CustomUser.objects.get_or_create(email=email, defaults={'display_name': display_name})
+    user, created = CustomUser.objects.get_or_create(
+        email=email,
+        defaults={
+            'display_name': display_name,
+            'first_name': first_name,
+            'last_name': last_name
+        }
+    )
     
-    # Générer un JWT pour l'utilisateur
+    if not created:
+        user.first_name = first_name
+        user.last_name = last_name
+    
+    if avatar_url:
+        print(f"Tentative de téléchargement de l'avatar depuis {avatar_url}")
+        avatar_response = requests.get(avatar_url)
+        if avatar_response.status_code == 200:
+            avatar_name = os.path.basename(urlparse(avatar_url).path)
+            avatar_content = ContentFile(avatar_response.content)
+            user.avatar.save(avatar_name, avatar_content, save=False)
+            print(f"Avatar téléchargé et enregistré sous {avatar_name}")
+        else:
+            print(f"Échec du téléchargement de l'avatar depuis {avatar_url}. Code statut: {avatar_response.status_code}")
+    else:
+        print("Aucune URL d'avatar fournie dans les informations utilisateur")
+
+    user.save()
+
     refresh = RefreshToken.for_user(user)
     
     return Response({
