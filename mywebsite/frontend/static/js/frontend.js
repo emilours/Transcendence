@@ -20,25 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
-	function showAlert(message) {
-		const alertContainer = document.getElementById('alert-container');
-		const alertMessage = document.getElementById('alert-message');
-
-		alertMessage.textContent = message;
-		alertContainer.classList.remove('d-none');
-
-		// Masquer l'alerte après 5 secondes
-		setTimeout(() => {
-			alertContainer.classList.add('d-none');
-		}, 500000);
-	}
-
-	function closeAlert() {
-		document.getElementById('alert-container').classList.add('d-none');
-	}
-
-
-
 	const app = document.getElementById('app');
 
 	function loadScript(url) {
@@ -130,6 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		const loginForm = document.getElementById('login-form');
 		const logoutForm = document.getElementById('logout-form');
 		const addFriendForm = document.getElementById('add-friend-form');
+		const acceptFriendForm = document.getElementById('accept-friend-form');
+		const rejectFriendForm = document.getElementById('reject-friend-form');
 
 		if (homeLink) {
 			homeLink.addEventListener('click', function (event) {
@@ -293,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				.then(response => response.json())
 				.then(data => {
 					if (data.error) {
-						showAlert(data.error);
+						alert(data.error);
 					} else {
 						window.location.href = '/profile/';
 					}
@@ -301,6 +284,60 @@ document.addEventListener("DOMContentLoaded", () => {
 				.catch(error => console.error('Error:', error));
 			});
 		}
+
+	// 	if (acceptFriendForm) {
+	// 		acceptFriendForm.addEventListener('submit', function(event) {
+	// 			event.preventDefault();
+
+	// 			const formData = new FormData(acceptFriendForm);
+	// 			const friendRequestId = formData.get('friend_request_id');
+
+	// 			fetch('/auth/accept_friend_request/${friendRequestId}/', {
+	// 				method: 'POST',
+	// 				body: formData,
+	// 				headers: {
+	// 					'X-Requested-With': 'XMLHttpRequest',
+	// 					'X-CSRFToken': csrftoken
+	// 				},
+	// 			})
+	// 			.then(response => response.json())
+	// 			.then(data => {
+	// 				if (data.error) {
+	// 					alert(data.error);
+	// 				} else {
+	// 					window.location.href = '/profile/';
+	// 				}
+	// 			})
+	// 			.catch(error => console.error('Error:', error));
+	// 		});
+	// 	}
+
+	// 	if (rejectFriendForm) {
+	// 		rejectFriendForm.addEventListener('submit', function(event) {
+	// 			event.preventDefault();
+
+	// 			const formData = new FormData(rejectFriendForm);
+	// 			const friendRequestId = formData.get('friend_request_id');
+
+	// 			fetch('/auth/refuse_friend_request/${friendRequestId}/', {
+	// 				method: 'POST',
+	// 				body: formData,
+	// 				headers: {
+	// 					'X-Requested-With': 'XMLHttpRequest',
+	// 					'X-CSRFToken': csrftoken
+	// 				},
+	// 			})
+	// 			.then(response => response.json())
+	// 			.then(data => {
+	// 				if (data.error) {
+	// 					alert(data.error);
+	// 				} else {
+	// 					window.location.href = '/profile/';
+	// 				}
+	// 			})
+	// 			.catch(error => console.error('Error:', error));
+	// 		});
+	// 	}
 	}
 
 	function getCookie(name) {

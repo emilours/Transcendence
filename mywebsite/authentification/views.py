@@ -30,7 +30,8 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
-        print('User authenticated:')
+        user.is_active = True
+        user.save()
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
@@ -83,7 +84,6 @@ def signup(request):
     user = authenticate(request, email=email, password=password1)
     if user is not None:
         login(request, user)
-        print('User authenticated:', request.user.is_authenticated)
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)
@@ -92,6 +92,8 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
+        request.user.is_active = False
+        request.user.save()
         logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
@@ -138,55 +140,40 @@ def contact(request):
 @login_required
 @require_POST
 def send_friend_request(request):
-    print('******************************* Request Received *****************************************************')
-
     receiver_email = request.POST.get('receiver_email')
-    print(f'Receiver Email: {receiver_email}')
 
     if not receiver_email:
-        print('Invalid email address provided.')
         return JsonResponse({"error": "Invalid email address provided."}, status=400)
 
     try:
         receiver = User.objects.get(email=receiver_email)
-        print(f'Receiver found: {receiver.email}')
 
         if receiver == request.user:
-            print('Cannot send a friend request to yourself.')
             return JsonResponse({"error": "You cannot send a friend request to yourself."}, status=400)
 
         if FriendRequest.objects.filter(sender=request.user, receiver=receiver).exists():
-            print('Friend request already sent.')
             return JsonResponse({"error": "Friend request already sent."}, status=400)
+        # revoir si le receiver a déjà envoyé une demande d'amitié
 
         FriendRequest.objects.create(sender=request.user, receiver=receiver)
-        print('Friend request created.')
 
         return JsonResponse({"message": "Friend request sent."}, status=200)
 
     except User.DoesNotExist:
-        print('User with this email does not exist.')
         return JsonResponse({"error": "User with this email does not exist."}, status=404)
     except Exception as e:
-        print(f'An error occurred: {str(e)}')
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
 @login_required
 @require_POST
 def accept_friend_request(request, friend_request_id):
-    print('******************************* Request Received *****************************************************')
-    print(f"Received friend request ID: {friend_request_id}")
-    print(f"Request user: {request.user}, ID: {request.user.id}")
-
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
-        print(f"Friend request found: Sender ID: {friend_request.sender.id}, Receiver ID: {friend_request.receiver.id}")
         friend_request.accept()
         return JsonResponse({"message": "Friend request accepted."}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
 @login_required
