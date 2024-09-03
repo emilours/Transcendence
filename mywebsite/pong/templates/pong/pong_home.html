@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,17 +13,28 @@
 	<div>
         <form id="gameForm" method="get">
             <input type="submit" value="Connect"/>
-        </form> 
+        </form>
 
         <script>
             // Replace with the actual game ID passed from your backend
             var gameId = {{ gameId }};
-    
+
             // Set the form's action attribute
             document.getElementById('gameForm').action = '/pong/lobby' + gameId;
         </script>
-		<!-- <button id="playButton">Play</button>
-		<button id="quitButton">Quit</button> -->
 	</div>
 </body>
-</html>
+</html> -->
+<div class="mt-5">
+    <form id="gameForm" method="get">
+        <input type="submit" value="Connect"/>
+    </form>
+
+    <script>
+        // Replace with the actual game ID passed from your backend
+        var gameId = {{ gameId }};
+
+        // Set the form's action attribute
+        document.getElementById('gameForm').action = '/pong/lobby' + gameId;
+    </script>
+</div>

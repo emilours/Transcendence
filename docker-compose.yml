@@ -6,6 +6,7 @@ services:
     # command: gunicorn mywebsite.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles/
+      - media_volume:/app/media/
       - ./mywebsite:/app
     ports:
       - 8000:8000
@@ -38,6 +39,7 @@ services:
     container_name: nginx
     volumes:
       - static_volume:/staticfiles/
+      - media_volume:/media/
     ports:
       - 8080:8080
     depends_on:
@@ -51,11 +53,23 @@ services:
     networks:
       - ft_transcendence
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6380:6379"
+    networks:
+      - ft_transcendence
+
 volumes:
   db_volume:
     name: db_volume
   static_volume:
     name: static_volume
+  uploads_volume:
+    name: uploads_volume
+  media_volume:
+    name: media_volume
 
 networks:
   ft_transcendence:

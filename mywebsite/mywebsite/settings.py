@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == 'True'
 
-# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ["127.0.0.1"]
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'frontend',
+    'authentification',
+    'invaders',
     'pong',
 ]
 
@@ -56,6 +58,17 @@ CHANNEL_LAYERS={
 		'BACKEND':'channels.layers.InMemoryChannelLayer'
 	}
 }
+
+# For production (using redis)
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [("127.0.0.1", 6380)],
+# 			# "hosts": [('redis://default:IUNiWfxeTzDbVdtFlSglIEVaokQaSOhi@redis.railway.internal:6379')]
+#         },
+#     },
+# }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -152,7 +165,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # STATICFILES_DIRS = [
 #     os.path.join(BASE_DIR, "static"),
@@ -171,7 +184,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8080',  # Nginx is serving the app here
     'http://127.0.0.1:8080',  # Ensure this is included if you're using localhost
-    # Add other domains as needed
+    'http://paul-f4ar5s4:8080',# Add other domains as needed
 ]
 
 # Custom user model

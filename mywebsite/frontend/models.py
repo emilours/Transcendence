@@ -24,11 +24,11 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
+    email = models.EmailField(max_length=100, unique=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
     display_name = models.CharField(max_length=100, unique=True)
-    avatar = models.FileField(upload_to='frontend/static/img/avatars/', default='static/img/avatars/defaultPusheen.png')
+    avatar = models.FileField(upload_to='img/avatars/', default='img/avatars/defaultPusheen.png')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -45,6 +45,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['display_name']
 
     objects = CustomUserManager()
+
+    def get_pending_friend_requests(self):
+        return FriendRequest.objects.filter(receiver=self, is_active=True)
 
     def __str__(self):
         return self.email
