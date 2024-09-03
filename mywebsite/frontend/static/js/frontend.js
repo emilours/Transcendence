@@ -1,4 +1,4 @@
-import { initializeGame } from '/static/js/invaders.js';
+// import { initializeGame } from '/static/js/invaders.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Fontsize + or -
