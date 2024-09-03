@@ -70,6 +70,7 @@ p {
 .button {
 	margin: 10px;
 	padding: 10px;
+	padding-bottom: 7px;
 	font-size: 0.7em;
 	cursor: pointer;
 	background-color: #ffce08;

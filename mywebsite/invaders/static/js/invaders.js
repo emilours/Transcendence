@@ -7,43 +7,15 @@ import { createElement, createButton, createPlayerContainer, backButton,
 import Tournament from "./Tournament.js";
 import gifler from 'gifler';
 
-// // Config canvas
-// if (document.getElementById('game')) {
-// 	const canvas = document.getElementById('game');
-// }
-// const ctx = canvas.getContext('2d');
-// canvas.width = 700;
-// canvas.height = 700;
 
-// // Gif background
-// const gifCanvas = document.createElement('canvas');
-// const gifAnimation = gifler('../../static/img/background.gif');
-// gifCanvas.width = canvas.width;
-// gifCanvas.height = canvas.height;
-// gifAnimation.get(function (a) {
-// 	a.animateInCanvas(gifCanvas);
-// });
-
-// // Game variables
-// let	mode;
-// let	enemyController;
-// let	enemyBulletController;
-// let	isGameOver = false;
-// let	didWin = false;
-// let	gameInterval;
-// let	userName = typeof userDisplayName === 'undefined' ? 'Player' : userDisplayName;
-
-let canvas = document.createElement('canvas');
-let	gameInterval = null;
-
-// Función para inicializar el juego
 export function initializeGame() {
 
 	// Config canvas
-	// const canvas = document.createElement('canvas');
+	const canvas = document.createElement('canvas');
 	canvas.id = 'game';
 	document.body.appendChild(canvas);
 	const ctx = canvas.getContext('2d');
+	let	gameInterval = null;
 	canvas.width = 700;
 	canvas.height = 700;
 
@@ -61,7 +33,6 @@ export function initializeGame() {
 	enemyBulletController = new BulletController(canvas);
 	isGameOver = false;
 	didWin = false;
-	// gameInterval = null;
 	userName = typeof userDisplayName === 'undefined' ? 'Player' : userDisplayName;
 
 	drawMenu();
