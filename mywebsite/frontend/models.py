@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 # ================================================================================================================================================================
 
 class CustomUserManager(BaseUserManager):
+    @transaction.atomic
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -16,7 +17,6 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-        FriendList.objects.create(user=user)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
@@ -30,7 +30,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150)
     display_name = models.CharField(max_length=100, unique=True) 
     avatar = models.FileField(upload_to='static/img/avatars/', default='static/img/avatars/defaultPusheen.png')
-    # avatar = models.ImageField(upload_to='static/img/avatars/', default='static/img/avatars/defaultPusheen.png')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -38,6 +37,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     victories = models.PositiveIntegerField(default=0)
     defeats = models.PositiveIntegerField(default=0)
 
+    friends_count = models.PositiveIntegerField(default=0)
     sent_requests_count = models.PositiveIntegerField(default=0)
     received_requests_count = models.PositiveIntegerField(default=0)
     accepted_requests_count = models.PositiveIntegerField(default=0)
@@ -58,6 +58,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         
         if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
             raise ValidationError({'display_name': 'This display name is already in use.'})
+    
+    def save(self, *args, **kwargs):
+        created = self.pk is None
+        super().save(*args, **kwargs)
+
+        if created and not hasattr(self, 'friend_list'):
+            FriendList.objects.get_or_create(user=self)
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND LIST                                                                                         ===
@@ -72,13 +79,17 @@ class FriendList(models.Model):
 
     def add_friend(self, account):
         if account != self.user and account not in self.friends.all():
-            self.friends.add(account)
-            self.save()
+            with transaction.atomic():
+                self.friends.add(account)
+                friend_list = FriendList.objects.get(user=account)
+                friend_list.friends.add(self.user)
 
     def remove_friend(self, account):
         if account != self.user and account in self.friends.all():
-            self.friends.remove(account)
-            self.save()
+            with transaction.atomic():
+                self.friends.remove(account)
+                friend_list = FriendList.objects.get(user=account)
+                friend_list.friends.remove(self.user)
 
     def unfriend(self, removee):
         self.remove_friend(removee)
@@ -92,70 +103,79 @@ class FriendList(models.Model):
         return friend in self.friends.all()
 
     def friend_count(self):
-        return self.friends.count()
+        count = self.friends.count()
+        return count
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUEST                                                                                      ===
 # # ================================================================================================================================================================
 
+from django.db import models, transaction
+
 class FriendRequest(models.Model):
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_requests")
-    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_requests")
-    is_active = models.BooleanField(default=True)
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="sent_requests")
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="received_requests")
+    status = models.CharField(max_length=10, choices=[
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined')
+    ], default='pending')
 
     def __str__(self):
-        return f"{self.sender} -> {self.receiver} (Active: {self.is_active})"
+        return f"{self.sender} -> {self.receiver} ({self.status})"
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if self._state.adding:
             self.sender.sent_requests_count += 1
             self.receiver.received_requests_count += 1
             self.sender.save()
             self.receiver.save()
-        super(FriendRequest, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
+    @transaction.atomic
     def accept(self):
-        if self.is_active:
-            try:
-                receiver_friend_list = FriendList.objects.get(user=self.receiver)
-                sender_friend_list = FriendList.objects.get(user=self.sender)
-
-                receiver_friend_list.add_friend(self.sender)
-                sender_friend_list.add_friend(self.receiver)
-
-                self.is_active = False
-                self.sender.friends_count += 1
-                self.receiver.friends_count += 1
-
-                self.save()
-                self.sender.save()
-                self.receiver.save()
-
-            except FriendList.DoesNotExist:
-                print(f"Friend list does not exist for sender or receiver.")
-            except Exception as e:
-                print(f"An error occurred while accepting the friend request: {str(e)}")
-
-    def decline(self):
-        if self.is_active:
-            self.is_active = False
-            self.receiver.declined_requests_count += 1
-
-            self.save()
-            self.receiver.save()
-
-    def cancel(self):
-        if self.is_active:
-            self.is_active = False
+        if self.status == 'pending':
+            self.status = 'accepted'
+            self.sender.friends_count += 1
+            self.receiver.friends_count += 1
             self.sender.sent_requests_count -= 1
             self.receiver.received_requests_count -= 1
-
-            self.save()
             self.sender.save()
             self.receiver.save()
+        
+        sender_friend_list, _ = FriendList.objects.get_or_create(user=self.sender)
+        receiver_friend_list, _ = FriendList.objects.get_or_create(user=self.receiver)
+        
+        sender_friend_list.add_friend(self.receiver)
+        receiver_friend_list.add_friend(self.sender)
+        
+        self.save()
 
+    @transaction.atomic
+    def decline(self):
+        if self.status == 'pending':
+            self.status = 'declined'
+            self.receiver.declined_requests_count += 1
+            self.sender.sent_requests_count -= 1
+            self.receiver.received_requests_count -= 1
+            self.sender.save()
+            self.receiver.save()
+            self.save()
+
+    @transaction.atomic
+    def cancel(self):
+        if self.status == 'pending':
+            self.status = 'declined'
+            self.sender.sent_requests_count -= 1
+            self.receiver.received_requests_count -= 1
+            self.sender.save()
+            self.receiver.save()
+            self.save()
+
+    @transaction.atomic
     def delete(self, *args, **kwargs):
-        if self.is_active:
+        if self.status == 'pending':
             self.sender.sent_requests_count -= 1
             self.receiver.received_requests_count -= 1
             self.sender.save()
@@ -165,8 +185,8 @@ class FriendRequest(models.Model):
     @staticmethod
     def count_declined_requests(user):
         return (
-            FriendRequest.objects.filter(sender=user, is_active=False).count() +
-            FriendRequest.objects.filter(receiver=user, is_active=False).count()
+            FriendRequest.objects.filter(sender=user, status='declined').count() +
+            FriendRequest.objects.filter(receiver=user, status='declined').count()
         )
 
 # # ================================================================================================================================================================

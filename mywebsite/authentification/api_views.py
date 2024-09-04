@@ -12,6 +12,7 @@ import requests
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from urllib.parse import urlparse
+from django.contrib.auth import login
 import os
 
 @api_view(['GET'])
@@ -54,7 +55,6 @@ def callback_42(request):
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
     
     user_info = user_info_response.json()
-    print("User Info from 42 API:", user_info)
 
     email = user_info.get('email')
     display_name = user_info.get('login')
@@ -80,19 +80,17 @@ def callback_42(request):
         user.last_name = last_name
     
     if avatar_url:
-        print(f"Tentative de téléchargement de l'avatar depuis {avatar_url}")
         avatar_response = requests.get(avatar_url)
         if avatar_response.status_code == 200:
             avatar_name = os.path.basename(urlparse(avatar_url).path)
             avatar_content = ContentFile(avatar_response.content)
             user.avatar.save(avatar_name, avatar_content, save=False)
-            print(f"Avatar téléchargé et enregistré sous {avatar_name}")
         else:
-            print(f"Échec du téléchargement de l'avatar depuis {avatar_url}. Code statut: {avatar_response.status_code}")
-    else:
-        print("Aucune URL d'avatar fournie dans les informations utilisateur")
+            return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
 
     user.save()
+
+    login(request, user)
 
     refresh = RefreshToken.for_user(user)
     
