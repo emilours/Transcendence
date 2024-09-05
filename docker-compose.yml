@@ -2,18 +2,24 @@ services:
   mywebsite:
     build: ./mywebsite
     container_name: mywebsite
-    command: python manage.py runserver 0.0.0.0:8000
+    # command: python manage.py runserver 0.0.0.0:8000
+    # -v2 == more detailed logs
+    command: daphne -v2 -u /daphne/daphne.sock mywebsite.asgi:application
+    # command: >
+    #   sh -c "daphne mywebsite.asgi:application -u /daphne/daphne.sock && chmod 660 /daphne/daphne.sock"
     # command: gunicorn mywebsite.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles/
       - ./mywebsite:/app
+      - daphne_volume:/app/daphne
     ports:
       - 8000:8000
     env_file:
       - .env
     depends_on:
-      db:
-        condition: service_healthy
+      - redis
+      - db # No condition specified here
+        # condition: service_healthy
     networks:
       - ft_transcendence
 
@@ -38,6 +44,7 @@ services:
     container_name: nginx
     volumes:
       - static_volume:/staticfiles/
+      - daphne_volume:/daphne
     ports:
       - 8080:8080
     depends_on:
@@ -64,6 +71,13 @@ volumes:
     name: db_volume
   static_volume:
     name: static_volume
+  daphne_volume:
+    name: daphne_volume
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/mywebsite/daphne
+      o: bind
 
 networks:
   ft_transcendence:

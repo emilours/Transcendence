@@ -21,6 +21,11 @@ RUN apt-get update && \
 # Copy the script to the working directory and make it executable
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
+
+RUN mkdir -p /daphne/ && chmod 777 /daphne/
+
+# RUN rm -rf daphne/daphne.sock.lock && rm -rf daphne/daphne.sock
+
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 # copy project

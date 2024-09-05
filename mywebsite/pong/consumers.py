@@ -2,6 +2,7 @@ import json, time, asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
 
+# CONST VARIABLES
 PADDLE_SPEED = 0.2
 BALL_SPEED = 0.1
 BALL_SIZE = 0.2
@@ -19,17 +20,21 @@ game_state = {}
 game_task = {}
 consumer_id = {}
 
+def log(message):
+	print(f"[CONSUMER LOG] {message}")
 
 # TODO: the first consumer (or both) should create the game_state{}
 class PongConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
 		global game_state, game_task, consumer_id
 
-		print("Trying to connect  client...")
+		log("Client trying to connect")
+		# if lobby available join else create new
 		self.game_id = len(consumer_id) // 2
-		print(f"[Game id #{self.game_id}]")
+		log(f"[Game id #{self.game_id}]")
 		game_state[self.game_id] = None
 
+		# log(self.scope)
 		# Define the room name based on the game session (e.g., using session ID)
 		self.room_group_name = 'pong_lobby_' + str(self.game_id)
 
@@ -39,7 +44,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 				self.channel_name
 				)
 		
-		print(f"channel group: {self.room_group_name}")
+		log(f"channel group: {self.room_group_name}")
 
 		await self.accept()
 
@@ -47,10 +52,10 @@ class PongConsumer(AsyncWebsocketConsumer):
 			consumer_id[self.channel_name] = len(consumer_id)
 
 		# Increment connected clients count
-		print(f"Client connected to consumer id {consumer_id[self.channel_name]}")
+		log(f"Client connected to consumer id {consumer_id[self.channel_name]}")
 		if (consumer_id[self.channel_name] % 2 != 0):
-			print(f"Consumer {consumer_id[self.channel_name]} will run the game loop")
-		print(f"Number of clients {len(consumer_id)}")
+			log(f"Consumer {consumer_id[self.channel_name]} will run the game loop")
+		log(f"Number of clients {len(consumer_id)}")
 
 		if consumer_id[self.channel_name] % 2 != 0:
 			game_state[self.game_id] = {
@@ -90,7 +95,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 			self.channel_name
 		)
 
-		print(f"Client disconnected to consumer id {consumer_id[self.channel_name]}")
+		log(f"Client disconnected to consumer id {consumer_id[self.channel_name]}")
 
 		# Cancel the game loop if no clients are connected
 		if len(consumer_id) == 0 or consumer_id[self.channel_name] % 2 != 0:
@@ -98,12 +103,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 				game_task[self.game_id].cancel()
 				game_task[self.game_id] = None
 				game_state[self.game_id] = {}
-				print("Game loop cancelled due to no active players.")
+				log("Game loop cancelled due to no active players.")
 
 		if self.channel_name in consumer_id:
 			del consumer_id[self.channel_name]
 
-		print(f"Number of clients {len(consumer_id)}")
+		log(f"Number of clients {len(consumer_id)}")
 
 	async def receive(self, text_data):
 		global game_state
@@ -112,9 +117,8 @@ class PongConsumer(AsyncWebsocketConsumer):
 		# player_id = data['player_id']
 		action = data['action']
 
-		# TODO: add limit so paddle don't go out of range
 
-		# print("Type of any: ", type(game_state['player1Pos']))
+		# log("Type of any: ", type(game_state['player1Pos']))
 
 		# NOTE: Might not need the player_id because we can user consumer id ??
 		# consumer with id % 2 == 0 will always be player1 aka left paddle
@@ -158,10 +162,10 @@ class PongConsumer(AsyncWebsocketConsumer):
 				self.reset_ball()
 
 			if game_state[self.game_id]['player1Score'] >= 5:
-				print("Player 1 Won!")
+				log("Player 1 Won!")
 				game_state[self.game_id]['gameOver'] = 1
 			elif game_state[self.game_id]['player2Score'] >= 5:
-				print("Player 2 Won!")
+				log("Player 2 Won!")
 				game_state[self.game_id]['gameOver'] = 1
 				
 			# Handle paddle collisions
