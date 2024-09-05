@@ -32,6 +32,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=True)
 
     victories = models.PositiveIntegerField(default=0)
     defeats = models.PositiveIntegerField(default=0)
@@ -81,6 +82,10 @@ class FriendList(models.Model):
         try:
             friends_list = FriendList.objects.get(user=removee)
             friends_list.remove_friend(self.user)
+            FriendRequest.objects.filter(
+                (models.Q(sender=self.user) & models.Q(receiver=removee)) |
+                (models.Q(sender=removee) & models.Q(receiver=self.user))
+            ).delete()
         except FriendList.DoesNotExist:
             pass
 
@@ -120,8 +125,8 @@ class FriendRequest(models.Model):
                 sender_friend_list.add_friend(self.receiver)
 
                 self.is_active = False  # Deactivate the friend request
-                self.sender.friends_count += 1
-                self.receiver.friends_count += 1
+                # self.sender.friends_count += 1
+                # self.receiver.friends_count += 1
 
                 self.save()
                 self.sender.save()

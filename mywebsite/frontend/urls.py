@@ -9,4 +9,5 @@ urlpatterns = [
 	path('profile/', views.profile, name='profile'),
 	path('games/', views.games, name='games'),
 	path('leaderboard/', views.leaderboard, name='leaderboard'),
+	path('load_header/', views.load_header, name='load_header'),
 ]

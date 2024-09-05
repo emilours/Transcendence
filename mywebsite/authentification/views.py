@@ -30,8 +30,8 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
-        user.is_active = True
-        user.save()
+        user.is_online = True
+        user.save(update_fields=['is_online'])
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
@@ -92,8 +92,8 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        request.user.is_active = False
-        request.user.save()
+        request.user.is_online = False
+        request.user.save(update_fields=['is_online'])
         logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
@@ -153,10 +153,11 @@ def send_friend_request(request):
 
         if FriendRequest.objects.filter(sender=request.user, receiver=receiver).exists():
             return JsonResponse({"error": "Friend request already sent."}, status=400)
-        # revoir si le receiver a déjà envoyé une demande d'amitié
+
+        if FriendRequest.objects.filter(sender=receiver, receiver=request.user).exists():
+            return JsonResponse({"error": "Friend request already received."}, status=400)
 
         FriendRequest.objects.create(sender=request.user, receiver=receiver)
-
         return JsonResponse({"message": "Friend request sent."}, status=200)
 
     except User.DoesNotExist:
@@ -181,22 +182,37 @@ def accept_friend_request(request, friend_request_id):
 def refuse_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
-        friend_request.decline()
+        friend_request.cancel()
         return JsonResponse({"message": "Friend request refused."}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
+# @login_required
+# @require_POST
+# def cancel_friend_request(request, friend_request_id):
+#     try:
+#         friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
+#         friend_request.decline()
+#         return JsonResponse({"message": "Friend request cancelled."}, status=200)
+#     except FriendRequest.DoesNotExist:
+#         return JsonResponse({"error": "Friend request not found."}, status=404)
+#     except Exception as e:
+#         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
 @login_required
 @require_POST
-def cancel_friend_request(request, friend_request_id):
+def remove_friend(request, friend_id):
     try:
-        friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
-        friend_request.cancel()
-        return JsonResponse({"message": "Friend request cancelled."}, status=200)
-    except FriendRequest.DoesNotExist:
-        return JsonResponse({"error": "Friend request not found."}, status=404)
+        friend_list = FriendList.objects.get(user=request.user)
+        friend = CustomUser.objects.get(id=friend_id)
+        friend_list.unfriend(friend)
+        return JsonResponse({"message": "Friend removed successfully."}, status=200)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Friend not found."}, status=404)
+    except FriendList.DoesNotExist:
+        return JsonResponse({"error": "Friend list not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 

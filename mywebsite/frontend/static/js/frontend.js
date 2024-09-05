@@ -1,10 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-	// Fontsize + or -
+	// Font size adjustment
 	const increaseFontBtn = document.getElementById('increase-font');
 	const decreaseFontBtn = document.getElementById('decrease-font');
 	const rootElement = document.documentElement;
 	let currentFontSize = 100;
-
 
 	increaseFontBtn.addEventListener('click', function() {
 		if (currentFontSize < 150) {
@@ -20,325 +19,179 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	// SPA - Single Page Application
 	const app = document.getElementById('app');
 
-	function loadScript(url) {
+	const loadResource = (url, type) => {
 		return new Promise((resolve, reject) => {
-			const script = document.createElement('script');
-			script.src = url;
-			script.type = "module";
-			script.onload = resolve;
-			script.onerror = reject;
-			script.dataset.dynamic = true;
-			document.head.appendChild(script);
+			const element = document.createElement(type);
+			if (type === 'script')
+				element.type = "module";
+			if (type === 'link')
+				element.rel = "stylesheet";
+			element.href = element.src = url
+			element.onload = resolve;
+			element.onerror = reject;
+			element.dataset.dynamic = true;
+			document.head.appendChild(element);
 		});
-	}
+	};
 
-	function loadCSS(url) {
-		return new Promise((resolve, reject) => {
-			const link = document.createElement('link');
-			link.rel = 'stylesheet';
-			link.href = url;
-			link.onload = resolve;
-			link.onerror = reject;
-			link.dataset.dynamic = true;
-			document.head.appendChild(link);
-		});
-	}
-
-	function cleanupResources() {
-		// Supprimer les scripts et CSS ajoutés dynamiquement
-		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
-		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-
-		// Nettoyer les résidus de l'animation ou du contenu
+	const cleanupResources = () => {
+		document.querySelectorAll('[data-dynamic="true"]').forEach(el => el.remove());
 		if (typeof cleanupInvaders === 'function') {
-			cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
+			cleanupInvaders();
 		}
-	}
+	};
 
-	function loadContent(url, addToHistory = true) {
-		cleanupResources();
-		fetch(url, {
-			headers: {
-				'X-Requested-With': 'XMLHttpRequest'
-			}
-		})
-		.then(response => {
-			if (!response.ok) {
-				throw new Error('Network response was not ok');
-			}
-			return response.json();
-		})
-		.then(data => {
+	// function cleanupResources() {
+	// 	document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
+	// 	document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+	// 	if (typeof cleanupInvaders === 'function') {
+	// 		cleanupInvaders();
+	// 	}
+	// }
+	const loadHeader = async () => {
+		try {
+			const response = await fetch('/load_header/', {
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				}
+			});
+			const data = await response.json();
+			const headerElement = document.querySelector('header');
+			headerElement.innerHTML = data.html;
+		} catch (error) {
+			console.error('Error loading header:', error);
+		}
+	};
+
+	const loadContent = async (url, addToHistory = true) => {
+		try {
+			cleanupResources();
+			const response = await fetch(url, {
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest'
+				}
+			});
+			if (!response.ok) throw new Error('Network response was not ok');
+			const data = await response.json();
 			app.innerHTML = data.html;
 
 			if (url.includes('invaders')) {
-				loadScript('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js')
-				.then(() => loadCSS('/static/css/invaders.css'))
-				.then(() => loadScript('/static/js/invaders.js'))
-				.catch(error => console.error('Error loading scripts:', error));
-			}
-
-			if (url.includes('pong')) {
-				loadScript('/static/js/pong.js')
-				// .then(() => loadScript('/static/js/pong.js'))
-				.catch(error => console.error('Error loading scripts:', error));
+				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
+				await loadResource('/static/css/invaders.css', 'link');
+				await loadResource('/static/js/invaders.js', 'script');
+			} else if (url.includes('pong')) {
+				await loadResource('/static/js/pong.js', 'script');
 			}
 
 			attachListeners();
 
-			if (addToHistory) {
-				history.pushState({ route: url }, null, url);
+			if (addToHistory) history.pushState({ route: url }, null, url);
+		} catch (error) {
+			console.error('Error loading content:', error);
+		}
+	};
+
+	const attachListeners = () => {
+		const links = [
+			{ id: 'home', url: '/home/' },
+			{ id: 'login', url: '/login/' },
+			{ id: 'signup', url: '/signup/' },
+			{ id: 'navbar-signup', url: '/signup/' },
+			{ id: 'navbar-login', url: '/login/' },
+			{ id: 'navbar-profile', url: '/profile/' },
+			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
+			{ id: 'games', url: '/games/' },
+			{ id: 'invaders', url: '/invaders/' },
+			{ id: 'pong', url: '/pong/' }
+		];
+
+		links.forEach(link => {
+			const element = document.getElementById(link.id);
+			if (element) {
+				element.addEventListener('click', event => {
+					event.preventDefault();
+					loadContent(link.url);
+				});
 			}
-		})
-		.catch(error => console.error('Error:', error));
-	}
+		});
 
-	function attachListeners() {
-		const homeLink = document.getElementById('home');
-		const loginLink = document.getElementById('login');
-		const signupLink = document.getElementById('signup');
-		const signupNavLink = document.getElementById('navbar-signup');
-		const loginNavLink = document.getElementById('navbar-login');
-		const profileNavLink = document.getElementById('navbar-profile');
-		const leaderNavLink = document.getElementById('navbar-leaderboard');
-		const gameLink = document.getElementById('games');
-		const invadersLink = document.getElementById('invaders');
-		const pongLink = document.getElementById('pong');
+		const forms = [
+			{ id: 'signup-form', url: '/auth/signup/' },
+			{ id: 'login-form', url: '/auth/signin/' },
+			{ id: 'logout-form', url: '/auth/signout/' },
+			{ id: 'add-friend-form', url: '/auth/send_friend_request/' }
+		];
 
-		const signupForm = document.getElementById('signup-form');
-		const loginForm = document.getElementById('login-form');
-		const logoutForm = document.getElementById('logout-form');
-		const addFriendForm = document.getElementById('add-friend-form');
-		const acceptFriendForm = document.getElementById('accept-friend-form');
-		const rejectFriendForm = document.getElementById('reject-friend-form');
+		forms.forEach(({ id, url }) => {
+			const form = document.getElementById(id);
+			if (form) {
+				form.addEventListener('submit', async (event) => {
+					event.preventDefault();
+					const formData = new FormData(form);
+					try {
+						const response = await fetch(url, {
+							method: 'POST',
+							body: formData,
+							headers: {
+								'X-Requested-With': 'XMLHttpRequest',
+								"X-CSRFToken": getCookie('csrftoken')
+							},
+						});
+						const data = await response.json();
+						if (data.error) {
+							alert(data.error);
+						} else {
+							// alert(data.message);
+							if (id === 'logout-form') {
+								// window.location.href = '/home/';
+								loadHeader();
+								loadContent('/home/', true);
+							} else {
+								// window.location.href = '/profile/';
+								loadContent('/profile/', true);
+								loadHeader();
+							}
+						}
+					} catch (error) {
+						console.error('Error:', error);
+					}
+				});
+			}
+		});
 
-		if (homeLink) {
-			homeLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/home/', true);
-			});
-		}
-
-		if (loginLink) {
-			loginLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/login/', true);
-			});
-		}
-
-		if (signupLink) {
-			signupLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/signup/', true);
-			});
-		}
-
-		if (signupNavLink) {
-			signupNavLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/signup/', true);
-			});
-		}
-
-		if (loginNavLink) {
-			loginNavLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/login/', true);
-			});
-		}
-
-		if (profileNavLink) {
-			profileNavLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/profile/', true);
-			});
-		}
-
-		if (leaderNavLink) {
-			leaderNavLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/leaderboard/', true);
-			});
-		}
-
-		if (gameLink) {
-			gameLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/games/', true);
-			});
-		}
-
-		if (invadersLink) {
-			invadersLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/invaders/', true);
-			});
-		}
-
-		if (pongLink) {
-			pongLink.addEventListener('click', function (event) {
-				event.preventDefault();
-				loadContent('/pong/', true);
-			});
-		}
-
-		if (signupForm) {
-			signupForm.addEventListener('submit', function(event) {
+		document.querySelectorAll('.accept-friend-request, .refuse-friend-request, .cancel-friend-request, .remove-friend-form').forEach(form => {
+			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
 
-				const formData = new FormData(signupForm);
+				const formData = new FormData(form);
+				const url = form.action;
 
-				fetch('/auth/signup/', {
-					method: 'POST',
-					body: formData,
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest',
-						"X-CSRFToken": csrftoken
-					},
-				})
-				.then(response => response.json())
-				.then(data => {
+				try {
+					const response = await fetch(url, {
+						method: 'POST',
+						body: formData,
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest',
+							"X-CSRFToken": getCookie('csrftoken')
+						},
+					});
+
+					const data = await response.json();
 					if (data.error) {
 						alert(data.error);
 					} else {
-						window.location.href = '/profile/';
+						// alert(data.message);
+						loadContent('/profile/', true);
 					}
-				})
-				.catch(error => console.error('Error:', error));
+				} catch (error) {
+					console.error('Error:', error);
+				}
 			});
-		}
-
-		if (loginForm) {
-			loginForm.addEventListener('submit', function(event) {
-				event.preventDefault();
-
-				const formData = new FormData(loginForm);
-
-				fetch('/auth/signin/', {
-					method: 'POST',
-					body: formData,
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest',
-						"X-CSRFToken": csrftoken
-					},
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);  // Gérer les erreurs de validation ici
-					} else {
-						window.location.href = '/profile/';
-					}
-				})
-				.catch(error => console.error('Error:', error));
-			});
-		}
-
-		if (logoutForm)	{
-			logoutForm.addEventListener('submit', function(event) {
-				event.preventDefault();
-
-				fetch('/auth/signout/', {
-					method: 'POST',
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest',
-						"X-CSRFToken": csrftoken
-					},
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);  // Gérer les erreurs de validation ici
-					} else {
-						window.location.href = '/home/';
-					}
-				})
-				.catch(error => console.error('Error:', error));
-			});
-		}
-
-		if (addFriendForm) {
-			addFriendForm.addEventListener('submit', function(event) {
-				event.preventDefault();
-
-				const formData = new FormData(addFriendForm);
-
-				fetch('/auth/send_friend_request/', {
-					method: 'POST',
-					body: formData,
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest',
-						'X-CSRFToken': csrftoken
-					},
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);
-					} else {
-						window.location.href = '/profile/';
-					}
-				})
-				.catch(error => console.error('Error:', error));
-			});
-		}
-
-	// 	if (acceptFriendForm) {
-	// 		acceptFriendForm.addEventListener('submit', function(event) {
-	// 			event.preventDefault();
-
-	// 			const formData = new FormData(acceptFriendForm);
-	// 			const friendRequestId = formData.get('friend_request_id');
-
-	// 			fetch('/auth/accept_friend_request/${friendRequestId}/', {
-	// 				method: 'POST',
-	// 				body: formData,
-	// 				headers: {
-	// 					'X-Requested-With': 'XMLHttpRequest',
-	// 					'X-CSRFToken': csrftoken
-	// 				},
-	// 			})
-	// 			.then(response => response.json())
-	// 			.then(data => {
-	// 				if (data.error) {
-	// 					alert(data.error);
-	// 				} else {
-	// 					window.location.href = '/profile/';
-	// 				}
-	// 			})
-	// 			.catch(error => console.error('Error:', error));
-	// 		});
-	// 	}
-
-	// 	if (rejectFriendForm) {
-	// 		rejectFriendForm.addEventListener('submit', function(event) {
-	// 			event.preventDefault();
-
-	// 			const formData = new FormData(rejectFriendForm);
-	// 			const friendRequestId = formData.get('friend_request_id');
-
-	// 			fetch('/auth/refuse_friend_request/${friendRequestId}/', {
-	// 				method: 'POST',
-	// 				body: formData,
-	// 				headers: {
-	// 					'X-Requested-With': 'XMLHttpRequest',
-	// 					'X-CSRFToken': csrftoken
-	// 				},
-	// 			})
-	// 			.then(response => response.json())
-	// 			.then(data => {
-	// 				if (data.error) {
-	// 					alert(data.error);
-	// 				} else {
-	// 					window.location.href = '/profile/';
-	// 				}
-	// 			})
-	// 			.catch(error => console.error('Error:', error));
-	// 		});
-	// 	}
-	}
+		});
+	};
 
 	function getCookie(name) {
 		let cookieValue = null;
@@ -354,17 +207,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		return cookieValue;
 	}
-	const csrftoken = getCookie('csrftoken');
 
-	window.addEventListener('popstate', (event) => {
-		const currentPath = window.location.pathname;
-		loadContent(currentPath, false);
-	});
+	// const getCookie = (name) => {
+	//     const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+	//     const match = cookies.find(cookie => cookie.startsWith(`${name}=`));
+	//     return match ? decodeURIComponent(match.split('=')[1]) : null;
+	// };
 
-	function loadInitialContent() {
-		const currentPath = window.location.pathname;
-		loadContent(currentPath, false);
-	}
-
-	loadInitialContent();
+	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
+	loadContent(window.location.pathname, false);
 });
