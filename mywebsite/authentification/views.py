@@ -1,16 +1,17 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponse
-from django.http import HttpResponseBadRequest
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
 from frontend.models import FriendRequest, FriendList, CustomUser
+from django.db import IntegrityError
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import update_session_auth_hash, authenticate, login, logout, get_user_model
+from django.utils.timezone import localtime
+from django.db import transaction
 import os
 
 User = get_user_model()
@@ -52,6 +53,11 @@ def signup(request):
     if password1 != password2:
         return JsonResponse({"error": "Passwords do not match."}, status=400)
 
+    try:
+        validate_password(password1)
+    except ValidationError as e:
+        return JsonResponse({"error": " ".join(e.messages)}, status=400)
+
     if User.objects.filter(email=email).exists():
         return JsonResponse({"error": "Email is already in use."}, status=400)
 
@@ -76,11 +82,6 @@ def signup(request):
         user.avatar = avatar
     user.save()
 
-    user.sent_requests_count = 0
-    user.received_requests_count = 0
-    user.accepted_requests_count = 0
-    user.declined_requests_count = 0
-
     user = authenticate(request, email=email, password=password1)
     if user is not None:
         login(request, user)
@@ -102,8 +103,9 @@ def signout(request):
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
 
-@login_required
 def contact(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"message": "No users authenticated"}, status=401)
     users = CustomUser.objects.all()
     online_users = []
     offline_users = []
@@ -112,6 +114,9 @@ def contact(request):
         friend_list = getattr(user, 'friend_list', None)
         friends_count = friend_list.friend_count() if friend_list else 0
 
+        last_login_local = localtime(user.last_login) if user.last_login else None
+        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M') if last_login_local else ''
+
         user_data = {
             'id': user.id,
             'email': user.email,
@@ -119,7 +124,8 @@ def contact(request):
             'last_name': user.last_name,
             'display_name': user.display_name,
             'avatar': str(user.avatar.url) if user.avatar else '',
-            'last_login': user.last_login,
+            'last_login': formatted_last_login,
+            'is_online' : user.is_online,
             'received_requests_count': user.received_requests_count,
             'sent_requests_count': user.sent_requests_count,
             'friends_count': friends_count,
@@ -137,69 +143,47 @@ def contact(request):
 # # ===                                                      FRIEND REQUESTS                                                                                     ===
 # # ================================================================================================================================================================
 
-@login_required
-@require_POST
-def send_friend_request(request):
-    receiver_email = request.POST.get('receiver_email')
-
-    if not receiver_email:
-        return JsonResponse({"error": "Invalid email address provided."}, status=400)
-
-    try:
-        receiver = User.objects.get(email=receiver_email)
-
-        if receiver == request.user:
-            return JsonResponse({"error": "You cannot send a friend request to yourself."}, status=400)
-
-        if FriendRequest.objects.filter(sender=request.user, receiver=receiver).exists():
-            return JsonResponse({"error": "Friend request already sent."}, status=400)
-
-        if FriendRequest.objects.filter(sender=receiver, receiver=request.user).exists():
-            return JsonResponse({"error": "Friend request already received."}, status=400)
-
-        FriendRequest.objects.create(sender=request.user, receiver=receiver)
-        return JsonResponse({"message": "Friend request sent."}, status=200)
-
-    except User.DoesNotExist:
-        return JsonResponse({"error": "User with this email does not exist."}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
 @login_required
 @require_POST
+@transaction.atomic
 def accept_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
         friend_request.accept()
-        return JsonResponse({"message": "Friend request accepted."}, status=200)
+        return JsonResponse({"message": "Friend request accepted.", "status": "accepted"}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
-        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
 @require_POST
+@transaction.atomic
 def refuse_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
-        friend_request.cancel()
-        return JsonResponse({"message": "Friend request refused."}, status=200)
+        friend_request.decline()
+        return JsonResponse({"message": "Friend request refused.", "status": "declined"}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
-        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
-# @login_required
-# @require_POST
-# def cancel_friend_request(request, friend_request_id):
-#     try:
-#         friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
-#         friend_request.decline()
-#         return JsonResponse({"message": "Friend request cancelled."}, status=200)
-#     except FriendRequest.DoesNotExist:
-#         return JsonResponse({"error": "Friend request not found."}, status=404)
-#     except Exception as e:
-#         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def cancel_friend_request(request, friend_request_id):
+    try:
+        friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
+        friend_request.cancel()
+        return JsonResponse({"message": "Friend request cancelled.", "status": "declined"}, status=200)
+    except FriendRequest.DoesNotExist:
+        return JsonResponse({"error": "Friend request not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
 @require_POST
@@ -216,3 +200,118 @@ def remove_friend(request, friend_id):
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
+# # ================================================================================================================================================================
+# # ===                                                      USER UPDATE FORM                                                                                    ===
+# # ================================================================================================================================================================
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        user = request.user
+
+        email = request.POST.get('email', user.email).strip()
+        first_name = request.POST.get('first_name', user.first_name).strip()
+        last_name = request.POST.get('last_name', user.last_name).strip()
+        display_name = request.POST.get('display_name', user.display_name).strip()
+        avatar = request.FILES.get('avatar', None)
+
+        if email == '':
+            email = user.email
+
+        if email != user.email:
+            if CustomUser.objects.filter(email=email).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This email address is already in use.',
+                    'email': email
+                }, status=400)
+
+        if display_name == '':
+            display_name = user.display_name
+
+        if display_name != user.display_name:
+            if CustomUser.objects.filter(display_name=display_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'display_name': display_name
+                }, status=400)
+
+        if first_name == '':
+            first_name = user.first_name
+
+        if first_name != user.first_name:
+            if CustomUser.objects.filter(first_name=first_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'first_name': first_name
+                }, status=400)
+
+        if last_name == '':
+            last_name = user.last_name
+
+        if last_name != user.last_name:
+            if CustomUser.objects.filter(last_name=last_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'last_name': last_name
+                }, status=400)
+
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.display_name = display_name
+
+        if avatar:
+            user.avatar = avatar
+
+        try:
+            user.save()
+            return JsonResponse({
+                'message': 'Profile successfully updated',
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'display_name': user.display_name,
+                    'avatar': user.avatar.url if user.avatar else None,
+                }
+            }, status=200)
+        except IntegrityError as e:
+            return JsonResponse({
+                'error': 'An error occurred while updating the profile.',
+                'details': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': 'An unexpected error occurred.',
+                'details': str(e)
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      USER UPDATE PASSWORD                                                                                ===
+# # ================================================================================================================================================================
+
+@login_required
+def update_password(request):
+    if request.method == 'POST':
+        user = request.user
+        form = PasswordChangeForm(user, request.POST)
+
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # pour éviter la déconnexion
+            return JsonResponse({
+                'message': 'Password successfully updated'
+            }, status=200)
+        else:
+            return JsonResponse({
+                'error': 'Please correct the errors below.',
+                'errors': form.errors
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
