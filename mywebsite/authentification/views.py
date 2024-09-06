@@ -143,6 +143,40 @@ def contact(request):
 # # ===                                                      FRIEND REQUESTS                                                                                     ===
 # # ================================================================================================================================================================
 
+@login_required
+@require_POST
+@transaction.atomic
+def send_friend_request(request):
+    try:
+        receiver_email = request.POST.get('receiver_email')
+
+        if not receiver_email:
+            return JsonResponse({"error": "Receiver email is required."}, status=400)
+
+        receiver = CustomUser.objects.get(email=receiver_email.lower())
+
+        if receiver == request.user:
+            return JsonResponse({"error": "Cannot send friend request to yourself."}, status=400)
+
+        if FriendRequest.objects.filter(sender=receiver, receiver=request.user).exists():
+            return JsonResponse({"error": "Friend request already received."}, status=400)
+
+        sender = request.user
+        friend_request, created = FriendRequest.objects.get_or_create(
+            sender=sender,
+            receiver=receiver,
+            defaults={'status': 'pending'}
+        )
+
+        if created:
+            return JsonResponse({"message": "Friend request sent successfully."}, status=200)
+        else:
+            return JsonResponse({"error": "Friend request already exists."}, status=400)
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Receiver not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
 @require_POST

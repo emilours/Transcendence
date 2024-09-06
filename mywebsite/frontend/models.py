@@ -50,10 +50,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     def get_pending_friend_requests(self):
-        return FriendRequest.objects.filter(receiver=self, is_active=True)
+        return FriendRequest.objects.filter(receiver=self, status='pending')
 
     def get_sent_friend_requests(self):
-        return FriendRequest.objects.filter(sender=self, is_active=True)
+        return FriendRequest.objects.filter(sender=self, status='pending')
 
     def __str__(self):
         return self.email
@@ -221,10 +221,6 @@ class FriendRequest(models.Model):
         return (
             FriendRequest.objects.filter(sender=user, is_active=False).count() +
             FriendRequest.objects.filter(receiver=user, is_active=False).count()
-        )
-
-            FriendRequest.objects.filter(sender=user, status='declined').count() +
-            FriendRequest.objects.filter(receiver=user, status='declined').count()
         )
 
 # # ================================================================================================================================================================
