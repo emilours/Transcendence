@@ -31,7 +31,8 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
-        user.is_active = True
+        user.is_online = True
+        user.save(update_fields=['is_online'])
         user.save()
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
@@ -95,8 +96,8 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        request.user.is_active = False
-        request.user.save()
+        request.user.is_online = False
+        request.user.save(update_fields=['is_online'])
         logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
@@ -105,8 +106,9 @@ def signout(request):
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
 
-@login_required
 def contact(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"message": "No users authenticated"}, status=401)
     users = CustomUser.objects.all()
     online_users = []
     offline_users = []
@@ -126,6 +128,7 @@ def contact(request):
             'display_name': user.display_name,
             'avatar': str(user.avatar.url) if user.avatar else '',
             'last_login': formatted_last_login,
+            'is_online' : user.is_online,
             'received_requests_count': user.received_requests_count,
             'sent_requests_count': user.sent_requests_count,
             'friends_count': friends_count,
@@ -213,6 +216,21 @@ def cancel_friend_request(request, friend_request_id):
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+@login_required
+@require_POST
+def remove_friend(request, friend_id):
+    try:
+        friend_list = FriendList.objects.get(user=request.user)
+        friend = CustomUser.objects.get(id=friend_id)
+        friend_list.unfriend(friend)
+        return JsonResponse({"message": "Friend removed successfully."}, status=200)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Friend not found."}, status=404)
+    except FriendList.DoesNotExist:
+        return JsonResponse({"error": "Friend list not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
 # # ================================================================================================================================================================
 # # ===                                                      USER UPDATE FORM                                                                                    ===

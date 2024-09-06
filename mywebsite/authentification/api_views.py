@@ -8,11 +8,11 @@ from django.contrib.auth.models import User
 from frontend.models import CustomUser
 from .serializers import AuthorizationCodeSerializer
 from rest_framework import serializers
-import requests
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from urllib.parse import urlparse
 from django.contrib.auth import login
+import requests
 import os
 
 @api_view(['GET'])
@@ -74,7 +74,7 @@ def callback_42(request):
             'last_name': last_name
         }
     )
-    
+     
     if not created:
         user.first_name = first_name
         user.last_name = last_name

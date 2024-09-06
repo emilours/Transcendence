@@ -33,6 +33,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=True)
 
     victories = models.PositiveIntegerField(default=0)
     defeats = models.PositiveIntegerField(default=0)
@@ -91,11 +92,23 @@ class FriendList(models.Model):
                 friend_list = FriendList.objects.get(user=account)
                 friend_list.friends.remove(self.user)
 
+    # def unfriend(self, removee):
+    #     self.remove_friend(removee)
+    #     try:
+    #         friends_list = FriendList.objects.get(user=removee)
+    #         friends_list.remove_friend(self.user)
+    #     except FriendList.DoesNotExist:
+    #         pass
+
     def unfriend(self, removee):
         self.remove_friend(removee)
         try:
             friends_list = FriendList.objects.get(user=removee)
             friends_list.remove_friend(self.user)
+            FriendRequest.objects.filter(
+                (models.Q(sender=self.user) & models.Q(receiver=removee)) |
+                (models.Q(sender=removee) & models.Q(receiver=self.user))
+            ).delete()
         except FriendList.DoesNotExist:
             pass
 
