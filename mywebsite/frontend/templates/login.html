@@ -1,8 +1,9 @@
 {% load static %}
 <section class="d-flex align-items-center justify-content-center">
 	<div class="container mt-5">
-		<div class="row justify-content-center">
-			<div class="col-12 col-md-6 col-lg-4">
+		<div class="row d-flex justify-content-center align-items-center">
+			<!-- Login Form Section -->
+			<div class="col-12 col-md-5 col-lg-4 d-flex flex-column align-items-center mb-4 mb-md-0">
 				<div class="card shadow">
 					<div class="card-body p-5">
 						<h3 class="card-title text-center mb-4 font-potta">Login</h3>
@@ -31,7 +32,20 @@
 					<p>Don't have an account? <a href="#" class="text-decoration-none" id="signup">Sign up</a></p>
 				</div>
 			</div>
+
+			<!-- Or Separator -->
+			<div class="col-12 col-md-2 d-flex align-items-center justify-content-center mb-4 mb-md-0">
+				<div class="text-center">
+					<span class="d-block">Or</span>
+				</div>
+			</div>
+
+			<!-- API Login Section -->
+			<div class="col-12 col-md-5 col-lg-4 d-flex align-items-center justify-content-center mb-4 mb-md-0">
+				<div id="api-login" class="text-center">
+					<button id="api-login-btn" class="btn btn-primary">Login with <img src="{% static 'img/42_Logo.png' %}" alt="school 42 icon" width="24" height="24"></button>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
-
