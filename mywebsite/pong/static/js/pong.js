@@ -149,7 +149,7 @@ function createScoreText()
 		bevelOffset: 0,
 		bevelSegments: 5
 	});
-	
+
 	const scoreMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 	scoreMesh = new THREE.Mesh(scoreGeometry, scoreMaterial);
 
@@ -171,7 +171,7 @@ function createScoreText()
 		const gameOverMaterial = new THREE.MeshBasicMaterial({color: 0xbd4500});
 		const gameOverMesh = new THREE.Mesh(gameOverGeometry, gameOverMaterial);
 
-		
+
 		gameOverGeometry.computeBoundingBox();
 		const gameOverBB = gameOverGeometry.boundingBox;
 		const gameOverSize = new THREE.Vector3();
@@ -225,7 +225,8 @@ function Init()
     renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     renderer.outputEncoding = THREE.sRGBEncoding;
     // renderer.setClearColor(0x1c1c1c, 1); // same as scene.background
-    document.body.appendChild(renderer.domElement);
+    const container = document.getElementById('pongContainer');
+	container.appendChild(renderer.domElement);
     // renderer.setAnimationLoop(animate);
 
     // CONTROLS
