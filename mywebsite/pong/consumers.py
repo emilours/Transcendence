@@ -1,6 +1,7 @@
-import json, time, asyncio
+import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
+
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -20,33 +21,64 @@ game_state = {}
 game_task = {}
 consumer_id = {}
 
+class MultiplayerPongConsumer(AsyncWebsocketConsumer):
+
+	players = {}
+	task = None
+
+	update_lock = asyncio.Lock()
+
+	async def connect(self):
+		self.player_id = str(uuid.uuid5())
+
+
+
 def log(message):
 	print(f"[CONSUMER LOG] {message}")
 
 # TODO: the first consumer (or both) should create the game_state{}
 class PongConsumer(AsyncWebsocketConsumer):
+
 	async def connect(self):
 		global game_state, game_task, consumer_id
 
+		namespace = uuid.NAMESPACE_DNS
+		name = "example.com"
+
 		log("Client trying to connect")
+		random_player_id = uuid.uuid4()
+		# give the user email or unique name
+		fixed_player_id = uuid.uuid5(namespace, name)
+
+		log(f"random player id {random_player_id}")
+		log(f"fixed player id {fixed_player_id}")
+
 		# if lobby available join else create new
 		self.game_id = len(consumer_id) // 2
 		log(f"[Game id #{self.game_id}]")
 		game_state[self.game_id] = None
 
-		# log(self.scope)
+		await self.accept()
+
+		user = self.scope["user"]
+		if user.is_authenticated:
+			log(f"user: {user.display_name}")
+
+			await self.send(text_data=json.dumps({
+				"message": f"Welcome {user.display_name}!"
+			}))
+		else:
+			log("not authed")
+
 		# Define the room name based on the game session (e.g., using session ID)
 		self.room_group_name = 'pong_lobby_' + str(self.game_id)
+		log(f"channel group: {self.room_group_name}")
 
 		# Add user to the group
 		await self.channel_layer.group_add(
 				self.room_group_name,
 				self.channel_name
 				)
-		
-		log(f"channel group: {self.room_group_name}")
-
-		await self.accept()
 
 		if self.channel_name not in consumer_id:
 			consumer_id[self.channel_name] = len(consumer_id)
@@ -167,7 +199,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 			elif game_state[self.game_id]['player2Score'] >= 5:
 				log("Player 2 Won!")
 				game_state[self.game_id]['gameOver'] = 1
-				
+
 			# Handle paddle collisions
 			if (abs(game_state[self.game_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
 				abs(game_state[self.game_id]['ballPosition'][1] - game_state[self.game_id]['player1Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
@@ -184,7 +216,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 						'game_state': game_state[self.game_id]
 						}
 					)
-			
+
 			if game_state[self.game_id]['gameOver'] == 1 and game_task[self.game_id]:
 				game_task[self.game_id].cancel()
 				game_task[self.game_id] = None
