@@ -31,7 +31,11 @@
 		<div class="row g-4 justify-content-evenly mx-2">
 			<div class="col-12 col-md-4 bg-primary d-flex flex-column align-items-center justify-content-center rounded-3 p-4">
 				<h1 class="fw-bold text-center">Pusheen Arcade</h1>
+				{% if user.is_authenticated %}
 				<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" id="games">Play Now</button>
+				{% else %}
+				<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" id="login-from-home">login to play</button>
+				{% endif %}
 			</div>
 			<div class="col-12 col-md-4 d-flex align-items-center">
 				<img src="{% static 'img/pusheen.gif' %}" alt="pusheen playing with a racket" class="rounded-3 w-100 border border-5 border-secondary">

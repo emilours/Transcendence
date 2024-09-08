@@ -97,8 +97,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	const attachListeners = () => {
 		const links = [
 			{ id: 'home', url: '/home/' },
-			{ id: 'login', url: '/login/' },
-			{ id: 'signup', url: '/signup/' },
+			{ id: 'login-from-signup', url: '/login/' },
+			{ id: 'login-from-home', url: '/login/' },
+			{ id: 'signup-from-login', url: '/signup/' },
 			{ id: 'navbar-signup', url: '/signup/' },
 			{ id: 'navbar-login', url: '/login/' },
 			{ id: 'navbar-profile', url: '/profile/' },
