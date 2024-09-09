@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			if (url.includes('pong')) {
 				loadScript('/static/js/pong.js')
-				// .then(() => loadScript('/static/js/pong.js'))
+				// .then(() => PongGame())
 				.catch(error => console.error('Error loading scripts:', error));
 			}
 

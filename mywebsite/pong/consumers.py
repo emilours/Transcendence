@@ -18,67 +18,68 @@ PLAYER2_X = 7.5
 
 # Global variable to track connected clients for the game room
 game_state = {}
-game_task = {}
+game_task = {} #
 consumer_id = {}
-
-class MultiplayerPongConsumer(AsyncWebsocketConsumer):
-
-	players = {}
-	task = None
-
-	update_lock = asyncio.Lock()
-
-	async def connect(self):
-		self.player_id = str(uuid.uuid5())
 
 
 
 def log(message):
-	print(f"[CONSUMER LOG] {message}")
+	print(f"[PONG LOG] {message}")
 
 # TODO: the first consumer (or both) should create the game_state{}
 class PongConsumer(AsyncWebsocketConsumer):
 
+	players = {}
+	game_state = {}
+	game_task = None
+	is_paused = False
+
+	update_lock = asyncio.Lock()
+
 	async def connect(self):
 		global game_state, game_task, consumer_id
 
-		namespace = uuid.NAMESPACE_DNS
-		name = "example.com"
-
-		log("Client trying to connect")
-		random_player_id = uuid.uuid4()
-		# give the user email or unique name
-		fixed_player_id = uuid.uuid5(namespace, name)
-
-		log(f"random player id {random_player_id}")
-		log(f"fixed player id {fixed_player_id}")
-
-		# if lobby available join else create new
-		self.game_id = len(consumer_id) // 2
-		log(f"[Game id #{self.game_id}]")
-		game_state[self.game_id] = None
+		user = self.scope["user"]
 
 		await self.accept()
 
-		user = self.scope["user"]
-		if user.is_authenticated:
-			log(f"user: {user.display_name}")
+		if user.is_authenticated and len(self.players) < 2:
+			namespace = uuid.NAMESPACE_DNS
+			random_player_id = uuid.uuid4()
+			self.player_id = uuid.uuid5(namespace, user.display_name)
+			log(f"User: {user.display_name}")
+			log(f"Random player id {random_player_id}")
+			log(f"Fixed player id {self.player_id}")
 
 			await self.send(text_data=json.dumps({
 				"message": f"Welcome {user.display_name}!"
 			}))
+		elif len(self.players) >= 2:
+			log("Lobby already has 2 players")
 		else:
-			log("not authed")
+			log("User trying to connect is not authenticated")
+
+
+		# if lobby available join else create new
+		self.game_id = len(consumer_id) // 2
+		log(f"Game #{self.game_id}")
+		game_state[self.game_id] = None
 
 		# Define the room name based on the game session (e.g., using session ID)
 		self.room_group_name = 'pong_lobby_' + str(self.game_id)
-		log(f"channel group: {self.room_group_name}")
+		log(f"Room name: {self.room_group_name}")
 
 		# Add user to the group
 		await self.channel_layer.group_add(
 				self.room_group_name,
 				self.channel_name
 				)
+		
+		async with self.update_lock:
+			self.players[self.player_id] = {
+				"id": self.player_id,
+				"game_state": self.game_state
+			}
 
 		if self.channel_name not in consumer_id:
 			consumer_id[self.channel_name] = len(consumer_id)
@@ -87,27 +88,26 @@ class PongConsumer(AsyncWebsocketConsumer):
 		log(f"Client connected to consumer id {consumer_id[self.channel_name]}")
 		if (consumer_id[self.channel_name] % 2 != 0):
 			log(f"Consumer {consumer_id[self.channel_name]} will run the game loop")
-		log(f"Number of clients {len(consumer_id)}")
+		log(f"Currently {len(consumer_id)} clients connected")
 
-		if consumer_id[self.channel_name] % 2 != 0:
-			game_state[self.game_id] = {
+		# Only 2nd connected player to lobby will run task
+		if len(self.players) == 2:
+			self.game_state = {
 				'player1Score': 0,
 				'player2Score': 0,
 				'ballPosition': [0, 0],
-				# [-BALL_SPEED, -BALL_SPEED] idk yet what the starting direction/velocity is, same for reset_ball
 				'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
 				'player1Pos': 0,
 				'player2Pos': 0,
 				'gameOver': 0,
 				}
-			game_task[self.game_id] =  asyncio.create_task(self.game_loop())
+			self.game_task =  asyncio.create_task(self.game_loop())
 
-			# Notify both players that the game is starting
 			await self.channel_layer.group_send(
 				self.room_group_name,
 				{
 					'type': 'send_game_state',
-					'game_state': game_state[self.game_id]
+					'game_state': self.game_state
 				}
 			)
 		else:
@@ -130,12 +130,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 		log(f"Client disconnected to consumer id {consumer_id[self.channel_name]}")
 
 		# Cancel the game loop if no clients are connected
-		if len(consumer_id) == 0 or consumer_id[self.channel_name] % 2 != 0:
-			if game_task[self.game_id]:
-				game_task[self.game_id].cancel()
-				game_task[self.game_id] = None
-				game_state[self.game_id] = {}
-				log("Game loop cancelled due to no active players.")
+		if len(self.players) == 0:
+			if self.game_task:
+				self.game_task.cancel()
+				self.game_task = None
+				self.game_state = {}
+				log("Both player left the room")
 
 		if self.channel_name in consumer_id:
 			del consumer_id[self.channel_name]
@@ -149,82 +149,82 @@ class PongConsumer(AsyncWebsocketConsumer):
 		# player_id = data['player_id']
 		action = data['action']
 
-
-		# log("Type of any: ", type(game_state['player1Pos']))
-
 		# NOTE: Might not need the player_id because we can user consumer id ??
 		# consumer with id % 2 == 0 will always be player1 aka left paddle
 		if consumer_id[self.channel_name] % 2 == 0:
 			if action == 'up':
-				game_state[self.game_id]['player1Pos'] += PADDLE_SPEED
-				if game_state[self.game_id]['player1Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
-					game_state[self.game_id]['player1Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
+				self.game_state['player1Pos'] += PADDLE_SPEED
+				if self.game_state['player1Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
+					self.game_state['player1Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
 			elif action == 'down':
-				game_state[self.game_id]['player1Pos'] -= PADDLE_SPEED
-				if game_state[self.game_id]['player1Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-					game_state[self.game_id]['player1Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+				self.game_state['player1Pos'] -= PADDLE_SPEED
+				if self.game_state['player1Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+					self.game_state['player1Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 		elif consumer_id[self.channel_name] % 2 != 0:
 			if action == 'up':
-				game_state[self.game_id]['player2Pos'] += PADDLE_SPEED
-				if game_state[self.game_id]['player2Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
-					game_state[self.game_id]['player2Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
+				self.game_state['player2Pos'] += PADDLE_SPEED
+				if self.game_state['player2Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
+					self.game_state['player2Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
 			elif action == 'down':
-				game_state[self.game_id]['player2Pos'] -= PADDLE_SPEED
-				if game_state[self.game_id]['player2Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-					game_state[self.game_id]['player2Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+				self.game_state['player2Pos'] -= PADDLE_SPEED
+				if self.game_state['player2Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+					self.game_state['player2Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
 
 	async def game_loop(self):
 		global game_state
 		while True:
 			# Update the ball position
-			game_state[self.game_id]['ballPosition'][0] += game_state[self.game_id]['ballVelocity'][0]
-			game_state[self.game_id]['ballPosition'][1] += game_state[self.game_id]['ballVelocity'][1]
+			self.game_state['ballPosition'][0] += self.game_state['ballVelocity'][0]
+			self.game_state['ballPosition'][1] += self.game_state['ballVelocity'][1]
 
 			# Handle collisions with walls and paddles
-			if game_state[self.game_id]['ballPosition'][1] <= BOTTOM_WALL or game_state[self.game_id]['ballPosition'][1] >= TOP_WALL:
-				game_state[self.game_id]['ballVelocity'][1] *= -1
+			if self.game_state['ballPosition'][1] <= BOTTOM_WALL or self.game_state['ballPosition'][1] >= TOP_WALL:
+				self.game_state['ballVelocity'][1] *= -1
 
 			# Handle scoring
-			if game_state[self.game_id]['ballPosition'][0] <= LEFT_WALL:
-				game_state[self.game_id]['player2Score'] += 1
+			if self.game_state['ballPosition'][0] <= LEFT_WALL:
+				self.game_state['player2Score'] += 1
 				self.reset_ball()
-			elif game_state[self.game_id]['ballPosition'][0] >= RIGHT_WALL:
-				game_state[self.game_id]['player1Score'] += 1
+			elif self.game_state['ballPosition'][0] >= RIGHT_WALL:
+				self.game_state['player1Score'] += 1
 				self.reset_ball()
 
-			if game_state[self.game_id]['player1Score'] >= 5:
+			if self.game_state['player1Score'] >= 5:
 				log("Player 1 Won!")
-				game_state[self.game_id]['gameOver'] = 1
-			elif game_state[self.game_id]['player2Score'] >= 5:
+				self.game_state['gameOver'] = 1
+			elif self.game_state['player2Score'] >= 5:
 				log("Player 2 Won!")
-				game_state[self.game_id]['gameOver'] = 1
+				self.game_state['gameOver'] = 1
 
 			# Handle paddle collisions
-			if (abs(game_state[self.game_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-				abs(game_state[self.game_id]['ballPosition'][1] - game_state[self.game_id]['player1Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
-				game_state[self.game_id]['ballVelocity'][0] *= -1
-			if (abs(game_state[self.game_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-				abs(game_state[self.game_id]['ballPosition'][1] - game_state[self.game_id]['player2Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
-				game_state[self.game_id]['ballVelocity'][0] *= -1
+			if (abs(self.game_state['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+				abs(self.game_state['ballPosition'][1] - self.game_state['player1Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
+				self.game_state['ballVelocity'][0] *= -1
+			if (abs(self.game_state['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+				abs(self.game_state['ballPosition'][1] - self.game_state['player2Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
+				self.game_state['ballVelocity'][0] *= -1
 
 			# Broadcast the updated game state to all clients
 			await self.channel_layer.group_send(
 					self.room_group_name,
 					{
 						'type': 'send_game_state',
-						'game_state': game_state[self.game_id]
+						'game_state': self.game_state
 						}
 					)
 
-			if game_state[self.game_id]['gameOver'] == 1 and game_task[self.game_id]:
-				game_task[self.game_id].cancel()
-				game_task[self.game_id] = None
-				game_state[self.game_id] = {}
+			if self.game_state['gameOver'] == 1 and self.game_task:
+				self.game_task.cancel()
+				self.game_task = None
+				self.game_state = {}
 				return
 
 			# Control the game loop speed
 			await asyncio.sleep(1 / 60)
+			while self.is_paused == True:
+				await asyncio.sleep(1 / 2)
+				log("GAME IS PAUSE, SLEEPING!")
 
 	async def send_game_state(self, event):
 		# Send the updated game state to the client
@@ -234,6 +234,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 		global game_state
 
 		# Reset the ball position and velocity after scoring
-		game_state[self.game_id]['ballPosition'] = [0, 0]
-		game_state[self.game_id]['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
+		self.game_state['ballPosition'] = [0, 0]
+		self.game_state['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
 
