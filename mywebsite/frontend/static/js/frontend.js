@@ -52,6 +52,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
+	function cleanupResources() {
+        // Supprimer les scripts et CSS ajoutés dynamiquement
+        document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
+        document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+
+        // Nettoyer les résidus de l'animation ou du contenu
+        // if (typeof cleanupInvaders === 'function') {
+        //     cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
+        // }
+    }
+
 	const loadHeader = async () => {
 		try {
 			const response = await fetch('/load_header/', {
@@ -69,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 	const loadContent = async (url, addToHistory = true) => {
+		cleanupResources();
 		try {
 			const response = await fetch(url, {
 				headers: {
@@ -210,12 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		return cookieValue;
 	}
-
-	// const getCookie = (name) => {
-	//     const cookies = document.cookie.split(';').map(cookie => cookie.trim());
-	//     const match = cookies.find(cookie => cookie.startsWith(`${name}=`));
-	//     return match ? decodeURIComponent(match.split('=')[1]) : null;
-	// };
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
