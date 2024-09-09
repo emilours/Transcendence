@@ -54,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 	const loadContent = async (url, addToHistory = true) => {
-		cl
 		try {
 			const response = await fetch(url, {
 				headers: {
