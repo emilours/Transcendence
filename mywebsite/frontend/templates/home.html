@@ -6,7 +6,7 @@
 				<img src="{% static 'img/pusheen_drink.png' %}" alt="Pusheen drinking a cola" width="75%">
 			</div>
 			<div class="col-12 col-md-6 mt-4 d-flex align-items-center justify-content-center">
-				<video controls class="w-100 rounded-3 border border-5 border-primary">
+				<video controls class="w-100 rounded-4 border border-5 border-primary">
 					<source src="{% static 'video/pusheen_the_cat_intro.mp4' %}" type="video/mp4"/>
 					<p>
 						Votre navigateur ne prend pas en charge les vidéos HTML5. Voici
@@ -29,12 +29,16 @@
 <section class="py-md-5 mt-2 font-potta">
 	<div class="container">
 		<div class="row g-4 justify-content-evenly mx-2">
-			<div class="col-12 col-md-4 bg-primary d-flex flex-column align-items-center justify-content-center rounded-3 p-4">
+			<div class="col-12 col-md-4 bg-primary d-flex flex-column align-items-center justify-content-center rounded-4 p-4">
 				<h1 class="fw-bold text-center">Pusheen Arcade</h1>
-				<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" id="games">Play Now</button>
+				{% if user.is_authenticated %}
+				<button type="button" class="btn btn-info mt-3 rounded-4 bg-secondary" id="games">Play Now</button>
+				{% else %}
+				<button type="button" class="btn btn-info mt-3 rounded-4 bg-secondary" id="login-from-home">log in to play</button>
+				{% endif %}
 			</div>
 			<div class="col-12 col-md-4 d-flex align-items-center">
-				<img src="{% static 'img/pusheen.gif' %}" alt="pusheen playing with a racket" class="rounded-3 w-100 border border-5 border-secondary">
+				<img src="{% static 'img/pusheen.gif' %}" alt="pusheen playing with a racket" class="rounded-4 w-100 border border-5 border-secondary">
 			</div>
 		</div>
 	</div>

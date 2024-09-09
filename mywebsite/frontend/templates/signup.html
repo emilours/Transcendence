@@ -3,7 +3,7 @@
 	<div class="container mt-5">
 		<div class="row justify-content-center">
 			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
+				<div class="card shadow rounded-4">
 					<div class="card-body p-5">
 						<h3 class="card-title text-center mb-4 font-potta">Sign Up</h3>
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
@@ -36,12 +36,12 @@
 								<label for="avatar" class="form-label">Avatar (optional)</label>
 								<input type="file" class="form-control" id="avatar" name="avatar">
 							</div>
-							<button type="submit" class="btn btn-primary w-100">Sign Up</button>
+							<button type="submit" class="btn btn-outline-primary w-100">Sign Up</button>
 						</form>
 					</div>
 				</div>
 				<div class="text-center mt-3">
-					<p>Already have an account? <a href="#" class="text-decoration-none" id="login">Login</a> </p>
+					<p>Already have an account? <a href="#" class="text-decoration-none" id="login-from-signup">Login</a> </p>
 				</div>
 			</div>
 		</div>

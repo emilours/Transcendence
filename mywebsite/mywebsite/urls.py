@@ -22,5 +22,6 @@ urlpatterns = [
     path('', include('frontend.urls')),
     path('pong/', include('pong.urls')),
     path('invaders/', include('invaders.urls')),
-    path('auth/', include('authentification.urls')),
+    # path('auth/', include('authentification.urls')),
+	path('auth/', include(('authentification.urls', 'authentification'), namespace='authentification')),
 ]
