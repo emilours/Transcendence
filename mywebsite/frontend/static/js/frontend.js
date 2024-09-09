@@ -53,15 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	function cleanupResources() {
-        // Supprimer les scripts et CSS ajoutés dynamiquement
-        document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
-        document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-
-        // Nettoyer les résidus de l'animation ou du contenu
-        // if (typeof cleanupInvaders === 'function') {
-        //     cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
-        // }
-    }
+		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
+		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+	}
 
 	const loadHeader = async () => {
 		try {
