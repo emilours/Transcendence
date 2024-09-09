@@ -37,20 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
-	const cleanupResources = () => {
-		document.querySelectorAll('[data-dynamic="true"]').forEach(el => el.remove());
-		if (typeof cleanupInvaders === 'function') {
-			cleanupInvaders();
-		}
-	};
-
-	// function cleanupResources() {
-	// 	document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
-	// 	document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-	// 	if (typeof cleanupInvaders === 'function') {
-	// 		cleanupInvaders();
-	// 	}
-	// }
 	const loadHeader = async () => {
 		try {
 			const response = await fetch('/load_header/', {
@@ -66,9 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
+
 	const loadContent = async (url, addToHistory = true) => {
+		cl
 		try {
-			cleanupResources();
 			const response = await fetch(url, {
 				headers: {
 					'X-Requested-With': 'XMLHttpRequest'

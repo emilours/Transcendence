@@ -2,10 +2,9 @@
 <section class="d-flex align-items-center justify-content-center mt-5">
 	<div class="container">
 		<div class="row justify-content-center mt-2 g-3">
-
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
 						<h2>Profile</h2>
 					</div>
 					<div class="card-body p-5">
@@ -52,8 +51,8 @@
 			</div>
 
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
 						<h2>Friends</h2>
 					</div>
 					<div class="card-body p-4">
@@ -73,12 +72,10 @@
 										<strong>{{ friend.display_name }}</strong>
 									</div>
 									<div>
-										<span class="badge {% if friend.is_online %}bg-secondary{% else %}bg-light{% endif %}">{{ friend.is_online|yesno:"Online,Offline" }}</span>
-
-										<!-- Bouton pour supprimer un ami -->
+										<span class="badge {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
 										<form method="POST" action="/auth/remove_friend/{{ friend.id }}/" class="d-inline remove-friend-form">
 											{% csrf_token %}
-											<button type="submit" class="btn btn-danger btn-sm">Remove</button>
+											<button type="submit" class="btn btn-light btn-sm">Remove</button>
 										</form>
 									</div>
 								</li>
@@ -92,8 +89,8 @@
 			</div>
 
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
 						<h2>Friend's Invitations</h2>
 					</div>
 					<div class="card-body p-4">
@@ -134,7 +131,11 @@
 											<strong>{{ request.receiver.display_name }}</strong>
 										</div>
 										<div>
-											<span class="badge bg-light">Pending</span>
+											<span class="badge bg-secondary text-black p-2">Pending...</span>
+											<form method="POST" action="/auth/cancel_friend_request/{{ request.id }}/" class="d-inline cancel-friend-request">
+												{% csrf_token %}
+												<button type="submit" class="btn btn-light btn-sm">Cancel</button>
+											</form>
 										</div>
 									</li>
 								{% endfor %}

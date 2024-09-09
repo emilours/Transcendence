@@ -20,14 +20,14 @@ import os
 def callback_42(request):
     token_url = settings.FORTYTWO_TOKEN_URL
     serializer = AuthorizationCodeSerializer(data=request.GET)
-    
+
     if not serializer.is_valid():
         return Response(serializer.errors, status=400)
 
     code = serializer.validated_data.get('code')
     if not code:
         return Response({'error': 'Code not provided'}, status=400)
-    
+
     token_data = {
         'grant_type': 'authorization_code',
         'client_id': settings.FORTYTWO_CLIENT_ID,
@@ -35,25 +35,27 @@ def callback_42(request):
         'code': code,
         'redirect_uri': settings.FORTYTWO_REDIRECT_URI,
     }
-    
+
     token_response = requests.post(token_url, data=token_data)
-    
+
     if token_response.status_code != 200:
         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
-    
+
     token_json = token_response.json()
     access_token = token_json.get('access_token')
-    
+
+    # access_token = token_response.json().get('access_token')
+
     if not access_token:
         return Response({'error': 'Access token not provided'}, status=400)
-    
+
     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
         'Authorization': f'Bearer {access_token}'
     })
-    
+
     if user_info_response.status_code != 200:
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
-    
+
     user_info = user_info_response.json()
 
     email = user_info.get('email')
@@ -62,10 +64,10 @@ def callback_42(request):
     last_name = user_info.get('last_name')
 
     avatar_url = user_info.get('image', {}).get('link')
-    
+
     if not email or not display_name:
         return Response({'error': 'Incomplete user info'}, status=400)
-    
+
     user, created = CustomUser.objects.get_or_create(
         email=email,
         defaults={
@@ -74,11 +76,11 @@ def callback_42(request):
             'last_name': last_name
         }
     )
-     
+
     if not created:
         user.first_name = first_name
         user.last_name = last_name
-    
+
     if avatar_url:
         avatar_response = requests.get(avatar_url)
         if avatar_response.status_code == 200:
@@ -91,10 +93,11 @@ def callback_42(request):
     user.save()
 
     login(request, user)
+    return redirect('/profile/')
 
-    refresh = RefreshToken.for_user(user)
-    
-    return Response({
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    })
+    # refresh = RefreshToken.for_user(user)
+
+    # return Response({
+    #     'refresh': str(refresh),
+    #     'access': str(refresh.access_token),
+    # })
