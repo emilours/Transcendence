@@ -93,6 +93,8 @@ def callback_42(request):
     user.save()
 
     login(request, user)
+    user.is_online = True
+    user.save(update_fields=['is_online'])
     return redirect('/profile/')
 
     # refresh = RefreshToken.for_user(user)
