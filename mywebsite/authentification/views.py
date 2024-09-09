@@ -162,6 +162,9 @@ def send_friend_request(request):
             return JsonResponse({"error": "Friend request already received."}, status=400)
 
         sender = request.user
+
+        FriendRequest.objects.filter(sender=sender, receiver=receiver, status='declined').delete()
+
         friend_request, created = FriendRequest.objects.get_or_create(
             sender=sender,
             receiver=receiver,
