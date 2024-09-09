@@ -1,3 +1,5 @@
+import { initializeGame } from '/static/js/invaders.js';
+
 document.addEventListener("DOMContentLoaded", () => {
 	// Font size adjustment
 	const increaseFontBtn = document.getElementById('increase-font');
@@ -18,6 +20,19 @@ document.addEventListener("DOMContentLoaded", () => {
 			rootElement.style.fontSize = currentFontSize + '%';
 		}
 	});
+
+	// Manage alerts
+	function showAlert(message) {
+		const alertContainer = document.getElementById('alert-container');
+		const alertMessage = document.getElementById('alert-message');
+
+		alertMessage.textContent = message;
+		alertContainer.classList.remove('d-none');
+	}
+
+	function closeAlert() {
+		document.getElementById('alert-container').classList.add('d-none');
+	}
 
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
@@ -68,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
+				await initializeGame();
 			} else if (url.includes('pong')) {
 				await loadResource('/static/js/pong.js', 'script');
 			}
