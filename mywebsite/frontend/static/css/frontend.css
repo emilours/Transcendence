@@ -14,3 +14,8 @@ body {
 .font-roboto {
 	font-family: 'Roboto', sans-serif;
 }
+
+body.high-contrast {
+	filter: contrast(1.3);
+}
+

@@ -243,12 +243,12 @@ def remove_friend(request, friend_id):
 def update_profile(request):
     if request.method == 'POST':
         user = request.user
-
         email = request.POST.get('email', user.email).strip()
         first_name = request.POST.get('first_name', user.first_name).strip()
         last_name = request.POST.get('last_name', user.last_name).strip()
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
+        avatar_choice = request.POST.get('avatar_choice', None)
 
         if email == '':
             email = user.email
@@ -297,6 +297,8 @@ def update_profile(request):
 
         if avatar:
             user.avatar = avatar
+        elif avatar_choice:
+            user.avatar = avatar_choice
 
         try:
             user.save()

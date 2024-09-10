@@ -3,7 +3,7 @@
 	<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
 		<div class="container-fluid bg-secondary">
 			<a class="navbar-brand">
-				<img src="{% static 'img/pusheen_nav.png' %}" alt="icone de pusheen" width="60" height="60">
+				<img src="{% static 'img/pusheen_nav.png' %}" alt="pusheen face icon" width="60" height="60">
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
 			aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,15 @@
 							<span class="d-md-none ms-1 fs-6">Increase font size</span>
 						</button>
 					</li>
+					<li class="nav-item">
+						<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
+							<i class="bi bi-eye"></i>
+							<span class="d-md-none ms-1 fs-6">High Contrast</span>
+						</button>
+					</li>
 					<li class="nav-item dropdown ms-3 mb-4 mb-md-0">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-							<img src="{% static 'img/global.png' %}" alt="Choose your language" width="24" height="24">
+							<img src="{% static 'img/global.png' %}" alt="Choose your language icon" width="24" height="24">
 							<span class="d-md-none ms-1 fs-6">Languages</span>
 						</a>
 						<ul class="dropdown-menu rounded-3 bg-secondary dropdown-menu-primary" aria-labelledby="navbarDropdown">
@@ -47,7 +53,7 @@
 				</ul>
 				{% if user.is_authenticated %}
 				<div class="d-flex justify-content-center align-items-center">
-					<img src="{{ user.avatar.url }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
+					<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle" width="60" height="60">
 					<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
 					<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 						{% csrf_token %}

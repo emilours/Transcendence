@@ -21,6 +21,18 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	const toggleContrastBtn = document.getElementById('toggle-contrast');
+	let isHighContrast = localStorage.getItem('highContrast') === 'true';
+	// if (isHighContrast) {
+	// 	document.body.classList.add('high-contrast');
+	// }
+
+	toggleContrastBtn.addEventListener('click', function () {
+		document.body.classList.toggle('high-contrast');
+		isHighContrast = !isHighContrast;
+		localStorage.setItem('highContrast', isHighContrast);
+	});
+
 	// Manage alerts
 	function showAlert(message) {
 		const alertContainer = document.getElementById('alert-container');
@@ -53,14 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	function cleanupResources() {
-		// Supprimer les scripts et CSS ajoutés dynamiquement
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-
-		// Nettoyer les résidus de l'animation ou du contenu
-		// if (typeof cleanupInvaders === 'function') {
-		//     cleanupInvaders();  // Assurez-vous que invaders.js contient une fonction de nettoyage
-		// }
 	}
 
 	const loadHeader = async () => {
@@ -120,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-login', url: '/login/' },
 			{ id: 'navbar-profile', url: '/profile/' },
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
+			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'games', url: '/games/' },
 			{ id: 'invaders', url: '/invaders/' },
 			{ id: 'pong', url: '/pong/' },
@@ -164,14 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
 						} else {
 							// alert(data.message);
 							if (id === 'logout-form') {
-								// window.location.href = '/home/';
 								loadContent('/home/', true);
 								loadHeader();
-							} else {
-								// window.location.href = '/profile/';
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
 								loadContent('/profile/', true);
 								loadHeader();
+							} else {
+								loadContent('/profile/', true);
 							}
+
 						}
 					} catch (error) {
 						console.error('Error:', error);
