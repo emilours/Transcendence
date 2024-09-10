@@ -114,14 +114,6 @@ class FriendList(models.Model):
                 friend_list = FriendList.objects.get(user=account)
                 friend_list.friends.remove(self.user)
 
-    # def unfriend(self, removee):
-    #     self.remove_friend(removee)
-    #     try:
-    #         friends_list = FriendList.objects.get(user=removee)
-    #         friends_list.remove_friend(self.user)
-    #     except FriendList.DoesNotExist:
-    #         pass
-
     def unfriend(self, removee):
         self.remove_friend(removee)
         try:
@@ -228,26 +220,34 @@ class FriendRequest(models.Model):
 # # ===                                                      MATCH HISTORY                                                                                     ===
 # # ================================================================================================================================================================
 
-# class Game(models.Model):
-#     name = models.CharField(max_length=100)
-#     description = models.TextField()
+class Game(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
 
-#     def __str__(self):
-#         return self.name
+    def __str__(self):
+        return self.name
 
-# class Match(models.Model):
-#     GAME_CHOICES = [
-#         ('game1', 'Game 1'),
-#         ('game2', 'Game 2'),
-#     ]
-#     game = models.CharField(max_length=5, choices=GAME_CHOICES)
-#     player1 = models.ForeignKey(CustomUser, related_name='player1_matches', on_delete=models.CASCADE)
-#     player2 = models.ForeignKey(CustomUser, related_name='player2_matches', on_delete=models.CASCADE)
-#     date = models.DateTimeField(auto_now_add=True)
-#     player1_score = models.IntegerField()
-#     player2_score = models.IntegerField()
-#     winner = models.ForeignKey(CustomUser, related_name='won_matches', on_delete=models.CASCADE)
-#     details = models.TextField()
+class Match(models.Model):
+    STATUS_CHOICES = [
+        ('ongoing', 'Ongoing'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
 
-#     def __str__(self):
-#         return f"{self.get_game_display()} match between {self.player1} and {self.player2} on {self.date}"
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    players = models.ManyToManyField(settings.AUTH_USER_MODEL, through='PlayerMatch', related_name='matches')
+    date = models.DateTimeField(auto_now_add=True)
+    details = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='completed')
+
+    def __str__(self):
+        return f"{self.game.name} match on {self.date} with {self.players.count()} players"
+
+class PlayerMatch(models.Model):
+    player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    match = models.ForeignKey(Match, on_delete=models.CASCADE)
+    score = models.IntegerField(default=0)
+    is_winner = models.BooleanField(default=False)
+ 
+    def __str__(self):
+        return f"{self.player.display_name} in match {self.match.id} with score {self.score}"

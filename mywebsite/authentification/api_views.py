@@ -91,10 +91,19 @@ def callback_42(request):
     user.save()
 
     login(request, user)
+    user.is_online = True
+    user.save(update_fields=['is_online'])
+    return redirect('/profile/')
 
-    refresh = RefreshToken.for_user(user)
+    # refresh = RefreshToken.for_user(user)
     
-    return Response({
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    })
+    # return Response({
+    #     'refresh': str(refresh),
+    #     'access': str(refresh.access_token),
+    # })
+
+    # Usage approprié : AllowAny est approprié ici parce que l'endpoint doit
+    # permettre à des utilisateurs non authentifiés de se connecter ou de
+    # s'enregistrer. C'est le point d'entrée pour obtenir un token d'accès,
+    # ce qui nécessite que les utilisateurs puissent accéder à cet endpoint
+    # sans être authentifiés au préalable.

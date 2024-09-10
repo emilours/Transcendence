@@ -5,12 +5,13 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList, CustomUser
+from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch
 from django.db import IntegrityError
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import update_session_auth_hash, authenticate, login, logout, get_user_model
 from django.utils.timezone import localtime
+from django.db.models import Max
 from django.db import transaction
 import os
 
@@ -207,8 +208,6 @@ def refuse_friend_request(request, friend_request_id):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-
-
 @login_required
 @require_POST
 @transaction.atomic
@@ -251,6 +250,7 @@ def update_profile(request):
         last_name = request.POST.get('last_name', user.last_name).strip()
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
+        # //rajout
 
         if email == '':
             email = user.email
@@ -299,6 +299,7 @@ def update_profile(request):
 
         if avatar:
             user.avatar = avatar
+            # //rajout
 
         try:
             user.save()
@@ -352,3 +353,102 @@ def update_password(request):
     return JsonResponse({
         'error': 'Invalid request method.'
     }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      MATCH HISTORY                                                                                     ===
+# # ================================================================================================================================================================
+
+@login_required
+def user_match_history(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+    
+    # matchs où le user a participé
+    player_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-match__date')
+    
+    # Stats
+    total_matches = player_matches.count()
+    wins = player_matches.filter(is_winner=True).count()
+    
+    # Meilleur score
+    best_score = player_matches.aggregate(Max('score'))['score__max']
+    
+    # Calcul du ratio de victoires
+    win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+
+    matches_list = [
+        {
+            'game': match.match.game.name,
+            'score': match.score,
+            'is_winner': match.is_winner,
+            'date': match.match.date,
+            'participants': [player.display_name for player in match.match.players.all()]
+        }
+        for match in player_matches
+    ]
+    
+    data = {
+        'user_profile': {
+            'display_name': user.display_name,
+            'total_matches': total_matches,
+            'wins': wins,
+            'win_ratio': win_ratio,
+            'best_score': best_score
+        },
+        'match_history': matches_list
+    }
+
+    return JsonResponse(data)
+
+    @login_required
+    def recent_matches(request, display_name):
+        user = get_object_or_404(CustomUser, display_name=display_name)
+        
+        # Récupérer les 3 derniers matchs
+        recent_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-match__date')[:3]
+        
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'is_winner': match.is_winner,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in recent_matches
+        ]
+
+        data = {
+            'user_profile': {
+                'display_name': user.display_name,
+            },
+            'recent_matches': matches_list
+        }
+
+    return JsonResponse(data)
+
+@login_required
+def best_matches(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+    
+    # Récupérer les matchs avec les scores les plus élevés (3 meilleurs)
+    best_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-score')[:3]
+    
+    matches_list = [
+        {
+            'game': match.match.game.name,
+            'score': match.score,
+            'is_winner': match.is_winner,
+            'date': match.match.date,
+            'participants': [player.display_name for player in match.match.players.all()]
+        }
+        for match in best_matches
+    ]
+
+    data = {
+        'user_profile': {
+            'display_name': user.display_name,
+        },
+        'best_matches': matches_list
+    }
+
+    return JsonResponse(data)
