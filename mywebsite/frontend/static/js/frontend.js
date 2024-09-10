@@ -67,6 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			const data = await response.json();
 			const headerElement = document.querySelector('header');
 			headerElement.innerHTML = data.html;
+			attachListeners();
+
 		} catch (error) {
 			console.error('Error loading header:', error);
 		}
@@ -114,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
 			{ id: 'games', url: '/games/' },
 			{ id: 'invaders', url: '/invaders/' },
-			{ id: 'pong', url: '/pong/' }
+			{ id: 'pong', url: '/pong/' },
 		];
 
 		links.forEach(link => {
@@ -131,7 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'signup-form', url: '/auth/signup/' },
 			{ id: 'login-form', url: '/auth/signin/' },
 			{ id: 'logout-form', url: '/auth/signout/' },
-			{ id: 'add-friend-form', url: '/auth/send_friend_request/' }
+			{ id: 'add-friend-form', url: '/auth/send_friend_request/' },
+			{ id: 'edit-profile-form', url: '/auth/update_profile/' }
 		];
 
 		forms.forEach(({ id, url }) => {
@@ -156,8 +159,8 @@ document.addEventListener("DOMContentLoaded", () => {
 							// alert(data.message);
 							if (id === 'logout-form') {
 								// window.location.href = '/home/';
-								loadHeader();
 								loadContent('/home/', true);
+								loadHeader();
 							} else {
 								// window.location.href = '/profile/';
 								loadContent('/profile/', true);

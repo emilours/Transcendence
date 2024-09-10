@@ -38,6 +38,13 @@ def profile(request):
 	return render(request, 'base.html')
 
 @login_required
+def edit_profile(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('edit_profile.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
+@login_required
 def games(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('games.html', request=request)
