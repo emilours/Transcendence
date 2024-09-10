@@ -297,7 +297,43 @@ export function initializeGame() {
 			leaderboard.push({ userName, score });
 			localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
 
-			console.log('Score saved successfully!');
+			// Enviar la puntuación a la API de Django
+			fetch('/save_score/', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': getCookie('csrftoken') // Asegúrate de incluir el token CSRF
+				},
+				body: JSON.stringify({ user: userName, score: score })
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.status === 'success') {
+					console.log('Score saved successfully in the database!');
+				} else {
+					console.error('Error saving score:', data.message);
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+			});
+		}
+
+		// Función para obtener el token CSRF
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					// Does this cookie string begin with the name we want?
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
 		}
 	}
 
