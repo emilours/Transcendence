@@ -13,8 +13,10 @@ urlpatterns = [
     path('cancel_friend_request/<int:friend_request_id>/', auth_views.cancel_friend_request, name='cancel_friend_request'),
     path('remove_friend/<int:friend_id>/', auth_views.remove_friend, name='remove_friend'),
     path('update_profile/', auth_views.update_profile, name='update_profile'),
+    path('delete_profile/', auth_views.delete_profile, name='delete_profile'),
     path('update_password/', auth_views.update_password, name='update_password'),
 
     # Vues API OAuth 2.0
-   path('oauth/complete/42/', api_views.callback_42, name='callback_42'),
+    path('oauth/complete/42/', api_views.callback_42, name='callback_42'),
+    path('delete_profile_api/', api_views.delete_profile_api, name='delete_profile_api'),
 ]

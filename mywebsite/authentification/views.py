@@ -250,7 +250,7 @@ def update_profile(request):
         last_name = request.POST.get('last_name', user.last_name).strip()
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
-        # //rajout
+        avatar_choice = request.POST.get('avatar_choice', None)
 
         if email == '':
             email = user.email
@@ -299,7 +299,8 @@ def update_profile(request):
 
         if avatar:
             user.avatar = avatar
-            # //rajout
+        elif avatar_choice:
+            user.avatar = avatar_choice
 
         try:
             user.save()
@@ -316,6 +317,124 @@ def update_profile(request):
         except IntegrityError as e:
             return JsonResponse({
                 'error': 'An error occurred while updating the profile.',
+                'details': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': 'An unexpected error occurred.',
+                'details': str(e)
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        user = request.user
+
+        email = request.POST.get('email', user.email).strip()
+        first_name = request.POST.get('first_name', user.first_name).strip()
+        last_name = request.POST.get('last_name', user.last_name).strip()
+        display_name = request.POST.get('display_name', user.display_name).strip()
+        avatar = request.FILES.get('avatar', None)
+        avatar_choice = request.POST.get('avatar_choice', None)
+
+        if email == '':
+            email = user.email
+
+        if email != user.email:
+            if CustomUser.objects.filter(email=email).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This email address is already in use.',
+                    'email': email
+                }, status=400)
+
+        if display_name == '':
+            display_name = user.display_name
+
+        if display_name != user.display_name:
+            if CustomUser.objects.filter(display_name=display_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'display_name': display_name
+                }, status=400)
+
+        if first_name == '':
+            first_name = user.first_name
+
+        if first_name != user.first_name:
+            if CustomUser.objects.filter(first_name=first_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'first_name': first_name
+                }, status=400)
+
+        if last_name == '':
+            last_name = user.last_name
+
+        if last_name != user.last_name:
+            if CustomUser.objects.filter(last_name=last_name).exclude(pk=user.pk).exists():
+                return JsonResponse({
+                    'error': 'This display name is already in use.',
+                    'last_name': last_name
+                }, status=400)
+
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.display_name = display_name
+
+        if avatar:
+            user.avatar = avatar
+        elif avatar_choice:
+            user.avatar = avatar_choice
+
+        try:
+            user.save()
+            return JsonResponse({
+                'message': 'Profile successfully updated',
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'display_name': user.display_name,
+                    'avatar': user.avatar.url if user.avatar else None,
+                }
+            }, status=200)
+        except IntegrityError as e:
+            return JsonResponse({
+                'error': 'An error occurred while updating the profile.',
+                'details': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': 'An unexpected error occurred.',
+                'details': str(e)
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      DELETE USER ACCOUNT                                                                                ===
+# # ================================================================================================================================================================
+
+@login_required
+def delete_profile(request):
+    if request.method == 'POST':
+        user = request.user
+
+        try:
+            user.delete()
+            return JsonResponse({
+                'message': 'Profile and all associated data successfully deleted.'
+            }, status=200)
+        except IntegrityError as e:
+            return JsonResponse({
+                'error': 'An error occurred while deleting the profile.',
                 'details': str(e)
             }, status=400)
         except Exception as e:
@@ -362,93 +481,100 @@ def update_password(request):
 def user_match_history(request, display_name):
     user = get_object_or_404(CustomUser, display_name=display_name)
     
-    # matchs où le user a participé
-    player_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-match__date')
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
     
-    # Stats
-    total_matches = player_matches.count()
-    wins = player_matches.filter(is_winner=True).count()
+    game_data = {}
     
-    # Meilleur score
-    best_score = player_matches.aggregate(Max('score'))['score__max']
-    
-    # Calcul du ratio de victoires
-    win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
-
-    matches_list = [
-        {
-            'game': match.match.game.name,
-            'score': match.score,
-            'is_winner': match.is_winner,
-            'date': match.match.date,
-            'participants': [player.display_name for player in match.match.players.all()]
-        }
-        for match in player_matches
-    ]
-    
-    data = {
-        'user_profile': {
-            'display_name': user.display_name,
-            'total_matches': total_matches,
-            'wins': wins,
-            'win_ratio': win_ratio,
-            'best_score': best_score
-        },
-        'match_history': matches_list
-    }
-
-    return JsonResponse(data)
-
-    @login_required
-    def recent_matches(request, display_name):
-        user = get_object_or_404(CustomUser, display_name=display_name)
+    for game in games:
+        player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
         
-        # Récupérer les 3 derniers matchs
-        recent_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-match__date')[:3]
+        total_matches = player_matches.count()
+        wins = player_matches.filter(is_winner=True).count() if 'is_winner' in player_matches.model._meta.get_fields() else 0
+        
+        best_score = player_matches.aggregate(Max('score'))['score__max']
+        
+        win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'is_winner': match.is_winner if 'is_winner' in match.__class__._meta.get_fields() else None,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in player_matches
+        ]
+        
+        game_data[game.name] = {
+            'user_profile': {
+                'display_name': user.display_name,
+                'total_matches': total_matches,
+                'wins': wins,
+                'win_ratio': win_ratio,
+                'best_score': best_score
+            },
+            'match_history': matches_list
+        }
+    
+    return JsonResponse(game_data)
+
+@login_required
+def recent_matches(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+    
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+    
+    game_data = {}
+    
+    for game in games:
+        recent_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')[:3]
         
         matches_list = [
             {
                 'game': match.match.game.name,
                 'score': match.score,
-                'is_winner': match.is_winner,
                 'date': match.match.date,
                 'participants': [player.display_name for player in match.match.players.all()]
             }
             for match in recent_matches
         ]
-
-        data = {
+        
+        game_data[game.name] = {
             'user_profile': {
                 'display_name': user.display_name,
             },
             'recent_matches': matches_list
         }
-
-    return JsonResponse(data)
+    
+    return JsonResponse(game_data)
 
 @login_required
 def best_matches(request, display_name):
     user = get_object_or_404(CustomUser, display_name=display_name)
     
-    # Récupérer les matchs avec les scores les plus élevés (3 meilleurs)
-    best_matches = PlayerMatch.objects.filter(player=user).select_related('match').order_by('-score')[:3]
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
     
-    matches_list = [
-        {
-            'game': match.match.game.name,
-            'score': match.score,
-            'is_winner': match.is_winner,
-            'date': match.match.date,
-            'participants': [player.display_name for player in match.match.players.all()]
+    game_data = {}
+    
+    for game in games:
+        best_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-score')[:3]
+        
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in best_matches
+        ]
+        
+        game_data[game.name] = {
+            'user_profile': {
+                'display_name': user.display_name,
+            },
+            'best_matches': matches_list
         }
-        for match in best_matches
-    ]
-
-    data = {
-        'user_profile': {
-            'display_name': user.display_name,
-        },
-        'best_matches': matches_list
-    }
-
-    return JsonResponse(data)
+    
+    return JsonResponse(game_data)

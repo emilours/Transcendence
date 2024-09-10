@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
@@ -98,8 +98,8 @@ def callback_42(request):
     # refresh = RefreshToken.for_user(user)
     
     # return Response({
-    #     'refresh': str(refresh),
-    #     'access': str(refresh.access_token),
+        # 'refresh': str(refresh),
+        # 'access': str(refresh.access_token),
     # })
 
     # Usage approprié : AllowAny est approprié ici parce que l'endpoint doit
@@ -107,3 +107,30 @@ def callback_42(request):
     # s'enregistrer. C'est le point d'entrée pour obtenir un token d'accès,
     # ce qui nécessite que les utilisateurs puissent accéder à cet endpoint
     # sans être authentifiés au préalable.
+
+
+# # ================================================================================================================================================================
+# # ===                                                      DELETE USER ACCOUNT                                                                                ===
+# # ================================================================================================================================================================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def delete_profile_api(request):
+    try:
+        user = request.user
+        user.delete()
+
+        return Response({
+            'message': 'Profile and all associated data successfully deleted.'
+        }, status=200)
+
+    except IntegrityError as e:
+        return Response({
+            'error': 'An error occurred while deleting the profile.',
+            'details': str(e)
+        }, status=400)
+    except Exception as e:
+        return Response({
+            'error': 'An unexpected error occurred.',
+            'details': str(e)
+        }, status=400)
