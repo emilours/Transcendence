@@ -1,12 +1,4 @@
-/* html, body {
-	height: 100%;
-}
-
-body {
-	display: flex;
-	flex-direction: column;
-} */
-
+/* Font styles */
 .font-potta {
 	font-family: 'Potta One', sans-serif;
 }
@@ -15,7 +7,76 @@ body {
 	font-family: 'Roboto', sans-serif;
 }
 
+/* High contrast */
 body.high-contrast {
-	filter: contrast(1.3);
+	background-color: #000;
+	color: #fff;
 }
 
+/* Navbar and buttons in high contrast */
+.high-contrast .navbar, .high-contrast .btn {
+	background-color: #222;
+	color: #fff;
+	border: 1px solid #fff;
+}
+
+/* Focus outline for better navigation visibility */
+.high-contrast button:focus, .high-contrast a:focus {
+	outline: 2px solid blue;
+}
+
+/* Links and text adjustments */
+/* .high-contrast a {
+	text-decoration: underline;
+} */
+
+.high-contrast p {
+	color: #fff;
+}
+
+
+.high-contrast .inversed-color {
+	/* background-color: #fff; */
+	color: #000;
+}
+
+
+/* Form */
+.high-contrast input[type="text"],
+.high-contrast input[type="email"],
+.high-contrast input[type="password"],
+.high-contrast input[type="file"],
+.high-contrast textarea,
+.high-contrast select {
+	background-color: #fdfdfd;
+	border: 2px solid #000;
+	color: #000;
+}
+
+/* image */
+.high-contrast img#logo-42 {
+	content: url("../img/42_Logo_white.jpg");
+}
+
+.high-contrast .btn:hover {
+	background-color: #fff;
+	color: #000;
+	border-color: #fff;
+	border: 2px;
+}
+
+
+.high-contrast .btn:active {
+	background-color: #ccc;
+	color: #000;
+	border-color: #000;
+	border: 2px;
+}
+
+
+.high-contrast .btn:focus {
+	outline: 2px solid #fff;
+	background-color: #444;
+	color: #fff;
+	border: 2px;
+}
