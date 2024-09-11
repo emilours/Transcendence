@@ -1,7 +1,7 @@
 import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
-
+from django.contrib.auth.decorators import login_required
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -15,6 +15,158 @@ LEFT_WALL = -8.0
 RIGHT_WALL = 8.0
 PLAYER1_X = -7.5
 PLAYER2_X = 7.5
+
+
+class MultiplayerPongConsumer(AsyncWebsocketConsumer):
+
+	games = {}
+	players = {}
+	# Don't know if i need or why i used it ...
+	# Player can be in game --> online or not in game --> offline
+	game_state = {}
+	# is_paused = False
+
+	update_lock = asyncio.Lock()
+
+	async def connect(self):
+		self.user = self.scope['user']
+
+		if self.user.is_authenticated:
+			await self.accept()
+
+			async with self.update_lock:
+				self.players[self.user.display_name] = "online"
+			game_found = False
+
+			for game in self.games.values():
+				if game["players"] != 2:
+					log(f"Game not full found: {game['id']}")
+					game_found = True
+					self.game_id = game["id"]
+					self.room_group_name = self.game_id
+					async with self.update_lock:
+						game["player2"] = self.user.display_name
+						self.game_state[self.game_id] = {
+							'player1Score': 0,
+							'player2Score': 0,
+							'ballPosition': [0, 0],
+							'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
+							'player1Pos': 0,
+							'player2Pos': 0,
+							'gameOver': 0,
+							}
+					self.game_task = asyncio.create_task(self.game_loop())
+					await self.channel_layer.group_send(
+						self.room_group_name,
+						{
+							'type': 'send_game_state',
+							'game_state': self.game_state[self.game_id]
+						}
+					)
+					break
+
+			if game_found == False:
+				self.game_id = str(uuid.uuid4())
+				async with self.update_lock:
+					self.games[self.game_id] = {
+						"id": self.game_id,
+						"players": 1,
+						"player1": self.user.display_name,
+						"player2": None,
+						"player1Score": 0,
+						"player2Score": 0,
+					}
+
+			self.room_group_name = self.game_id
+			await self.channel_layer.group_add(
+				self.room_group_name, self.channel_name
+				)
+
+			log(f"Room name: {self.room_group_name}")
+			await self.send(text_data=json.dumps({
+				'type': 'waiting',
+				'message': 'Waiting for another player to join...'
+			}))
+			for game in self.games.values():
+				log(f"values: {game}")
+		else:
+			log("User trying to connect is not authenticated")
+			await self.close()
+			return
+
+	async def game_loop(self):
+		log("STARTING GAME LOOP")
+		while True:
+			log("In game loop..")
+			while self.is_paused == True:
+				await asyncio.sleep(1 / 2)
+				log("GAME IS PAUSE, SLEEPING!")
+			# Update the ball position
+			self.game_state[self.game_id]['ballPosition'][0] += self.game_state[self.game_id]['ballVelocity'][0]
+			self.game_state[self.game_id]['ballPosition'][1] += self.game_state[self.game_id]['ballVelocity'][1]
+
+			# Handle collisions with walls and paddles
+			if self.game_state[self.game_id]['ballPosition'][1] <= BOTTOM_WALL or self.game_state[self.game_id]['ballPosition'][1] >= TOP_WALL:
+				self.game_state[self.game_id]['ballVelocity'][1] *= -1
+
+			# Handle scoring
+			if self.game_state[self.game_id]['ballPosition'][0] <= LEFT_WALL:
+				self.game_state[self.game_id]['player2Score'] += 1
+				self.reset_ball()
+			elif self.game_state[self.game_id]['ballPosition'][0] >= RIGHT_WALL:
+				self.game_state[self.game_id]['player1Score'] += 1
+				self.reset_ball()
+
+			if self.game_state[self.game_id]['player1Score'] >= 5:
+				log("Player 1 Won!")
+				self.game_state[self.game_id]['gameOver'] = 1
+			elif self.game_state[self.game_id]['player2Score'] >= 5:
+				log("Player 2 Won!")
+				self.game_state[self.game_id]['gameOver'] = 1
+
+			# Handle paddle collisions
+			if (abs(self.game_state[self.game_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+				abs(self.game_state[self.game_id]['ballPosition'][1] - self.game_state[self.game_id]['player1Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
+				self.game_state[self.game_id]['ballVelocity'][0] *= -1
+			if (abs(self.game_state[self.game_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+				abs(self.game_state[self.game_id]['ballPosition'][1] - self.game_state[self.game_id]['player2Pos']) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2):
+				self.game_state[self.game_id]['ballVelocity'][0] *= -1
+
+			# Broadcast the updated game state to all clients
+			await self.channel_layer.group_send(
+					self.room_group_name,
+					{
+						'type': 'send_game_state',
+						'game_state': self.game_state[self.game_id]
+						}
+					)
+
+			# if self.game_state[self.game_id]['gameOver'] == 1 and self.game_task:
+			# 	self.game_task.cancel()
+			# 	self.game_task = None
+			# 	self.game_state[self.game_id] = {}
+			# 	return
+
+			# Control the game loop speed
+			await asyncio.sleep(1 / 60)
+
+	async def send_game_state(self, event):
+		# Send the updated game state to the client
+		await self.send(text_data=json.dumps(event['game_state']))
+
+	def reset_ball(self):
+
+		# Reset the ball position and velocity after scoring
+		self.game_state[self.game_id]['ballPosition'] = [0, 0]
+		self.game_state[self.game_id]['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
+
+
+	async def disconnect(self, close_code):
+		pass
+
+	async def receive(self, text_data):
+		pass
+
 
 # Global variable to track connected clients for the game room
 game_state = {}
@@ -36,6 +188,8 @@ class PongConsumer(AsyncWebsocketConsumer):
 
 	update_lock = asyncio.Lock()
 
+	# login_required or/and redirect to login page
+	# @login_required
 	async def connect(self):
 		global game_state, game_task, consumer_id
 
@@ -74,7 +228,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 				self.room_group_name,
 				self.channel_name
 				)
-		
+
 		async with self.update_lock:
 			self.players[self.player_id] = {
 				"id": self.player_id,
