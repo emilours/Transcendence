@@ -13,6 +13,7 @@ from django.contrib.auth import update_session_auth_hash, authenticate, login, l
 from django.utils.timezone import localtime
 from django.db.models import Max
 from django.db import transaction
+from django.utils.crypto import get_random_string
 import os
 
 User = get_user_model()
@@ -578,3 +579,26 @@ def best_matches(request, display_name):
         }
     
     return JsonResponse(game_data)
+
+# # ================================================================================================================================================================
+# # ===                                                      ANONYMIZATION                                                                                       ===
+# # ================================================================================================================================================================
+
+@login_required
+def request_anonymization(request):
+    user = request.user
+    
+    try:
+        with transaction.atomic():
+            unique_suffix = get_random_string(length=8)
+            
+            user.email = f'anonymized_{unique_suffix}@example.com'
+            user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous'
+            user.last_name = 'Anonymous'
+            user.save()
+
+            return JsonResponse({'message': 'Your data has been anonymized successfully.'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

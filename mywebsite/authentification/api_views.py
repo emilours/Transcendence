@@ -12,6 +12,10 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from urllib.parse import urlparse
 from django.contrib.auth import login
+from rest_framework.authtoken.models import Token
+from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.crypto import get_random_string
 import requests
 import os
 
@@ -74,6 +78,9 @@ def callback_42(request):
             'last_name': last_name
         }
     )
+
+    token, _ = Token.objects.get_or_create(user=user)
+    print(f" ******------******* Token DRF généré pour le user{user.email}: {token.key}")
      
     if not created:
         user.first_name = first_name
@@ -93,14 +100,8 @@ def callback_42(request):
     login(request, user)
     user.is_online = True
     user.save(update_fields=['is_online'])
+    # print(f"Access Token créé : {access_token}")
     return redirect('/profile/')
-
-    # refresh = RefreshToken.for_user(user)
-    
-    # return Response({
-        # 'refresh': str(refresh),
-        # 'access': str(refresh.access_token),
-    # })
 
     # Usage approprié : AllowAny est approprié ici parce que l'endpoint doit
     # permettre à des utilisateurs non authentifiés de se connecter ou de
@@ -108,9 +109,8 @@ def callback_42(request):
     # ce qui nécessite que les utilisateurs puissent accéder à cet endpoint
     # sans être authentifiés au préalable.
 
-
 # # ================================================================================================================================================================
-# # ===                                                      DELETE USER ACCOUNT                                                                                ===
+# # ===                                                      DELETE USER ACCOUNT                                                                                 ===
 # # ================================================================================================================================================================
 
 @api_view(['POST'])
@@ -134,3 +134,27 @@ def delete_profile_api(request):
             'error': 'An unexpected error occurred.',
             'details': str(e)
         }, status=400)
+
+# # ================================================================================================================================================================
+# # ===                                                      ANONYMIZATION                                                                                       ===
+# # ================================================================================================================================================================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_anonymization_api(request):
+    user = request.user
+    try:
+        with transaction.atomic():
+            unique_suffix = get_random_string(length=8)
+            user.email = f'anonymized_{user.id}@example.com'
+            user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous'
+            user.last_name = 'Anonymous'
+            user.save()
+
+            return Response({'message': 'Your data has been anonymized successfully.'}, status=200)
+
+    except ObjectDoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)

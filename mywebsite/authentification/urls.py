@@ -15,8 +15,10 @@ urlpatterns = [
     path('update_profile/', auth_views.update_profile, name='update_profile'),
     path('delete_profile/', auth_views.delete_profile, name='delete_profile'),
     path('update_password/', auth_views.update_password, name='update_password'),
+    path('request_anonymization/', auth_views.request_anonymization, name='request_anonymization'),
 
     # Vues API OAuth 2.0
     path('oauth/complete/42/', api_views.callback_42, name='callback_42'),
     path('delete_profile_api/', api_views.delete_profile_api, name='delete_profile_api'),
+    path('request_anonymization_api/', api_views.request_anonymization_api, name='request_anonymization_api'),
 ]
