@@ -504,10 +504,10 @@ def request_anonymization(request):
         with transaction.atomic():
             unique_suffix = get_random_string(length=8)
 
-            user.email = f'anonymized_{unique_suffix}@example.com'
-            user.display_name = f'Anonymous_{unique_suffix}'
-            user.first_name = 'Anonymous'
-            user.last_name = 'Anonymous'
+            # user.email = f'anonymized_{unique_suffix}@example.com'
+            # user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous_{unique_suffix}'
+            user.last_name = 'Anonymous_{unique_suffix}'
             user.save()
 
             return JsonResponse({'message': 'Your data has been anonymized successfully.'}, status=200)
