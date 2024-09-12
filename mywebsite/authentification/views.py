@@ -5,13 +5,15 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList, CustomUser
+from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch
 from django.db import IntegrityError
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import update_session_auth_hash, authenticate, login, logout, get_user_model
 from django.utils.timezone import localtime
+from django.db.models import Max
 from django.db import transaction
+from django.utils.crypto import get_random_string
 import os
 
 User = get_user_model()
@@ -162,7 +164,9 @@ def send_friend_request(request):
             return JsonResponse({"error": "Friend request already received."}, status=400)
 
         sender = request.user
+
         FriendRequest.objects.filter(sender=sender, receiver=receiver, status='declined').delete()
+
         friend_request, created = FriendRequest.objects.get_or_create(
             sender=sender,
             receiver=receiver,
@@ -204,8 +208,6 @@ def refuse_friend_request(request, friend_request_id):
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
-
 
 @login_required
 @require_POST
@@ -299,6 +301,8 @@ def update_profile(request):
             user.avatar = avatar
         elif avatar_choice:
             user.avatar = avatar_choice
+        elif avatar_choice:
+            user.avatar = avatar_choice
 
         try:
             user.save()
@@ -315,6 +319,35 @@ def update_profile(request):
         except IntegrityError as e:
             return JsonResponse({
                 'error': 'An error occurred while updating the profile.',
+                'details': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': 'An unexpected error occurred.',
+                'details': str(e)
+            }, status=400)
+
+    return JsonResponse({
+        'error': 'Invalid request method.'
+    }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      DELETE USER ACCOUNT                                                                                ===
+# # ================================================================================================================================================================
+
+@login_required
+def delete_profile(request):
+    if request.method == 'POST':
+        user = request.user
+
+        try:
+            user.delete()
+            return JsonResponse({
+                'message': 'Profile and all associated data successfully deleted.'
+            }, status=200)
+        except IntegrityError as e:
+            return JsonResponse({
+                'error': 'An error occurred while deleting the profile.',
                 'details': str(e)
             }, status=400)
         except Exception as e:
@@ -352,3 +385,132 @@ def update_password(request):
     return JsonResponse({
         'error': 'Invalid request method.'
     }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      MATCH HISTORY                                                                                     ===
+# # ================================================================================================================================================================
+
+@login_required
+def user_match_history(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+
+    game_data = {}
+
+    for game in games:
+        player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
+
+        total_matches = player_matches.count()
+        wins = player_matches.filter(is_winner=True).count() if 'is_winner' in player_matches.model._meta.get_fields() else 0
+
+        best_score = player_matches.aggregate(Max('score'))['score__max']
+
+        win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'is_winner': match.is_winner if 'is_winner' in match.__class__._meta.get_fields() else None,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in player_matches
+        ]
+
+        game_data[game.name] = {
+            'user_profile': {
+                'display_name': user.display_name,
+                'total_matches': total_matches,
+                'wins': wins,
+                'win_ratio': win_ratio,
+                'best_score': best_score
+            },
+            'match_history': matches_list
+        }
+
+    return JsonResponse(game_data)
+
+@login_required
+def recent_matches(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+
+    game_data = {}
+
+    for game in games:
+        recent_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')[:3]
+
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in recent_matches
+        ]
+
+        game_data[game.name] = {
+            'user_profile': {
+                'display_name': user.display_name,
+            },
+            'recent_matches': matches_list
+        }
+
+    return JsonResponse(game_data)
+
+@login_required
+def best_matches(request, display_name):
+    user = get_object_or_404(CustomUser, display_name=display_name)
+
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+
+    game_data = {}
+
+    for game in games:
+        best_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-score')[:3]
+
+        matches_list = [
+            {
+                'game': match.match.game.name,
+                'score': match.score,
+                'date': match.match.date,
+                'participants': [player.display_name for player in match.match.players.all()]
+            }
+            for match in best_matches
+        ]
+
+        game_data[game.name] = {
+            'user_profile': {
+                'display_name': user.display_name,
+            },
+            'best_matches': matches_list
+        }
+
+    return JsonResponse(game_data)
+
+# # ================================================================================================================================================================
+# # ===                                                      ANONYMIZATION                                                                                       ===
+# # ================================================================================================================================================================
+
+@login_required
+def request_anonymization(request):
+    user = request.user
+
+    try:
+        with transaction.atomic():
+            unique_suffix = get_random_string(length=8)
+
+            user.email = f'anonymized_{unique_suffix}@example.com'
+            user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous'
+            user.last_name = 'Anonymous'
+            user.save()
+
+            return JsonResponse({'message': 'Your data has been anonymized successfully.'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
