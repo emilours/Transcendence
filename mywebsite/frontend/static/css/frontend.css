@@ -21,9 +21,9 @@ body.high-contrast {
 }
 
 /* Focus outline for better navigation visibility */
-.high-contrast button:focus, .high-contrast a:focus {
+/* .high-contrast button:focus, .high-contrast a:focus {
 	outline: 2px solid blue;
-}
+} */
 
 /* Links and text adjustments */
 /* .high-contrast a {
