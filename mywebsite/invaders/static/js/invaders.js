@@ -290,21 +290,16 @@ export function initializeGame() {
 		}
 
 		function saveScore(score) {
-			const userName = game.userName;
-			const leaderboardKey = 'leaderboard';
-			const leaderboard = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
-
-			leaderboard.push({ userName, score });
-			localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
+			const gameName = 'Invaders';
 
 			// Enviar la puntuación a la API de Django
-			fetch('/save_score/', {
+			fetch('../save_arcade_score/', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-CSRFToken': getCookie('csrftoken') // Asegúrate de incluir el token CSRF
 				},
-				body: JSON.stringify({ user: userName, score: score })
+				body: JSON.stringify({ user_id: game.userName, score: score, game_name: gameName })
 			})
 			.then(response => response.json())
 			.then(data => {
