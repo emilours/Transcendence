@@ -8,7 +8,7 @@ class MatchAdmin(admin.ModelAdmin):
 	list_display = ('game', 'status', 'date')
 
 class PlayerMatchAdmin(admin.ModelAdmin):
-	list_display = ('player', 'match', 'score', 'is_winner')
+	list_display = ('player', 'score', 'is_winner')
 
 class CustomUserAdmin(admin.ModelAdmin):
 	list_display = ('display_name', 'email', 'is_online')
