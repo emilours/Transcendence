@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initializeGame();
+				await initializeGame(data.test_name);
 			} else if (url.includes('pong')) {
 				await loadResource('/static/js/pong.js', 'script');
 			}

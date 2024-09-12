@@ -116,7 +116,7 @@ def contact(request):
         friends_count = friend_list.friend_count() if friend_list else 0
 
         last_login_local = localtime(user.last_login) if user.last_login else None
-        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M') if last_login_local else ''
+        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M')[:-3] if last_login_local else ''
 
         user_data = {
             'id': user.id,

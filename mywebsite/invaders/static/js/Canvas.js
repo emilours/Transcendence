@@ -2,7 +2,7 @@ import EnemyController from './EnemyController.js';
 import BulletController from './BulletController.js';
 
 export default class Canvas {
-	constructor() {
+	constructor(userName) {
 		// Config canvas
 		this.canvas = document.getElementById('game');
 		if (!this.canvas) {
@@ -27,6 +27,6 @@ export default class Canvas {
 		this.enemyBulletController = new BulletController(this.canvas);
 		this.isGameOver = false;
 		this.didWin = false;
-		this.userName = typeof userDisplayName === 'undefined' ? 'Player' : userDisplayName;
+		this.userName = userName;
 	}
 }
