@@ -60,7 +60,7 @@ export function PongGame()
 			if (pongSocket) {
 				pongSocket.close();
 			}
-		});	
+		});
 	}
 
 
@@ -238,6 +238,23 @@ export function PongGame()
 		// CONTROLS
 		controls = new OrbitControls( camera, renderer.domElement);
 		controls.update();
+
+		// TEXT TEXTURE
+		// const textCanvas = document.createElement('canvas');
+		// const textContext = textCanvas.getContext('2d');
+		// textCanvas.width  = 512;
+		// textCanvas.height = 512;
+		// textContext.fillStyle = 'black';
+		// textContext.fillRect(0, 0, textCanvas.width, textCanvas.height);
+		// textContext.fillStyle = 'white';
+		// textContext.font = 'Bold 40px Arial';
+		// textContext.fillText('Game Starting', 50, 200);
+
+		// const textTexture = new THREE.CanvasTexture(textCanvas);
+		// const textGeometry = new THREE.PlaneGeometry(5, 5);
+		// const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture });
+		// const textPlane = new THREE.Mesh(textGeometry, textMaterial);
+		// scene.add(textPlane);
 
 		// LIGHT
 		// can't see textures without light
