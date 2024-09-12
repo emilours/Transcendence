@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from datetime import timedelta
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch
+from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch, Game, Match
 from django.db import IntegrityError
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
@@ -14,6 +14,7 @@ from django.utils.timezone import localtime
 from django.db.models import Max
 from django.db import transaction
 from django.utils.crypto import get_random_string
+from django.shortcuts import get_object_or_404
 import os
 
 User = get_user_model()
@@ -394,7 +395,7 @@ def update_password(request):
 def user_match_history(request, display_name):
     user = get_object_or_404(CustomUser, display_name=display_name)
 
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
 
     game_data = {}
 
@@ -436,7 +437,7 @@ def user_match_history(request, display_name):
 def recent_matches(request, display_name):
     user = get_object_or_404(CustomUser, display_name=display_name)
 
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
 
     game_data = {}
 
@@ -466,7 +467,7 @@ def recent_matches(request, display_name):
 def best_matches(request, display_name):
     user = get_object_or_404(CustomUser, display_name=display_name)
 
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
+    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
 
     game_data = {}
 
