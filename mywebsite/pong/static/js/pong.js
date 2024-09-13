@@ -441,5 +441,5 @@ export function PongGame()
 	}
 }
 
-PongGame();
+// PongGame();
 

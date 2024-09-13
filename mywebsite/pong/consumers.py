@@ -1,7 +1,5 @@
 import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import async_to_sync
-from django.contrib.auth.decorators import login_required
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -29,7 +27,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		self.user = self.scope['user']
-		self.is_paused = False
+		game_found = False
 
 		if not self.user.is_authenticated:
 			log("User trying to connect is not authenticated")
@@ -38,18 +36,28 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 		
 		await self.accept()
 
+		# for game in self.games:
+		# 	if game["status"] == "paused":
+		# 		if game[""]
+		# if game["player1"] == self.user.display_name or game["player2"] == self.user.display_name:
+
 		async with self.update_lock:
 			self.players[self.user.display_name] = "online"
-		game_found = False
 
 		for game in self.games.values():
 			if game["players"] != 2:
-				log(f"Game not full found: {game['id']}")
 				game_found = True
 				self.game_id = game["id"]
 				self.room_group_name = self.game_id
+				if game["player1"] == self.user.display_name:
+					self.players[self.user.display_name] = "online"
+					self.games[self.game_id]["status"] = "running"
+					break
+				log(f"Game not full found: {game['id']}")
 				async with self.update_lock:
 					game["player2"] = self.user.display_name
+					game["players"] += 1
+					game["status"] = "running"
 					self.game_state[self.game_id] = {
 						'player1Score': 0,
 						'player2Score': 0,
@@ -80,8 +88,11 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 					"player2": None,
 					"player1Score": 0,
 					"player2Score": 0,
+					"status": "waiting",
+					# waiting (for a 2nd player), paused (player disconnected), running
 				}
 
+		# All cases
 		self.room_group_name = self.game_id
 		await self.channel_layer.group_add(
 			self.room_group_name, self.channel_name
@@ -92,6 +103,8 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 			'type': 'waiting',
 			'message': 'Waiting for another player to join...'
 		}))
+
+		# Debug
 		for game in self.games.values():
 			log(f"values: {game}")
 
@@ -100,7 +113,8 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 		log("STARTING GAME LOOP")
 		while True:
 			log("In game loop..")
-			while self.is_paused == True:
+			log(f"status: {self.games[self.game_id]['status']}")
+			while self.games[self.game_id]["status"] == "paused":
 				await asyncio.sleep(1 / 2)
 				log("GAME IS PAUSE, SLEEPING!")
 			# Update the ball position
@@ -144,10 +158,11 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 					)
 
 			if self.game_state[self.game_id]['gameOver'] == 1 and self.game_task:
+				# TODO: Save game in db
 				self.game_task.cancel()
 				self.game_task = None
 				self.game_state[self.game_id] = {}
-				return
+				return 
 
 			# Control the game loop speed
 			await asyncio.sleep(1 / 60)
@@ -164,10 +179,48 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 
 	async def disconnect(self, close_code):
-		pass
+		# Remove user from group
+		if not self.scope["user"].is_authenticated:
+			return
+		
+		await self.channel_layer.group_discard(
+			self.room_group_name,
+			self.channel_name
+		)
+
+		log(f"User {self.user.display_name} has disconnected, GAME PAUSED")
+
+		async with self.update_lock:
+			self.games[self.game_id]["status"] = "paused"
+			if self.user.display_name in self.players:
+				del self.players[self.user.display_name]
+
+
 
 	async def receive(self, text_data):
-		pass
+		data = json.loads(text_data)
+		
+		action = data['action']
+
+		if self.game_task:
+			if action == 'up':
+				self.game_state[self.game_id]['player1Pos'] += PADDLE_SPEED
+				if self.game_state[self.game_id]['player1Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
+					self.game_state[self.game_id]['player1Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
+			elif action == 'down':
+				self.game_state[self.game_id]['player1Pos'] -= PADDLE_SPEED
+				if self.game_state[self.game_id]['player1Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+					self.game_state[self.game_id]['player1Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+		elif consumer_id[self.channel_name] % 2 != 0:
+			if action == 'up':
+				self.game_state[self.game_id]['player2Pos'] += PADDLE_SPEED
+				if self.game_state[self.game_id]['player2Pos'] + PADDLE_HEIGHT / 2 > TOP_WALL:
+					self.game_state[self.game_id]['player2Pos'] = TOP_WALL - PADDLE_HEIGHT / 2
+			elif action == 'down':
+				self.game_state[self.game_id]['player2Pos'] -= PADDLE_SPEED
+				if self.game_state[self.game_id]['player2Pos'] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+					self.game_state[self.game_id]['player2Pos'] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+
 
 
 # Global variable to track connected clients for the game room
