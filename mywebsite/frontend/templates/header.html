@@ -12,14 +12,16 @@
 			<div class="collapse navbar-collapse align justify-content-between my-2" id="navbarContent">
 				<ul class="navbar-nav mx-auto align-items-center">
 					<li class="nav-item">
-						<a class="nav-link active" aria-current="page" href="#" id="home">Home</a>
+						<a class="nav-link active fs-4" aria-current="page" href="#" id="home">HOME</a>
 					</li>
 					<!-- <li class="nav-item">
 						<a class="nav-link" href="#footer">About Us</a>
 					</li> -->
 					{% if user.is_authenticated %}
 					<li class="nav-item">
-						<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+						<a class="nav-link fs-4" href="#" id="games">GAMES</a>
+					<li class="nav-item">
+						<a class="nav-link fs-4" href="#" id="navbar-leaderboard">LEADERBOARD</a>
 					{% endif %}
 					<li class="nav-item">
 						<button id="decrease-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">

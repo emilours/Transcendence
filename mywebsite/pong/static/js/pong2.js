@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, StartGame } from './pong.js';
+// import { ConnectWebsocket, StartGame } from './pong.js';
 
 export function initPong(userName) {
 	console.log('Pong game initialized - user:', userName);
@@ -17,7 +17,7 @@ export function initPong(userName) {
 				menuScreen.remove();
 				// const player1 = new Player(game.canvas, 'Player1', 'player1');
 				// const player2 = new Player(game.canvas, 'Player2', 'player2');
-				StartGame();
+				// StartGame();
 			}),
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
