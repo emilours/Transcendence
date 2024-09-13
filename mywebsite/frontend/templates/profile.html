@@ -15,7 +15,13 @@
 						<p class="text-center mb-4 inversed-color"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
 						<p class="text-center mb-4 inversed-color"><strong>Email:</strong> {{ user.email }}</p>
 						<div class="text-center">
-							<a href="" class="btn btn-primary" id="edit-profile">Edit Profile</a>
+							<a href="" class="btn btn-secondary mb-2 rounded-3" id="edit-profile">Edit Profile</a>
+							<a href="" class="btn btn-secondary ms-2 mb-2 rounded-3" id="edit-password">Edit Password</a>
+							<!-- <a href="" class="btn btn-danger ms-2 mb-2 rounded-3" id="delete-account" onclick="return confirm('Are you sure you want to delete your account?');">Delete Account</a> -->
+							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}">
+								{% csrf_token %}
+								<button type="submit" class="btn btn-danger ms-2 mb-2 rounded-3" onclick="return confirm('Are you sure you want to delete your account?');">Delete Account</button>
+							</form>
 						</div>
 						<hr>
 						<h4 class="text-center font-roboto mb-4">Pong Stats</h4>
@@ -63,23 +69,23 @@
 						<form id="add-friend-form" method="POST" action="{% url 'profile' %}">
 							{% csrf_token %}
 							<div class="input-group mb-3">
-								<input id="receiver_email" type="email" name="receiver_email" class="form-control" placeholder="Enter friend's email" required>
-								<button type="submit" class="btn btn-secondary">Add Friend</button>
+								<input id="receiver_email" type="email" name="receiver_email" class="form-control rounded-start-3" placeholder="Enter friend's email" required>
+								<button type="submit" class="btn btn-secondary rounded-end-3">Add Friend</button>
 							</div>
 						</form>
 						{% if user.friend_list.friends.all %}
 						<ul class="list-group">
 							{% for friend in user.friend_list.friends.all %}
-								<li class="list-group-item d-flex justify-content-between align-items-center">
+								<li class="list-group-item d-flex justify-content-between align-items-center rounded-3">
 									<div>
 										<img src="{{ friend.avatar.url }}" alt="{{ friend.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
 										<strong>{{ friend.display_name }}</strong>
 									</div>
 									<div>
-										<span class="badge {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
+										<span class="badge rounded-3 {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
 										<form method="POST" action="/auth/remove_friend/{{ friend.id }}/" class="d-inline remove-friend-form">
 											{% csrf_token %}
-											<button type="submit" class="btn btn-light btn-sm">Remove</button>
+											<button type="submit" class="btn btn-light btn-sm rounded-3">Remove</button>
 										</form>
 									</div>
 								</li>
@@ -103,7 +109,7 @@
 						{% if pending_requests %}
 							<ul class="list-group mb-4">
 								{% for request in pending_requests %}
-									<li class="list-group-item d-flex justify-content-between align-items-center">
+									<li class="list-group-item d-flex justify-content-between align-items-center rounded-3">
 										<div>
 											<img src="{{ request.sender.avatar.url }}" alt="{{ request.sender.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
 											<strong>{{ request.sender.display_name }}</strong>
@@ -111,11 +117,11 @@
 										<div>
 											<form method="POST" action="/auth/accept_friend_request/{{ request.id }}/" class="d-inline accept-friend-request">
 												{% csrf_token %}
-												<button type="submit" class="btn btn-secondary btn-sm">Accept</button>
+												<button type="submit" class="btn btn-secondary btn-sm rounded-3">Accept</button>
 											</form>
 											<form method="POST" action="/auth/refuse_friend_request/{{ request.id }}/" class="d-inline refuse-friend-request">
 												{% csrf_token %}
-												<button type="submit" class="btn btn-light btn-sm">Decline</button>
+												<button type="submit" class="btn btn-light btn-sm rounded-3">Decline</button>
 											</form>
 										</div>
 									</li>
@@ -129,16 +135,16 @@
 						{% if sent_requests %}
 							<ul class="list-group">
 								{% for request in sent_requests %}
-									<li class="list-group-item d-flex justify-content-between align-items-center">
+									<li class="list-group-item d-flex justify-content-between align-items-center rounded-3">
 										<div>
 											<img src="{{ request.receiver.avatar.url }}" alt="{{ request.receiver.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
 											<strong>{{ request.receiver.display_name }}</strong>
 										</div>
 										<div>
-											<span class="badge bg-secondary text-black p-2">Pending...</span>
+											<span class="badge bg-secondary text-black p-2 rounded-3">Pending...</span>
 											<form method="POST" action="/auth/cancel_friend_request/{{ request.id }}/" class="d-inline cancel-friend-request">
 												{% csrf_token %}
-												<button type="submit" class="btn btn-light btn-sm">Cancel</button>
+												<button type="submit" class="btn btn-light btn-sm rounded-3">Cancel</button>
 											</form>
 										</div>
 									</li>
@@ -154,4 +160,3 @@
 		</div>
 	</div>
 </section>
-

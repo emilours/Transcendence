@@ -14,7 +14,7 @@ body.high-contrast {
 }
 
 /* Navbar and buttons in high contrast */
-.high-contrast .navbar, .high-contrast .btn {
+.high-contrast .navbar, .high-contrast .btn, .high-contrast span {
 	background-color: #222;
 	color: #fff;
 	border: 1px solid #fff;

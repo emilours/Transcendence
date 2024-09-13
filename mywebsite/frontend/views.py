@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 def index(request):
 	redirect('home')
@@ -13,8 +14,11 @@ def home(request):
 	return render(request, 'base.html')
 
 def login(request):
+	context = {
+		'api_42_auth_url': settings.API_42_AUTH_URL
+	}
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('login.html', request=request)
+		html = render_to_string('login.html', context, request=request)
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
@@ -53,6 +57,13 @@ def edit_profile(request):
 		html = render_to_string('edit_profile.html', {'predefined_avatars': predefined_avatars}, request=request)
 		return JsonResponse({'html': html})
 	return render(request, 'base.html', {'predefined_avatars': predefined_avatars})
+
+@login_required
+def edit_password(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('edit_password.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
 
 @login_required
 def games(request):

@@ -23,9 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const toggleContrastBtn = document.getElementById('toggle-contrast');
 	let isHighContrast = localStorage.getItem('highContrast') === 'true';
-	// if (isHighContrast) {
-	// 	document.body.classList.add('high-contrast');
-	// }
 
 	toggleContrastBtn.addEventListener('click', function () {
 		document.body.classList.toggle('high-contrast');
@@ -106,6 +103,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				await initializeGame();
 			} else if (url.includes('pong')) {
 				await loadResource('/static/js/pong.js', 'script');
+			} else if (url.includes('signup')) {
+				attachPolicyListeners();
 			}
 
 			attachListeners();
@@ -126,7 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-login', url: '/login/' },
 			{ id: 'navbar-profile', url: '/profile/' },
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
+			{ id: 'navbar-games', url: '/games/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
+			{ id: 'edit-password', url: '/edit_password/' },
 			{ id: 'games', url: '/games/' },
 			{ id: 'invaders', url: '/invaders/' },
 			{ id: 'pong', url: '/pong/' },
@@ -147,7 +148,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'login-form', url: '/auth/signin/' },
 			{ id: 'logout-form', url: '/auth/signout/' },
 			{ id: 'add-friend-form', url: '/auth/send_friend_request/' },
-			{ id: 'edit-profile-form', url: '/auth/update_profile/' }
+			{ id: 'edit-profile-form', url: '/auth/update_profile/' },
+			{ id: 'edit-password-form', url: '/auth/update_password/' },
+			{ id: 'delete-account-form', url: '/auth/delete_profile/' },
 		];
 
 		forms.forEach(({ id, url }) => {
@@ -166,11 +169,17 @@ document.addEventListener("DOMContentLoaded", () => {
 							},
 						});
 						const data = await response.json();
-						if (data.error) {
+						if (data.errors) {
+							let errorMessage = '';
+							for (const [field, messages] of Object.entries(data.errors)) {
+								errorMessage += `${messages.join(', ')}\n`;
+							}
+							alert(errorMessage);
+						} else if (data.error) {
 							alert(data.error);
 						} else {
 							// alert(data.message);
-							if (id === 'logout-form') {
+							if (id === 'logout-form' || id === 'delete-account-form') {
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
@@ -179,7 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
 							} else {
 								loadContent('/profile/', true);
 							}
-
 						}
 					} catch (error) {
 						console.error('Error:', error);
@@ -218,6 +226,26 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 		});
 	};
+
+
+	const attachPolicyListeners = () => {
+		const privacyPolicyModal = new bootstrap.Modal(document.getElementById('privacyPolicyModal'));
+		privacyPolicyModal.show();
+		const acceptPrivacyPolicyBtn = document.getElementById('accept-privacy-policy');
+		const privacyPolicyAgreement = document.getElementById('privacyPolicyAgreement');
+		const signupSubmitBtn = document.getElementById('signup-submit');
+
+		if (acceptPrivacyPolicyBtn) {
+			acceptPrivacyPolicyBtn.addEventListener('click', () => {
+				if (privacyPolicyAgreement.checked) {
+					privacyPolicyModal.hide();
+					signupSubmitBtn.disabled = false;
+				} else {
+					alert('You must agree to the privacy policy to proceed.');
+				}
+			});
+		}
+	}
 
 	function getCookie(name) {
 		let cookieValue = null;

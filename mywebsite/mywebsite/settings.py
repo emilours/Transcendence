@@ -193,6 +193,7 @@ AUTH_USER_MODEL = 'frontend.CustomUser'
 FORTYTWO_AUTHORIZATION_BASE_URL = 'https://api.intra.42.fr/oauth/authorize'
 FORTYTWO_TOKEN_URL = 'https://api.intra.42.fr/v2/oauth/token'
 FORTYTWO_USER_URL = 'https://api.intra.42.fr/v2/me'
+API_42_AUTH_URL = os.environ.get('API_42_AUTH_URL')
 
 # API 42 AUTHENTIFICATION
 FORTYTWO_CLIENT_ID = os.getenv('CLIENT_ID')
