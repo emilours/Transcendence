@@ -31,7 +31,7 @@ export function initializeGame(userName) {
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
 				tournamentSetup(startGame, game);
-			}),
+			})
 			// createButton('LEADERBOARD', () => {
 			// 	menuScreen.remove();
 			// 	displayLeaderboard();
