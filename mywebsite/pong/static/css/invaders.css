@@ -1,0 +1,142 @@
+.invaders-container, html {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* margin-top: 15px; */
+	height: 100%;
+	width: 100%;
+	background: rgba(0, 0, 0, 0);
+	font-family: 'Press Start 2P';
+}
+
+canvas {
+	box-shadow: 20px 10px 50px black;
+	background-image: url("../img/background.gif");
+	background-size: 700px 700px;
+	background-position: center;
+	border-radius: 10px;
+	width: 700px;
+	height: 700px;
+	display: block;
+}
+
+.menu {
+	font-size: 1em;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 40px;
+	text-align: center;
+	color: white;
+	max-width: 650px;
+	max-height: 650px;
+	background-color: rgba(0, 0, 0, 0.5);
+	border-radius: 10px;
+}
+
+h1 {
+	margin: 20px 0 50px;
+	font-size: 4em;
+	color: white;
+	line-height: 1.5;
+}
+
+h2 {
+	margin: 0;
+	margin-bottom: 20px;
+	font-size: 2em;
+	color: #ffce08;
+}
+
+h3 {
+	margin: 10px;
+	font-size: 1.2em;
+	color: white;
+}
+
+h4 {
+	font-size: 0.8em;
+	color: white;
+	line-height: 0.2;
+}
+
+p {
+	margin: 0;
+	font-size: 0.7em;
+}
+
+.button {
+	margin: 10px;
+	padding: 10px;
+	padding-bottom: 7px;
+	font-size: 0.7em;
+	cursor: pointer;
+	background-color: #ffce08;
+	color: #06061d;
+	border: none;
+	border-radius: 0;
+}
+
+.button:hover {
+	background-color: #ff0000;
+	color: white;
+}
+
+.button.green:hover {
+	background-color: #0ccf0c;
+}
+
+.button-vertical {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+}
+
+.button-horizontal {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+input {
+	margin: 7px;
+	padding: 2px;
+	font-size: 0.8em;
+	border-radius: 2px;
+	border-style: solid;
+}
+
+.player-info {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 50px;
+}
+
+.list {
+	display: flex;
+	align-items: left;
+	text-align: left;
+}
+
+.list-leader {
+	display: flex;
+	align-items: left;
+	flex-direction: column;
+	text-align: center;
+	gap: 20px;
+}
+
+.arrow {
+	margin: 20px;
+	font-size: 2em;
+	color: #ffce08;
+	cursor: pointer;
+}
+
+.arrow:hover {
+	color: #ff0000;
+}

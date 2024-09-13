@@ -1,4 +1,5 @@
-import { initializeGame } from '/static/js/invaders.js';
+import { initInvaders } from '/static/js/invaders.js';
+import { initPong } from '/static/js/pong2.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Font size adjustment
@@ -91,9 +92,12 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initializeGame(data.test_name);
+				await initInvaders(data.test_name);
 			} else if (url.includes('pong')) {
-				await loadResource('/static/js/pong.js', 'script');
+				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
+				await loadResource('/static/css/pong.css', 'link');
+				await loadResource('/static/js/pong2.js', 'script');
+				await initPong(data.test_name);
 			}
 
 			attachListeners();

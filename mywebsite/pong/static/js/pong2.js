@@ -6,14 +6,14 @@ import { Color } from "./Colors.js";
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import { tournamentSetup } from "./Tournament.js";
 
-export function initInvaders(userName) {
-
+export function initPong(userName) {
+	console.log('Pong game initialized!');
 	const game = new Canvas(userName);
 	let mode;
 	game.ctx.drawImage(game.gifCanvas, 0, 0, game.canvas.width, game.canvas.height);
 
 	const menuScreen = createElement('div', { className: 'menu' },
-		createElement('h1', { innerText: 'PUSHEEN\nINVADERS' }),
+		createElement('h1', { innerText: 'PUSHEEN\nPONG' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
 		createElement('div', { className: 'button-vertical' },
 			createButton('ARCADE 1P', () => {
@@ -75,7 +75,7 @@ export function initInvaders(userName) {
 
 		const backButton = createButton('MENU', () => {
 			controlsScreen.remove();
-			initInvaders(game.userName);
+			initPong(game.userName);
 		});
 
 		const buttonContainer = createElement('div', { className: 'button-horizontal' }, backButton, startButton);
@@ -211,7 +211,7 @@ export function initInvaders(userName) {
 						createButton('MENU', () => {
 							gameOverScreen.remove();
 							resetGame(game);
-							initInvaders(game.userName);
+							initPong(game.userName);
 						}
 					));
 					appendChildren(gameOverScreen, titleText, scoreText, actionButton);
@@ -241,7 +241,7 @@ export function initInvaders(userName) {
 							actionButton = createButton('BACK TO MENU', () => {
 								gameOverScreen.remove();
 								resetGame(game);
-								initInvaders(game.userName);
+								initPong(game.userName);
 							});
 							appendChildren(gameOverScreen, titleText, winnerName, scoreText, actionButton);
 						}
@@ -349,7 +349,7 @@ export function initInvaders(userName) {
 
 		const backButton = createButton('MENU', () => {
 			leaderboardScreen.remove();
-			initInvaders(game.userName);
+			initPong(game.userName);
 		});
 		leaderboardScreen.appendChild(backButton);
 		document.querySelector('.invaders-container').appendChild(leaderboardScreen);
@@ -365,4 +365,4 @@ export function resetGame(game) {
 	game.enemyBulletController = null;
 }
 
-// initializeGame();
+// initPong();
