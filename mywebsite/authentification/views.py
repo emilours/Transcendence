@@ -391,8 +391,71 @@ def update_password(request):
 # # ===                                                      MATCH HISTORY                                                                                     ===
 # # ================================================================================================================================================================
 
+# @login_required
+# def user_match_history(request, display_name):
+
+#     try:
+#         user = CustomUser.objects.get(display_name=display_name)
+#     except CustomUser.DoesNotExist:
+#         return JsonResponse({'error': 'User not found'}, status=404)
+
+#     user = get_object_or_404(CustomUser, display_name=display_name)
+
+#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+
+#     game_data = {}
+
+#     for game in games:
+#         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
+
+#         total_matches = player_matches.count()
+#         best_score = player_matches.aggregate(Max('score'))['score__max']
+
+#         if game.name != 'Invaders':
+#             wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
+#             win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+#         else:
+#             wins = None
+#             win_ratio = None
+
+#         matches_list = [
+#             {
+#                 'game': match.match.game.name,
+#                 'score': match.score,
+#                 'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
+#                 # 'is_winner': match.is_winner if 'is_winner' in match.__class__._meta.get_fields() else None,
+#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
+#                 'participants': [player.display_name for player in match.match.players.all()]
+#             }
+#             for match in player_matches
+#         ]
+
+#         game_data[game.name] = {
+#             'user_profile': {
+#                 'display_name': user.display_name,
+#                 'total_matches': total_matches,
+#                 # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
+#                 **({
+#                     'wins': wins,
+#                     'win_ratio': win_ratio
+#                 } if game.name != 'Invaders' else {}),
+#                 'best_score': best_score
+#             },
+#             'match_history': matches_list
+#         }
+
+#     return JsonResponse(game_data)
+
+from django.utils.timezone import localtime
+
 @login_required
 def user_match_history(request, display_name):
+
+    try:
+        user = CustomUser.objects.get(display_name=display_name)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
     user = get_object_or_404(CustomUser, display_name=display_name)
 
     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
@@ -403,18 +466,25 @@ def user_match_history(request, display_name):
         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
 
         total_matches = player_matches.count()
-        wins = player_matches.filter(is_winner=True).count() if 'is_winner' in player_matches.model._meta.get_fields() else 0
 
-        best_score = player_matches.aggregate(Max('score'))['score__max']
+        # Trouver le meilleur score et la date associée
+        best_score_match = player_matches.order_by('-score').first()  # Récupère le match avec le meilleur score
+        best_score = best_score_match.score if best_score_match else None
+        best_score_date = localtime(best_score_match.match.date).strftime('%Y-%m-%d %H:%M') if best_score_match else None
 
-        win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+        if game.name != 'Invaders':
+            wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
+            win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+        else:
+            wins = None
+            win_ratio = None
 
         matches_list = [
             {
                 'game': match.match.game.name,
                 'score': match.score,
-                'is_winner': match.is_winner if 'is_winner' in match.__class__._meta.get_fields() else None,
-                'date': match.match.date,
+                'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
+                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
                 'participants': [player.display_name for player in match.match.players.all()]
             }
             for match in player_matches
@@ -424,17 +494,27 @@ def user_match_history(request, display_name):
             'user_profile': {
                 'display_name': user.display_name,
                 'total_matches': total_matches,
-                'wins': wins,
-                'win_ratio': win_ratio,
-                'best_score': best_score
+                # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
+                **({
+                    'wins': wins,
+                    'win_ratio': win_ratio
+                } if game.name != 'Invaders' else {}),
+                'best_score': best_score,
+                'best_score_date': best_score_date  # Ajout de la date du meilleur score
             },
-            'match_history': matches_list
+            # 'match_history': matches_list (--> afficher les derniers match ici ?)
         }
 
     return JsonResponse(game_data)
 
+
 @login_required
 def recent_matches(request, display_name):
+    try:
+        user = CustomUser.objects.get(display_name=display_name)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
     user = get_object_or_404(CustomUser, display_name=display_name)
 
     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
@@ -448,7 +528,7 @@ def recent_matches(request, display_name):
             {
                 'game': match.match.game.name,
                 'score': match.score,
-                'date': match.match.date,
+                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
                 'participants': [player.display_name for player in match.match.players.all()]
             }
             for match in recent_matches
@@ -465,8 +545,13 @@ def recent_matches(request, display_name):
 
 @login_required
 def best_matches(request, display_name):
-    user = get_object_or_404(CustomUser, display_name=display_name)
+    try:
+        user = CustomUser.objects.get(display_name=display_name)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
 
+    user = get_object_or_404(CustomUser, display_name=display_name)
+    
     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
 
     game_data = {}
@@ -478,7 +563,7 @@ def best_matches(request, display_name):
             {
                 'game': match.match.game.name,
                 'score': match.score,
-                'date': match.match.date,
+                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
                 'participants': [player.display_name for player in match.match.players.all()]
             }
             for match in best_matches
