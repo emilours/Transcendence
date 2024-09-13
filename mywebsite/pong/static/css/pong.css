@@ -1,23 +1,22 @@
-.invaders-container, html {
+.pong-container, html {
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	/* margin-top: 15px; */
-	height: 100%;
-	width: 100%;
+	margin-top: 20px;
+	margin-bottom: 15px;
 	background: rgba(0, 0, 0, 0);
-	font-family: 'Press Start 2P';
+	font-family: 'Orbitron', sans-serif;
 }
 
 canvas {
 	box-shadow: 20px 10px 50px black;
-	background-image: url("../img/background.gif");
-	background-size: 700px 700px;
+	background-image: url("../img/background2.gif");
+	background-size: 900px 800px;
 	background-position: center;
 	border-radius: 10px;
-	width: 700px;
-	height: 700px;
+	width: 900px;
+	height: 800px;
 	display: block;
 }
 
@@ -30,57 +29,59 @@ canvas {
 	padding: 40px;
 	text-align: center;
 	color: white;
-	max-width: 650px;
-	max-height: 650px;
-	background-color: rgba(0, 0, 0, 0.5);
-	border-radius: 10px;
+	max-width: 750px;
+	max-height: 700px;
+	background-color: rgba(0, 0, 0, 0.7);
 }
 
 h1 {
 	margin: 20px 0 50px;
-	font-size: 4em;
-	color: white;
-	line-height: 1.5;
+	font-size: 5em;
+	line-height: 1;
+	background: linear-gradient(90deg, #5fbfff, #a527be);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
 }
+
 
 h2 {
 	margin: 0;
 	margin-bottom: 20px;
-	font-size: 2em;
-	color: #ffce08;
+	font-size: 3em;
+	color: #a527be;
 }
 
 h3 {
 	margin: 10px;
-	font-size: 1.2em;
+	font-size: 1.5em;
 	color: white;
 }
 
 h4 {
-	font-size: 0.8em;
+	font-size: 2.5em;
 	color: white;
 	line-height: 0.2;
 }
 
 p {
 	margin: 0;
-	font-size: 0.7em;
+	font-size: 1em;
 }
 
 .button {
 	margin: 10px;
 	padding: 10px;
 	padding-bottom: 7px;
-	font-size: 0.7em;
+	font-size: 1.2em;
 	cursor: pointer;
-	background-color: #ffce08;
+	background-color: #5fbfff;
 	color: #06061d;
 	border: none;
 	border-radius: 0;
 }
 
 .button:hover {
-	background-color: #ff0000;
+	background-color: #a527be;
 	color: white;
 }
 

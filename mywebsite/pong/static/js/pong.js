@@ -35,7 +35,7 @@ function DisconnectWebsocket()
 	console.log("Connection closed!");
 }
 
-function ConnectWebsocket()
+export function ConnectWebsocket()
 {
 	// WEBSOCKET
 	const url = `ws://${window.location.host}/ws/pong-socket-server/`;
@@ -79,7 +79,7 @@ function onWindowResize()
 	console.log("width: " + width + " height: " + height);
 }
 
-function StartGame()
+export function StartGame()
 {
 	// TODO: I think i should load everything (all font, textures...) before initializing the rest
 	Load();
@@ -149,7 +149,7 @@ function createScoreText()
 		bevelOffset: 0,
 		bevelSegments: 5
 	});
-	
+
 	const scoreMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 	scoreMesh = new THREE.Mesh(scoreGeometry, scoreMaterial);
 
@@ -171,7 +171,7 @@ function createScoreText()
 		const gameOverMaterial = new THREE.MeshBasicMaterial({color: 0xbd4500});
 		const gameOverMesh = new THREE.Mesh(gameOverGeometry, gameOverMaterial);
 
-		
+
 		gameOverGeometry.computeBoundingBox();
 		const gameOverBB = gameOverGeometry.boundingBox;
 		const gameOverSize = new THREE.Vector3();
