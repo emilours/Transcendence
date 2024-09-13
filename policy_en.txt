@@ -37,7 +37,6 @@ Under the GDPR, you have the following rights regarding your personal data:
 Access: You can request access to your personal data.
 Rectification: You can request the correction of inaccurate data.
 Erasure: You can request the deletion of your data if it is no longer necessary for the purposes it was collected for.
-Portability: You can request to receive your data in a structured, commonly used, and machine-readable format. //NOOOO
 Objection: You have the right to object to certain types of processing, including for direct marketing purposes.
 To exercise your rights, please contact us at pusheen_arcade@contact.com.
 
@@ -50,5 +49,5 @@ By choosing to browse our site, you acknowledge that you have read and accepted 
 9. Changes to the Privacy Policy
 We reserve the right to modify this Privacy Policy at any time. Any changes will be posted on this page and will take effect immediately. We encourage you to regularly review this page to stay informed of any updates.
 
-Last updated: [Date]
+Last updated: September 13rd 2024
 
