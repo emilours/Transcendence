@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
+	'rest_framework',
+	'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'frontend',
     'authentification',
     'invaders',
@@ -74,7 +76,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -142,18 +144,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -165,7 +164,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # STATICFILES_DIRS = [
 #     os.path.join(BASE_DIR, "static"),
@@ -189,3 +188,23 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Custom user model
 AUTH_USER_MODEL = 'frontend.CustomUser'
+
+# Configuration de l'API 42
+FORTYTWO_AUTHORIZATION_BASE_URL = 'https://api.intra.42.fr/oauth/authorize'
+FORTYTWO_TOKEN_URL = 'https://api.intra.42.fr/v2/oauth/token'
+FORTYTWO_USER_URL = 'https://api.intra.42.fr/v2/me'
+
+# API 42 AUTHENTIFICATION
+FORTYTWO_CLIENT_ID = os.getenv('CLIENT_ID')
+FORTYTWO_CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+FORTYTWO_REDIRECT_URI = os.getenv('API_42_REDIRECT_URI')
+
+# Configuration de REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}

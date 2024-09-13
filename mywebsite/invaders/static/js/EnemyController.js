@@ -121,7 +121,7 @@ export default class EnemyController {
 			this.moveDownTimer = this.moveDownTimerDefault;
 			if (this.mode === 'arcade') {
 				this.velocity += 0.02;
-				console.log('Speed up! velocity = ' + this.velocity.toFixed(2));
+				// console.log('Speed up! velocity = ' + this.velocity.toFixed(2));
 				this.addNewEnemyRow();
 			}
 		}

@@ -1,13 +1,13 @@
 import Player from './Player.js';
 import { createElement, appendChildren, createButton, createButtonGreen } from './GameUtils.js';
-import { resetGame, drawMenu, startGame } from './invaders.js';
-// import { resetGame, drawMenu, startGame } from './frontend.js';
-
+import { resetGame, initInvaders } from './invaders.js';
+import { Color } from "./Colors.js";
+import { createPlayerContainer, shuffleArray } from './GameUtils.js';
 
 export default class Tournament {
 
-	constructor(canvas, playerList) {
-		this.canvas = canvas;
+	constructor(game, playerList, startGame) {
+		this.canvas = game.canvas;
 		this.currentRound = [];
 		this.nextRound = [];
 		this.isOver = false;
@@ -15,9 +15,10 @@ export default class Tournament {
 		this.nextPlayer1 = null;
 		this.nextPlayer2 = null;
 		this.round = 1;
+		this.startGame = startGame;
 
 		for (let [id, name] of playerList)
-			this.currentRound.push(new Player(canvas, name, id));
+			this.currentRound.push(new Player(this.canvas, name, id));
 		this.updateNextPlayers();
 	}
 
@@ -56,11 +57,11 @@ export default class Tournament {
 				style: `color: ${this.nextRound[0].color}; margin-bottom: 20px;` }),
 			createButton('MENU', () => {
 				winnerScreen.remove();
-				resetGame();
-				drawMenu();
+				resetGame(this.canvas);
+				initInvaders(game.userName);
 			}),
 		);
-		document.body.appendChild(winnerScreen);
+		document.querySelector('.invaders-container').appendChild(winnerScreen);
 	}
 
 	showRoundMatches() {
@@ -88,11 +89,11 @@ export default class Tournament {
 				tieScreen.remove();
 				this.nextPlayer1.reset();
 				this.nextPlayer2.reset();
-				resetGame();
-				startGame('tournament', this.nextPlayer1, this.nextPlayer2, this);
+				resetGame(this.canvas);
+				this.startGame('tournament', this.nextPlayer1, this.nextPlayer2, this);
 			})
 		);
-		document.body.appendChild(tieScreen);
+		document.querySelector('.invaders-container').appendChild(tieScreen);
 	}
 
 	onMatchEnd(player1, player2) {
@@ -123,8 +124,8 @@ export default class Tournament {
 				createElement('div', { className: 'button-horizontal' },
 					createButton('MENU', () => {
 						winnerScreen.remove();
-						resetGame();
-						drawMenu();
+						resetGame(this.canvas);
+						initInvaders(game.userName);
 					}),
 					createButtonGreen('NEXT', () => {
 						winnerScreen.remove();
@@ -133,7 +134,7 @@ export default class Tournament {
 					})
 				)
 			);
-			document.body.appendChild(winnerScreen);
+			document.querySelector('.invaders-container').appendChild(winnerScreen);
 		}
 	}
 
@@ -160,12 +161,63 @@ export default class Tournament {
 				),
 				createButtonGreen('START MATCH', () => {
 					tournamentStatusScreen.remove();
-					startGame('tournament', this.nextPlayer1, this.nextPlayer2,
+					this.startGame('tournament', this.nextPlayer1, this.nextPlayer2,
 						this);
 				})
 			);
 			tournamentStatusScreen.appendChild(nextMatch);
-			document.body.appendChild(tournamentStatusScreen);
+			document.querySelector('.invaders-container').appendChild(tournamentStatusScreen);
 		}
 	}
 }
+
+export function tournamentSetup(startGame, game) {
+	const playerList = new Array();
+	const playerListContainer = createElement('div', { className: 'player-list' });
+
+	const tournamentScreen = createElement('div', { className: 'menu' },
+		createElement('h2', { innerText: 'Tournament' }),
+		createElement('h3', { innerText: 'SELECT A SIZE' }),
+		createButton('4 PLAYER', () => setupPlayers(4)),
+		createButton('8 PLAYERS', () => setupPlayers(8)),
+		playerListContainer,
+		createElement('div', { className: 'button-horizontal' },
+			createButton('MENU', () => {
+				tournamentScreen.remove();
+				initInvaders(game.userName);
+			}),
+			createButtonGreen('CREATE', () => {
+				if (playerList.length === 4 || playerList.length === 8) {
+					tournamentScreen.style.display = 'none';
+					shuffleArray(playerList);
+					createTournament(new Tournament(game, playerList, startGame));
+				} else {
+					alertBox.style.color = 'red';
+					setTimeout(() => {
+						alertBox.style.color = 'transparent';}, 3000);
+				}
+			})
+		)
+	);
+	const alertBox = createElement('div', { className: 'p',
+		innerText: 'Select a size before continue!',
+		style: 'color: transparent; font-size: 0.8em;' });
+	tournamentScreen.appendChild(alertBox);
+	document.querySelector('.invaders-container').appendChild(tournamentScreen);
+
+	function setupPlayers(num) {
+		playerListContainer.innerHTML = '';
+		playerList.length = 0;
+
+		for (let i = 1; i <= num; i++) {
+			const color = Color[`player${i}`];
+			const playerContainer = createPlayerContainer(i, color, playerList);
+			playerListContainer.appendChild(playerContainer);
+		}
+	}
+
+	function createTournament(tournament) {
+		tournament.playNextMatch();
+	}
+}
+

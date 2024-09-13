@@ -1,10 +1,10 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import * as THREE from './three.module.js';
+import { OrbitControls } from './OrbitControls.js';
+import { TextGeometry } from './TextGeometry.js';
+import { FontLoader } from './FontLoader.js';
 
-export function PongGame()
-{
+// export function PongGame()
+// {
 
 	// standard global variables
 	var scene, camera, renderer, controls, loader;
@@ -25,21 +25,14 @@ export function PongGame()
 
 
 
-	ConnectWebsocket();
+	// ConnectWebsocket();
 
-
-	// function DisconnectWebsocket()
-	// {
-	// 	pongSocket.close(1000, "Quit Button Pressed");
-	// 	console.log("Connection closed!");
-	// }
-
-	function ConnectWebsocket()
+	export function ConnectWebsocket()
 	{
-		// WEBSOCKET
-		const url = `ws://${window.location.host}/ws/pong-socket-server/`;
-		console.log("Url: " + url);
-		pongSocket = new WebSocket(url);
+	// WEBSOCKET
+	const url = `ws://${window.location.host}/ws/pong-socket-server/`;
+	console.log("Url: " + url);
+	pongSocket = new WebSocket(url);
 
 		pongSocket.onmessage = function(e){
 			let data = JSON.parse(e.data);
@@ -55,12 +48,13 @@ export function PongGame()
 			console.log('CLIENT Disconnect!');
 		}
 
-		// beforeunload or unload
-		window.addEventListener('beforeunload', function() {
-			if (pongSocket) {
-				pongSocket.close();
-			}
-		});
+	}
+
+	export function CloseWebsocket() {
+		if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
+			pongSocket.close(1000, "Closing normally");
+			console.log("WebSocket closed");
+		}
 	}
 
 
@@ -85,14 +79,14 @@ export function PongGame()
 		console.log("width: " + width + " height: " + height);
 	}
 
-	function StartGame()
-	{
-		// TODO: I think i should load everything (all font, textures...) before initializing the rest
-		Load();
-		Init();
-		pongSocket.onmessage = function(e){
-			let data = JSON.parse(e.data);
-			console.log('Data:', data);
+function StartGame()
+{
+	// TODO: I think i should load everything (all font, textures...) before initializing the rest
+	Load();
+	Init();
+	pongSocket.onmessage = function(e){
+		let data = JSON.parse(e.data);
+		console.log('Data:', data);
 
 			if (data.ballPosition && data.ballVelocity && typeof data.player1Pos !== 'undefined'
 				&& typeof data.player2Pos !== 'undefined' && typeof data.player1Score !== 'undefined'
@@ -226,12 +220,12 @@ export function PongGame()
 
 
 		// RENDERER
-		renderer = new THREE.WebGLRenderer({antialias: true, canvas: gameCanvas});
+		renderer = new THREE.WebGLRenderer({antialias: true, canvas: game});
 		renderer.setPixelRatio( window.devicePixelRatio );
 		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 		renderer.outputEncoding = THREE.sRGBEncoding;
 		// renderer.setClearColor(0x1c1c1c, 1); // same as scene.background
-		const container = document.getElementById('pongContainer');
+		const container = document.getElementById('pong-container-id');
 		container.appendChild(renderer.domElement);
 		// renderer.setAnimationLoop(animate);
 
@@ -439,7 +433,7 @@ export function PongGame()
 	{
 		renderer.render(scene, camera);
 	}
-}
+// }
+
 
 // PongGame();
-

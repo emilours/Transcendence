@@ -3,45 +3,45 @@
 	<div class="container mt-5">
 		<div class="row justify-content-center">
 			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
+				<div class="card shadow rounded-4">
 					<div class="card-body p-5">
 						<h3 class="card-title text-center mb-4 font-potta">Sign Up</h3>
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
 							{% csrf_token %}
 							<div class="mb-3">
 								<label for="display_name" class="form-label">Username</label>
-								<input type="text" class="form-control" id="display_name" name="display_name" required>
+								<input type="text" class="form-control" id="display_name" name="display_name" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="firstName" class="form-label">First Name</label>
-								<input type="text" class="form-control" id="firstName" name="firstname" required>
+								<input type="text" class="form-control" id="firstName" name="firstname" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="lastName" class="form-label">Last Name</label>
-								<input type="text" class="form-control" id="lastName" name="lastname" required>
+								<input type="text" class="form-control" id="lastName" name="lastname" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="email" class="form-label">Email Address</label>
-								<input type="email" class="form-control" id="email" name="email" required>
+								<input type="email" class="form-control" id="email" name="email" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="password" class="form-label">Password</label>
-								<input type="password" class="form-control" id="password" name="password1" required>
+								<input type="password" class="form-control" id="password" name="password1" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="confirmPassword" class="form-label">Confirm Password</label>
-								<input type="password" class="form-control" id="confirmPassword" name="password2" required>
+								<input type="password" class="form-control" id="confirmPassword" name="password2" maxlength="100" required>
 							</div>
 							<div class="mb-3">
 								<label for="avatar" class="form-label">Avatar (optional)</label>
 								<input type="file" class="form-control" id="avatar" name="avatar">
 							</div>
-							<button type="submit" class="btn btn-primary w-100">Sign Up</button>
+							<button type="submit" class="btn btn-outline-primary w-100">Sign Up</button>
 						</form>
 					</div>
 				</div>
 				<div class="text-center mt-3">
-					<p>Already have an account? <a href="#" class="text-decoration-none" id="login">Login</a> </p>
+					<p>Already have an account? <a href="#" class="text-decoration-none" id="login-from-signup">Login</a> </p>
 				</div>
 			</div>
 		</div>

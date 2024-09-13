@@ -1,23 +1,23 @@
 {% load static %}
 <section class="d-flex align-items-center justify-content-center mt-5">
-	<div class="container">
-		<div class="row justify-content-center mt-2">
-			<!-- Profil utilisateur -->
-			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
+	<div class="container mb-5">
+		<div class="row justify-content-center mt-2 g-3">
+			<div class="col-12 col-lg-6 col-xxl-4">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
 						<h2>Profile</h2>
 					</div>
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="../{{ user.avatar }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
+							<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 						</div>
 						<h3 class="card-title text-center mb-4 font-potta">{{ user.display_name }}</h3>
 						<p class="text-center mb-4"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
 						<p class="text-center mb-4"><strong>Email:</strong> {{ user.email }}</p>
-
+						<div class="text-center">
+							<a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+						</div>
 						<hr>
-
 						<h4 class="text-center font-roboto mb-4">Pong Stats</h4>
 						<div class="d-flex justify-content-around mb-4">
 							<div>
@@ -33,9 +33,7 @@
 								<p class="text-center">Not defined in model</p>
 							</div>
 						</div>
-
 						<hr>
-
 						<h4 class="text-center font-roboto mb-4">Invaders Stats</h4>
 						<div class="d-flex justify-content-around mb-4">
 							<div>
@@ -51,98 +49,109 @@
 								<p class="text-center">Not defined in model</p>
 							</div>
 						</div>
+
 					</div>
 				</div>
 			</div>
 
-			<!-- Liste d'amis -->
-			<div class="col-12 col-md-8 col-lg-6">
-				<div class="card shadow">
-					<div class="card-header text-center bg-primary font-potta">
+			<div class="col-12 col-lg-6 col-xxl-4">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
 						<h2>Friends</h2>
 					</div>
-					<div class="d-flex justify-content-around mb-4">
-						<div>
-							<h5 class="text-center">Sent</h5>
-							<p class="text-center">{{ user.sent_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Received</h5>
-							<p class="text-center">{{ user.received_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Accepted</h5>
-							<p class="text-center">{{ user.accepted_requests_count }}</p>
-						</div>
-						<div>
-							<h5 class="text-center">Declined</h5>
-							<p class="text-center">{{ user.declined_requests_count }}</p>
-						</div>
-					</div>
 					<div class="card-body p-4">
-						<!-- Formulaire pour ajouter des amis -->
 						<form id="add-friend-form" method="POST" action="{% url 'profile' %}">
 							{% csrf_token %}
 							<div class="input-group mb-3">
 								<input id="receiver_email" type="email" name="receiver_email" class="form-control" placeholder="Enter friend's email" required>
-								<button type="submit" class="btn btn-primary">Add Friend</button>
+								<button type="submit" class="btn btn-secondary">Add Friend</button>
 							</div>
 						</form>
-
-						<!-- Liste des amis existants -->
 						{% if user.friend_list.friends.all %}
-							<ul class="list-group">
-								{% for friend in user.friend_list.friends.all %}
-									<li class="list-group-item d-flex justify-content-between align-items-center">
-										<div>
-											<img src="../{{ friend.avatar }}" alt="{{ friend.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
-											<strong>{{ friend.display_name }}</strong>
-										</div>
-										<span class="badge {% if friend.is_active %}bg-success{% else %}bg-secondary{% endif %}">{{ friend.is_active|yesno:"Online,Offline" }}</span>
-									</li>
-								{% endfor %}
-							</ul>
-						{% else %}
-							<p class="text-center">You have no friends added yet.</p>
-						{% endif %}
+						<ul class="list-group">
+							{% for friend in user.friend_list.friends.all %}
+								<li class="list-group-item d-flex justify-content-between align-items-center">
+									<div>
+										<img src="{{ friend.avatar.url }}" alt="{{ friend.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
+										<strong>{{ friend.display_name }}</strong>
+									</div>
+									<div>
+										<span class="badge {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
+										<form method="POST" action="/auth/remove_friend/{{ friend.id }}/" class="d-inline remove-friend-form">
+											{% csrf_token %}
+											<button type="submit" class="btn btn-light btn-sm">Remove</button>
+										</form>
+									</div>
+								</li>
+							{% endfor %}
+						</ul>
+					{% else %}
+						<p class="text-center">You have no friends added yet.</p>
+					{% endif %}
 					</div>
 				</div>
 			</div>
 
-			<!-- Demandes d'amis en attente -->
-			<div class="col-12 col-md-8 col-lg-6 mt-4">
-				<div class="card shadow">
-					<div class="card-header text-center bg-secondary font-potta">
-						<h2>Pending Friend Requests</h2>
+			<div class="col-12 col-lg-6 col-xxl-4">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+						<h2>Friend's Invitations</h2>
 					</div>
 					<div class="card-body p-4">
-						{% if user.pending_requests.all %}
-							<ul class="list-group">
-								{% for request in user.pending_requests.all %}
+
+						<h4 class="text-center mb-3">Received</h4>
+						{% if pending_requests %}
+							<ul class="list-group mb-4">
+								{% for request in pending_requests %}
 									<li class="list-group-item d-flex justify-content-between align-items-center">
 										<div>
-											<img src="../{{ request.sender.avatar }}" alt="{{ request.sender.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
+											<img src="{{ request.sender.avatar.url }}" alt="{{ request.sender.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
 											<strong>{{ request.sender.display_name }}</strong>
 										</div>
 										<div>
-											<form method="POST" action="{% url 'accept_friend_request' request.id %}" class="d-inline">
+											<form method="POST" action="/auth/accept_friend_request/{{ request.id }}/" class="d-inline accept-friend-request">
 												{% csrf_token %}
-												<button type="submit" class="btn btn-success btn-sm">Accept</button>
+												<button type="submit" class="btn btn-secondary btn-sm">Accept</button>
 											</form>
-											<form method="POST" action="{% url 'decline_friend_request' request.id %}" class="d-inline">
+											<form method="POST" action="/auth/refuse_friend_request/{{ request.id }}/" class="d-inline refuse-friend-request">
 												{% csrf_token %}
-												<button type="submit" class="btn btn-danger btn-sm">Decline</button>
+												<button type="submit" class="btn btn-light btn-sm">Decline</button>
 											</form>
 										</div>
 									</li>
 								{% endfor %}
 							</ul>
 						{% else %}
-							<p class="text-center">You have no pending friend requests.</p>
+							<p class="text-center">No pending friend requests.</p>
 						{% endif %}
+
+						<h4 class="text-center mb-3">Sent</h4>
+						{% if sent_requests %}
+							<ul class="list-group">
+								{% for request in sent_requests %}
+									<li class="list-group-item d-flex justify-content-between align-items-center">
+										<div>
+											<img src="{{ request.receiver.avatar.url }}" alt="{{ request.receiver.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
+											<strong>{{ request.receiver.display_name }}</strong>
+										</div>
+										<div>
+											<span class="badge bg-secondary text-black p-2">Pending...</span>
+											<form method="POST" action="/auth/cancel_friend_request/{{ request.id }}/" class="d-inline cancel-friend-request">
+												{% csrf_token %}
+												<button type="submit" class="btn btn-light btn-sm">Cancel</button>
+											</form>
+										</div>
+									</li>
+								{% endfor %}
+							</ul>
+						{% else %}
+							<p class="text-center">No sent friend requests.</p>
+						{% endif %}
+
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 </section>
+
