@@ -8,9 +8,13 @@ body {
 } */
 
 .font-potta {
-	font-family: 'Concert One', cursive;
+	font-family: 'Balsamiq Sans', cursive;
+	font-weight: 700;
+	margin-top: 2px;
+	color: 71, 46, 39;
 }
 
 .font-roboto {
 	font-family: 'Roboto', sans-serif;
+	color: 71, 46, 39;
 }
