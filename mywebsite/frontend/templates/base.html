@@ -25,6 +25,7 @@
 	</script>
 </head>
 <body class="d-flex flex-fill flex-column vh-100">
+	
 	{% include 'header.html' %}
 
 	<main class="flex-grow-1 d-flex flex-column">
@@ -32,83 +33,8 @@
 		</div>
 	</main>
 
-	<footer class="border-info mt-2 font-potta" id="footer">
-		<div class="container-fluid py-4 bg-primary">
-			<div class="row gy-2 align-items-center">
-				<div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-start">
-					<h1 class="fs-1" href="#" >PUSHEEN</h1>
-				</div>
-				<div class="col-12 col-md-4 d-flex justify-content-center text-md-center">
-					<ul class="list-unstyled mb-0">
-						<li>
-							<a href="" class="text-decoration-none text-dark" data-bs-toggle="modal" data-bs-target="#aboutUs">About Us</a>
-						</li>
-					</ul>
-				</div>
-				<div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-end">
-					<ul class="list-inline mb-0">
-						<li class="list-inline-item">
-							<a href="https://42.fr/en/homepage/" target="_blank" class="text-decoration-none text-dark" data-bs-toggle="tooltip" title="school 42">
-								<img src="{% static 'img/42_Logo.png' %}" alt="school 42 icon" width="24" height="24">
-							</a>
-						</li>
-						<li class="list-inline-item" >
-							<a href="https://github.com/Ariti-87/ft_transcendence" target="_blank" class="text-decoration-none text-dark" data-bs-toggle="tooltip" title="github">
-								<i class="bi bi-github fs-5"></i>
-							</a>
-						</li>
-					</ul>
-				</div>
-			</div>
-		</div>
+	{% include 'footer.html' %}
 
-		<!-- Modal -->
-		<div class="modal fade" id="aboutUs" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">About Us</h5>
-						<li class="nav-item">
-							<button id="decrease-font" class="btn btn-zoom shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
-								<i class="bi bi-zoom-out"></i>
-								<span class="d-md-none">Decrease font size</span>
-							</button>
-						</li>
-						<li class="nav-item">
-							<button id="increase-font" class="btn btn-zoom shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Increase font size">
-								<i class="bi bi-zoom-in"></i>
-								<span class="d-md-none">Increase font size</span>
-							</button>
-						</li>
-						<li class="nav-item">
-							<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
-								<i class="bi bi-eye"></i>
-								<span class="d-md-none ms-1 fs-6">High Contrast</span>
-							</button>
-						</li>
-						<li class="nav-item dropdown ms-3 mb-4 mb-md-0">
-							<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-								<i class="bi bi-translate" aria-hidden="true"></i>
-								<span class="d-md-none ms-1 fs-6">Languages</span>
-							</a>
-							<ul class="dropdown-menu rounded-3 bg-secondary dropdown-menu-primary" aria-labelledby="navbarDropdown">
-								<li><a class="dropdown-item" href="#">English</a></li>
-								<li><a class="dropdown-item" href="#">French</a></li>
-								<li><a class="dropdown-item" href="#">Spanish</a></li>
-							</ul>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						<p>We are students from 42, a revolutionary coding school known for its peer-to-peer learning model and innovative curriculum. As part of our journey in becoming proficient developers,
-						we are undertaking the Transcendence Project, a unique and challenging task designed to push our limits and expand our skills.</p>
-						<p>The Transcendence Project is an ambitious endeavor where we create a fully functional and secure website that facilitates real-time multiplayer games,
-						specifically focusing on the classic game of Pong. This project encompasses a wide range of technical requirements, including frontend and backend development, user authentication, security measures, and seamless user experience.</p>
-					</div>
-				</div>
-			</div>
-		</div>
-
-	</footer>
 	<script> const userDisplayName = "{{ user.display_name }}"; </script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
 	integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
