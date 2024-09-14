@@ -1,4 +1,39 @@
 {% load static %}
+<header class="font-balsamiq">
+	<nav class="navbar navbar-expand-lg bg-primary">
+		<div class="container-fluid">
+			<img src="{% static 'img/pusheen-nav.gif' %}" alt="gif de pusheen" width="70" height="70">
+			<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+				<div class="navbar-nav fs-4">
+					<a class="nav-link" aria-current="page" href="#" id="home">HOME</a>
+					<a class="nav-link" href="#" id="games">GAMES</a>
+					<a class="nav-link" href="#" id="navbar-leaderboard">LEADERBOARD</a>
+					<a class="nav-link" href="#" id="navbar-leaderboard">ABOUT US</a>
+				</div>
+			</div>
+		</div>
+		<div>
+			{% if user.is_authenticated %}
+			<div class="d-flex justify-content-center align-items-center">
+				<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle" width="60" height="60">
+				<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
+				<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
+					{% csrf_token %}
+					<button type="submit" class="btn btn-primary rounded-pill ms-2">Sign out</button>
+				</form>
+			</div>
+			{% else %}
+			<div class="d-flex justify-content-center">
+
+				<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login">Login</button>
+				<button type="button" class="btn btn-primary rounded-pill ms-2" id="navbar-signup">Sign up</button>
+			</div>
+			{% endif %}
+		</div>
+	</nav>
+</header>
+
+<!-- {% load static %}
 <header class="font-potta">
 	<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
 		<div class="container-fluid bg-primary">
@@ -11,12 +46,10 @@
 					<li class="nav-item">
 						<a class="nav-link fs-4" aria-current="page" href="#" id="home">HOME</a>
 					</li>
-					{% if user.is_authenticated %}
 					<li class="nav-item">
 						<a class="nav-link fs-4" href="#" id="games">GAMES</a>
 					<li class="nav-item">
 						<a class="nav-link fs-4" href="#" id="navbar-leaderboard">LEADERBOARD</a>
-					{% endif %}
 					<li class="nav-item">
 						<button id="decrease-font" class="btn btn-zoom shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
 							<i class="bi bi-zoom-out"></i>
@@ -27,12 +60,6 @@
 						<button id="increase-font" class="btn btn-zoom shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Increase font size">
 							<i class="bi bi-zoom-in"></i>
 							<span class="d-md-none">Increase font size</span>
-						</button>
-					</li>
-					<li class="nav-item">
-						<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
-							<i class="bi bi-eye"></i>
-							<span class="d-md-none ms-1 fs-6">High Contrast</span>
 						</button>
 					</li>
 					<li class="nav-item">
@@ -73,3 +100,4 @@
 		</div>
 	</nav>
 </header>
+ -->

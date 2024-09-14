@@ -1,9 +1,7 @@
 /* Font styles */
-.font-potta {
+.font-balsamiq {
 	font-family: 'Balsamiq Sans', cursive;
 	font-weight: 700;
-	margin-top: 2px;
-	color: 71, 46, 39;
 }
 
 .font-roboto {
