@@ -5,7 +5,7 @@
 			<a class="navbar-brand">
 				<img src="{% static 'img/pusheen-nav.gif' %}" alt="gif de pusheen" width="70" height="70">
 			</a>
-			
+
 			<div class="collapse navbar-collapse align justify-content-between my-2" id="navbarContent">
 				<ul class="navbar-nav mx-auto align-items-center">
 					<li class="nav-item">
@@ -29,6 +29,18 @@
 							<span class="d-md-none">Increase font size</span>
 						</button>
 					</li>
+					<li class="nav-item">
+						<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
+							<i class="bi bi-eye"></i>
+							<span class="d-md-none ms-1 fs-6">High Contrast</span>
+						</button>
+					</li>
+					<li class="nav-item">
+						<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
+							<i class="bi bi-eye"></i>
+							<span class="d-md-none ms-1 fs-6">High Contrast</span>
+						</button>
+					</li>
 					<li class="nav-item dropdown ms-3 mb-4 mb-md-0">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<i class="bi bi-translate" aria-hidden="true"></i>
@@ -43,7 +55,7 @@
 				</ul>
 				{% if user.is_authenticated %}
 				<div class="d-flex justify-content-center align-items-center">
-					<img src="{{ user.avatar.url }}" alt="Profile Image" class="rounded-circle" width="60" height="60">
+					<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle" width="60" height="60">
 					<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
 					<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 						{% csrf_token %}

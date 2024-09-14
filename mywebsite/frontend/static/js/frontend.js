@@ -22,6 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	const toggleContrastBtn = document.getElementById('toggle-contrast');
+	let isHighContrast = localStorage.getItem('highContrast') === 'true';
+	// if (isHighContrast) {
+	// 	document.body.classList.add('high-contrast');
+	// }
+
+	toggleContrastBtn.addEventListener('click', function () {
+		document.body.classList.toggle('high-contrast');
+		isHighContrast = !isHighContrast;
+		localStorage.setItem('highContrast', isHighContrast);
+	});
+
 	// Manage alerts
 	function showAlert(message) {
 		const alertContainer = document.getElementById('alert-container');
@@ -120,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-login', url: '/login/' },
 			{ id: 'navbar-profile', url: '/profile/' },
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
+			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'games', url: '/games/' },
 			{ id: 'invaders', url: '/invaders/' },
 			{ id: 'pong', url: '/pong/' },
@@ -164,14 +177,15 @@ document.addEventListener("DOMContentLoaded", () => {
 						} else {
 							// alert(data.message);
 							if (id === 'logout-form') {
-								// window.location.href = '/home/';
 								loadContent('/home/', true);
 								loadHeader();
-							} else {
-								// window.location.href = '/profile/';
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
 								loadContent('/profile/', true);
 								loadHeader();
+							} else {
+								loadContent('/profile/', true);
 							}
+
 						}
 					} catch (error) {
 						console.error('Error:', error);

@@ -39,10 +39,20 @@ def profile(request):
 
 @login_required
 def edit_profile(request):
+	predefined_avatars = [
+		{"url": "../media/img/avatars/avatar0.jpg"},
+		{"url": "../media/img/avatars/avatar1.jpg"},
+		{"url": "../media/img/avatars/avatar2.jpg"},
+		{"url": "../media/img/avatars/avatar3.jpg"},
+		{"url": "../media/img/avatars/avatar4.jpg"},
+		{"url": "../media/img/avatars/avatar5.jpg"},
+		{"url": "../media/img/avatars/avatar6.jpg"},
+	]
+
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('edit_profile.html', request=request)
+		html = render_to_string('edit_profile.html', {'predefined_avatars': predefined_avatars}, request=request)
 		return JsonResponse({'html': html})
-	return render(request, 'base.html')
+	return render(request, 'base.html', {'predefined_avatars': predefined_avatars})
 
 @login_required
 def games(request):
