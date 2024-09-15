@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import { OrbitControls } from './OrbitControls.js';
+// import { OrbitControls } from './OrbitControls.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
@@ -230,8 +230,9 @@ function StartGame()
 		// renderer.setAnimationLoop(animate);
 
 		// CONTROLS
-		controls = new OrbitControls( camera, renderer.domElement);
-		controls.update();
+
+		// controls = new OrbitControls( camera, renderer.domElement);
+		// controls.update();
 
 		// TEXT TEXTURE
 		// const textCanvas = document.createElement('canvas');
@@ -419,14 +420,14 @@ function StartGame()
 	function Update()
 	{
 		// Wireframe Cube
-		cube.position.x = ball.position.x;
-		cube.position.y = ball.position.y;
+		// cube.position.x = ball.position.x;
+		// cube.position.y = ball.position.y;
 
 		// Paddle Outline
 		leftPaddleOutLine.position.y = leftPaddle.position.y;
 		rightPaddleOutLine.position.y = rightPaddle.position.y;
 
-		controls.update();
+		// controls.update();
 	}
 
 	function Render()
