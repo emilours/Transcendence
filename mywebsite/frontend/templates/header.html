@@ -24,28 +24,28 @@
 					<li><a class="dropdown-item text-secondary-emphasis" href="#">Spanish</a></li>
 				</ul>
 			</div> -->
-				{% if user.is_authenticated %}
-				<div class="navbar-nav nav-item dropdown text-secondary-emphasis me-3">
-					<a class="nav-link dropdown-toggle fs-5" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-						Account
-						<span class="d-md-none ms-1 fs-5">Account</span>
-					</a>
-					<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
-						<li><a class="dropdown-item text-link" href="#">Profile</a></li>
-						<li><a class="dropdown-item text-link" href="#">Friends</a></li>
-						<li><hr class="dropdown-divider"></li>
-						<li><a class="dropdown-item text-link" href="#">Sign out</a></li>
-					</ul>
-				</div>
-				<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle me-2" width="60" height="60">
-				<!-- <button type="button" class="btn btn-primary me-2" id="navbar-profile">Profile</button> -->
-				<!-- <form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}"> -->
-					<!-- {% csrf_token %} -->
-					<!-- <button type="submit" class="btn btn-outline-primary me-2">Sign out</button> -->
-				<!-- </form> -->
-				{% else %}
-				<button type="button" class="btn btn-outline-primary me-2" id="navbar-login">Login</button>
-				<button type="button" class="btn btn-primary me-2" id="navbar-signup">Sign up</button>
+			{% if user.is_authenticated %}
+			<div class="navbar-nav nav-item dropdown text-secondary-emphasis me-3">
+				<a class="nav-link dropdown-toggle fs-5" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+					Account
+					<span class="d-md-none ms-1 fs-5">Account</span>
+				</a>
+				<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
+					<li><a class="dropdown-item text-link" href="#">Profile</a></li>
+					<li><a class="dropdown-item text-link" href="#">Friends</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item text-link" href="#">Sign out</a></li>
+				</ul>
+			</div>
+			<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle me-2" width="60" height="60">
+			<!-- <button type="button" class="btn btn-primary me-2" id="navbar-profile">Profile</button> -->
+			<!-- <form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}"> -->
+				<!-- {% csrf_token %} -->
+				<!-- <button type="submit" class="btn btn-outline-primary me-2">Sign out</button> -->
+			<!-- </form> -->
+			{% else %}
+			<button type="button" class="btn btn-outline-primary me-2" id="navbar-login">Login</button>
+			<button type="button" class="btn btn-primary me-2" id="navbar-signup">Sign up</button>
 			{% endif %}
 		</div>
 	</nav>
