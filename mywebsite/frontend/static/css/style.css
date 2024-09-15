@@ -50,7 +50,7 @@
   --bs-danger-rgb: 220, 53, 69;
   --bs-light-rgb: 108, 117, 125;
   --bs-dark-rgb: 33, 37, 41;
-  --bs-primary-text: 83, 53, 35;
+  --bs-primary-text: 255, 200, 100;
   --bs-secondary-text: #6e5448;
   --bs-success-text-emphasis: #4a2966;
   --bs-info-text-emphasis: #662832;
@@ -111,10 +111,11 @@
   --bs-border-color: #dee2e6;
   --bs-border-color-translucent: rgba(0, 0, 0, 0.175);
   --bs-border-radius: 1rem;
-  --bs-border-radius-sm: 3px;
-  --bs-border-radius-lg: 3px;
-  --bs-border-radius-xl: 3px;
-  --bs-border-radius-xxl: 3px;
+  --bs-border-radius-sm: 0.5rem;
+  --bs-border-radius-md: 1rem;
+  --bs-border-radius-lg: 2rem;
+  --bs-border-radius-xl: 3rem;
+  --bs-border-radius-xxl: 4rem;
   --bs-border-radius-2xl: var(--bs-border-radius-xxl);
   --bs-border-radius-pill: 50rem;
   --bs-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
@@ -3333,7 +3334,7 @@ textarea.form-control-lg {
   --bs-dropdown-box-shadow: var(--bs-box-shadow);
   --bs-dropdown-link-color: var(--bs-body-color);
   --bs-dropdown-link-hover-color: var(--bs-body-color);
-  --bs-dropdown-link-hover-bg: var(--bs-tertiary-bg);
+  --bs-dropdown-link-hover-bg: transparent;
   --bs-dropdown-link-active-color: #fff;
   --bs-dropdown-link-active-bg: #d9abff;
   --bs-dropdown-link-disabled-color: var(--bs-tertiary-color);
@@ -8243,6 +8244,14 @@ textarea.form-control-lg {
   color: var(--bs-secondary-text) !important;
 }
 
+.text-link {
+  color: var(--bs-secondary-text) !important;
+}
+
+.text-link:hover {
+  color: var(--bs-secondary) !important;
+}
+
 .text-success-emphasis {
   color: var(--bs-success-text-emphasis) !important;
 }
@@ -8583,7 +8592,7 @@ textarea.form-control-lg {
 }
 
 .rounded-2 {
-  border-radius: var(--bs-border-radius) !important;
+  border-radius: var(--bs-border-radius-md) !important;
 }
 
 .rounded-3 {

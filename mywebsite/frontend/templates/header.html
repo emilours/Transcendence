@@ -4,34 +4,46 @@
 		<div class="container-fluid">
 			<img src="{% static 'img/pusheen-nav.gif' %}" alt="gif de pusheen" width="70" height="70">
 			<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-				<div class="navbar-nav fs-4">
-					<a class="nav-link" aria-current="page" href="#" id="home">HOME</a>
-					<a class="nav-link" href="#" id="navbar-games">GAMES</a>
-					<a class="nav-link" href="#" id="navbar-leaderboard">LEADERBOARD</a>
-					<a class="nav-link" href="#" id="navbar-about-us">ABOUT US</a>
+				<div class="navbar-nav fs-5">
+					<a class="nav-link" aria-current="page" href="#" id="home">Home</a>
+					<a class="nav-link" href="#" id="navbar-games">Games</a>
+					<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+					<a class="nav-link" href="#" id="navbar-about-us">About us</a>
 				</div>
 			</div>
 		</div>
 		<div class="d-flex justify-content-center align-items-center text-nowrap">
-			<!-- <div class="nav-item dropdown text-secondary-emphasis ms-3">
+			<!-- <div class="nav-item dropdown text-secondary-emphasis me-3">
 				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 					<i class="bi bi-translate"></i>
 					<span class="d-md-none ms-1 fs-6">Languages</span>
 				</a>
-				<ul class="dropdown-menu rounded-3 bg-zoom dropdown-menu-primary" aria-labelledby="navbarDropdown">
-					<li><a class="dropdown-item" href="#">English</a></li>
-					<li><a class="dropdown-item" href="#">French</a></li>
-					<li><a class="dropdown-item" href="#">Spanish</a></li>
+				<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
+					<li><a class="dropdown-item text-secondary-emphasis" href="#">English</a></li>
+					<li><a class="dropdown-item text-secondary-emphasis" href="#">French</a></li>
+					<li><a class="dropdown-item text-secondary-emphasis" href="#">Spanish</a></li>
 				</ul>
 			</div> -->
-			{% if user.is_authenticated %}
+				{% if user.is_authenticated %}
+				<div class="navbar-nav nav-item dropdown text-secondary-emphasis me-3">
+					<a class="nav-link dropdown-toggle fs-5" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						Account
+						<span class="d-md-none ms-1 fs-5">Account</span>
+					</a>
+					<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
+						<li><a class="dropdown-item text-link" href="#">Profile</a></li>
+						<li><a class="dropdown-item text-link" href="#">Friends</a></li>
+						<li><hr class="dropdown-divider"></li>
+						<li><a class="dropdown-item text-link" href="#">Sign out</a></li>
+					</ul>
+				</div>
 				<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle me-2" width="60" height="60">
-				<button type="button" class="btn btn-primary me-2" id="navbar-profile">Profile</button>
-				<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
-					{% csrf_token %}
-					<button type="submit" class="btn btn-outline-primary me-2">Sign out</button>
-				</form>
-			{% else %}
+				<!-- <button type="button" class="btn btn-primary me-2" id="navbar-profile">Profile</button> -->
+				<!-- <form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}"> -->
+					<!-- {% csrf_token %} -->
+					<!-- <button type="submit" class="btn btn-outline-primary me-2">Sign out</button> -->
+				<!-- </form> -->
+				{% else %}
 				<button type="button" class="btn btn-outline-primary me-2" id="navbar-login">Login</button>
 				<button type="button" class="btn btn-primary me-2" id="navbar-signup">Sign up</button>
 			{% endif %}

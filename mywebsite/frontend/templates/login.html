@@ -1,21 +1,24 @@
 {% load static %}
 <section class="d-flex align-items-center justify-content-center">
-	<div class="container mt-5">
+	<div class="container">
 		<div class="row d-flex justify-content-center align-items-center">
-			<div class="col-12 col-md-5 col-lg-4 d-flex flex-column align-items-center mb-4 mb-md-0">
-				<div class="card shadow rounded-4">
-					<div class="card-body p-5">
-						<h1 class="card-title text-center mb-4 font-potta">Login</h1>
+			<div class="col-12 col-md-5 col-lg-4 d-flex flex-column align-items-center mb-md-0">
+				<div class="card shadow rounded-2">
+					<div class="card-body p-5 text-secondary-emphasis">
+						<div class="d-flex justify-content-between align-items-center">
+							<h1 class="card-title text-center font-balsamiq ">Login</h1>
+							<img src="{% static 'img/pusheen-login.gif' %}" alt="gif de pusheen" width="100" height="100">
+						</div>
 						<form id="login-form" class="font-roboto" method="POST" action="{% url 'home' %}">
 							{% csrf_token %}
 							<div class="mb-3">
 								<label for="email" class="form-label">Email Address</label>
-								<input type="email" class="form-control" id="email" name="email" placeholder="Email" aria-describedby="emailHelp" maxlength="100" required>
+								<input type="email" class="form-control rounded-1" id="email" name="email" placeholder="Email" aria-describedby="emailHelp" maxlength="100" required>
 								<div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
 							</div>
 							<div class="mb-3">
 								<label for="password" class="form-label">Password</label>
-								<input type="password" class="form-control" id="password" name="password" placeholder="Password" maxlength="100" required>
+								<input type="password" class="form-control rounded-1" id="password" name="password" placeholder="Password" maxlength="100" required>
 							</div>
 							<div class="my-4 form-check">
 								<input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
@@ -26,7 +29,7 @@
 
 						<div class="text-center mt-3">
 							<p>Or login with:</p>
-							<a href="https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-5641bcb4cc525bd5757aa71984f8605d72e965662f61cdb4fdf943f4c7052726&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Foauth%2Fcomplete%2F42%2F&response_type=code" class="btn btn-outline-secondary w-100">
+							<a href="https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-5641bcb4cc525bd5757aa71984f8605d72e965662f61cdb4fdf943f4c7052726&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Foauth%2Fcomplete%2F42%2F&response_type=code" class="btn btn-secondary w-100">
 								Login with <img src="{% static 'img/42_Logo.png' %}" id="logo-42" alt="Login with 42 school account" width="24" height="24">
 							</a>
 						</div>
