@@ -2,19 +2,22 @@ services:
   mywebsite:
     build: ./mywebsite
     container_name: mywebsite
-    command: python manage.py runserver 0.0.0.0:8000
+    # command: python manage.py runserver 0.0.0.0:8000
+    # -v2 == more detailed logs
+    command: daphne -u daphne/daphne.sock mywebsite.asgi:application
     # command: gunicorn mywebsite.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles/
       - media_volume:/app/media/
       - ./mywebsite:/app
+      - daphne_volume:/app/daphne
     ports:
       - 8000:8000
     env_file:
       - .env
     depends_on:
-      db:
-        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - ft_transcendence
 
@@ -40,6 +43,7 @@ services:
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media/
+      - daphne_volume:/daphne
     ports:
       - 8080:8080
     depends_on:
@@ -56,6 +60,9 @@ services:
   redis:
     image: redis:alpine
     container_name: redis
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "6380:6379"
     networks:
@@ -70,6 +77,14 @@ volumes:
     name: uploads_volume
   media_volume:
     name: media_volume
+  daphne_volume:
+    name: daphne_volume
+
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   device: ${PWD}/mywebsite/daphne
+    #   o: bind
 
 networks:
   ft_transcendence:

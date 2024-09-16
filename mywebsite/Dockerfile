@@ -15,12 +15,16 @@ COPY requirements.txt .
 
 # Install any dependencies
 RUN apt-get update && \
-	apt-get install -y postgresql-client && \
+	apt-get install -y postgresql-client openssl && \
 	pip install --no-cache-dir -r requirements.txt
 
 # Copy the script to the working directory and make it executable
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
+
+# RUN mkdir -p /daphne/ && chmod 777 /daphne/
+# RUN rm -rf daphne/daphne.sock.lock && rm -rf daphne/daphne.sock
+
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 # copy project

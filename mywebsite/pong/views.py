@@ -9,10 +9,10 @@ from django.http import JsonResponse
 # 	liveGames += 1
 # 	return render(request, 'pong/pong_home.html', {'gameId': gameId})
 
-def lobby(request, id):
-	print(id)
+# def lobby(request, id):
+# 	print(id)
 
-	return render(request, 'pong/pong.html')
+# 	return render(request, 'pong/pong.html')
 
 
 def pong(request):

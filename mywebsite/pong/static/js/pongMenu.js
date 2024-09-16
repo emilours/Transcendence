@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-// import { ConnectWebsocket, StartGame } from './pong.js';
+import { ConnectWebsocket } from './pong.js';
 
 export function initPong(userName) {
 	console.log('Pong game initialized - user:', userName);
@@ -10,14 +10,14 @@ export function initPong(userName) {
 		createElement('div', { className: 'button-vertical' },
 			createButton('ONLINE MATCH', () => {
 				menuScreen.remove();
-				// const player1 = new Player(game.canvas, 'Player1', 'player1');
+				ConnectWebsocket();
+
 				// startGame(mode = 'online', player1, null);
 			}),
 			createButton('LOCAL MATCH', () => {
 				menuScreen.remove();
-				// const player1 = new Player(game.canvas, 'Player1', 'player1');
-				// const player2 = new Player(game.canvas, 'Player2', 'player2');
-				// StartGame();
+
+
 			}),
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
