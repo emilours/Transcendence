@@ -6,9 +6,9 @@ import { Color } from "./Colors.js";
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import { tournamentSetup } from "./Tournament.js";
 
-export function initializeGame() {
+export function initializeGame(userName) {
 
-	const game = new Canvas();
+	const game = new Canvas(userName);
 	let mode;
 	game.ctx.drawImage(game.gifCanvas, 0, 0, game.canvas.width, game.canvas.height);
 
@@ -32,11 +32,7 @@ export function initializeGame() {
 				menuScreen.remove();
 				tournamentSetup(startGame, game);
 			}),
-			createButton('LEADERBOARD', () => {
-				menuScreen.remove();
-				displayLeaderboard();
-			})
-			// ,createButton('HISTORY', () => {
+			// createButton('LEADERBOARD', () => {
 			// 	menuScreen.remove();
 			// 	displayLeaderboard();
 			// })
@@ -79,7 +75,7 @@ export function initializeGame() {
 
 		const backButton = createButton('MENU', () => {
 			controlsScreen.remove();
-			initializeGame();
+			initializeGame(game.userName);
 		});
 
 		const buttonContainer = createElement('div', { className: 'button-horizontal' }, backButton, startButton);
@@ -205,6 +201,7 @@ export function initializeGame() {
 				let winner;
 
 				if (mode === 'arcade') {
+					saveScore(player1.score);
 					titleText.innerText = "GAME OVER";
 					titleText.style.color = "red";
 
@@ -214,13 +211,7 @@ export function initializeGame() {
 						createButton('MENU', () => {
 							gameOverScreen.remove();
 							resetGame(game);
-							initializeGame();
-						}),
-						createButtonGreen('SAVE SCORE', () => {
-							gameOverScreen.remove();
-							saveScore(player1.score);
-							resetGame(game);
-							initializeGame();
+							initializeGame(game.userName);
 						}
 					));
 					appendChildren(gameOverScreen, titleText, scoreText, actionButton);
@@ -250,7 +241,7 @@ export function initializeGame() {
 							actionButton = createButton('BACK TO MENU', () => {
 								gameOverScreen.remove();
 								resetGame(game);
-								initializeGame();
+								initializeGame(game.userName);
 							});
 							appendChildren(gameOverScreen, titleText, winnerName, scoreText, actionButton);
 						}
@@ -290,14 +281,40 @@ export function initializeGame() {
 		}
 
 		function saveScore(score) {
-			const userName = game.userName;
-			const leaderboardKey = 'leaderboard';
-			const leaderboard = JSON.parse(localStorage.getItem(leaderboardKey)) || [];
+			fetch('/invaders/save_match/', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': getCookie('csrftoken')
+				},
+				body: JSON.stringify({ score: score }),
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.status === 'success') {
+					console.log('Score saved successfully in the database!');
+				} else {
+					console.error('Error saving score:', data.message);
+				}
+			})
+			.catch(error => {
+				console.error('Error: ', error);
+			});
+		}
 
-			leaderboard.push({ userName, score });
-			localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
-
-			console.log('Score saved successfully!');
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
 		}
 	}
 
@@ -332,7 +349,7 @@ export function initializeGame() {
 
 		const backButton = createButton('MENU', () => {
 			leaderboardScreen.remove();
-			initializeGame();
+			initializeGame(game.userName);
 		});
 		leaderboardScreen.appendChild(backButton);
 		document.querySelector('.invaders-container').appendChild(leaderboardScreen);

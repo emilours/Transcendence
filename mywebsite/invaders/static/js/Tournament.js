@@ -6,8 +6,8 @@ import { createPlayerContainer, shuffleArray } from './GameUtils.js';
 
 export default class Tournament {
 
-	constructor(canvas, playerList, startGame) {
-		this.canvas = canvas;
+	constructor(game, playerList, startGame) {
+		this.canvas = game.canvas;
 		this.currentRound = [];
 		this.nextRound = [];
 		this.isOver = false;
@@ -58,7 +58,7 @@ export default class Tournament {
 			createButton('MENU', () => {
 				winnerScreen.remove();
 				resetGame(this.canvas);
-				initializeGame();
+				initializeGame(game.userName);
 			}),
 		);
 		document.querySelector('.invaders-container').appendChild(winnerScreen);
@@ -125,7 +125,7 @@ export default class Tournament {
 					createButton('MENU', () => {
 						winnerScreen.remove();
 						resetGame(this.canvas);
-						initializeGame();
+						initializeGame(game.userName);
 					}),
 					createButtonGreen('NEXT', () => {
 						winnerScreen.remove();
@@ -183,13 +183,14 @@ export function tournamentSetup(startGame, game) {
 		playerListContainer,
 		createElement('div', { className: 'button-horizontal' },
 			createButton('MENU', () => {
-				backButton(tournamentScreen, initializeGame);
+				tournamentScreen.remove();
+				initializeGame(game.userName);
 			}),
 			createButtonGreen('CREATE', () => {
 				if (playerList.length === 4 || playerList.length === 8) {
 					tournamentScreen.style.display = 'none';
 					shuffleArray(playerList);
-					createTournament(new Tournament(game.canvas, playerList, startGame));
+					createTournament(new Tournament(game, playerList, startGame));
 				} else {
 					alertBox.style.color = 'red';
 					setTimeout(() => {
@@ -219,4 +220,3 @@ export function tournamentSetup(startGame, game) {
 		tournament.playNextMatch();
 	}
 }
-
