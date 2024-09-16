@@ -89,6 +89,11 @@ POSTGRES_DB=your_db_name
 POSTGRES_USER=your_db_user
 POSTGRES_PASSWORD=your_db_password
 
+CLIENT_ID=
+CLIENT_SECRET=
+API_42_REDIRECT_URI=
+API_42_AUTH_URL=
+
 Replace `your_db_user`, `your_db_password`, `your_db_name`, and `your_db_host` with your actual database credentials and host information.
 
 ## Additional Notes

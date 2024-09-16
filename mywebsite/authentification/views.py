@@ -299,9 +299,17 @@ def update_profile(request):
         user.display_name = display_name
 
         if avatar:
+            valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+            ext = os.path.splitext(avatar.name)[1].lower()
+            if ext not in valid_extensions:
+                return JsonResponse({"error": f"Unsupported file extension: {ext}. Allowed extensions are: .jpg, .jpeg, .png, .gif."}, status=400)
+
+        max_avatar_size = 2 * 1024 * 1024
+        if avatar and avatar.size > max_avatar_size:
+            return JsonResponse({"error": f"File size exceeds the maximum limit of 2MB."}, status=400)
+
+        if avatar:
             user.avatar = avatar
-        elif avatar_choice:
-            user.avatar = avatar_choice
         elif avatar_choice:
             user.avatar = avatar_choice
 
@@ -378,9 +386,10 @@ def update_password(request):
                 'message': 'Password successfully updated'
             }, status=200)
         else:
+            errors = {field: [error['message'] for error in form.errors.get_json_data()[field]] for field in form.errors}
             return JsonResponse({
                 'error': 'Please correct the errors below.',
-                'errors': form.errors
+                'errors': errors
             }, status=400)
 
     return JsonResponse({

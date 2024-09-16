@@ -14,7 +14,7 @@ body.high-contrast {
 }
 
 /* Navbar and buttons in high contrast */
-.high-contrast .navbar, .high-contrast .btn {
+.high-contrast .navbar, .high-contrast .btn, .high-contrast span {
 	background-color: #222;
 	color: #fff;
 	border: 1px solid #fff;
@@ -55,7 +55,7 @@ body.high-contrast {
 
 /* image */
 .high-contrast img#logo-42 {
-	content: url("../img/42_Logo_white.jpg");
+	content: url("../img/42_Logo_white.png");
 }
 
 .high-contrast .btn:hover {
