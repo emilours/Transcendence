@@ -25,6 +25,6 @@ urlpatterns = [
 
     # API URLs last
     path('oauth/complete/42/', api_views.callback_42, name='callback_42'),
-    path('delete_profile_api/', api_views.delete_profile_api, name='delete_profile_api'),
+    # path('delete_profile_api/', api_views.delete_profile_api, name='delete_profile_api'),
     # path('request_anonymization_api/', api_views.request_anonymization_api, name='request_anonymization_api'),
 ]
