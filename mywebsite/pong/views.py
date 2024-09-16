@@ -16,7 +16,13 @@ from django.http import JsonResponse
 
 
 def pong(request):
+	context = {}
+	if request.user.is_authenticated:
+		test_name = request.user.display_name
+		context = {
+			'test_name': test_name
+		}
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('pong.html', request=request)
-		return JsonResponse({'html': html})
+		html = render_to_string('pong.html', context, request=request)
+		return JsonResponse({'html': html, 'test_name': test_name})
 	return render(request, 'base.html')

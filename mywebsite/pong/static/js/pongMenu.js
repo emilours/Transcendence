@@ -2,70 +2,79 @@ import { createElement, createButton, createButtonGreen, appendChildren, createA
 import { ConnectWebsocket } from './pong.js';
 
 export function initPong(userName) {
+	this.userName = userName;
 	console.log('Pong game initialized - user:', userName);
 
-	const menuScreen = createElement('div', { className: 'menu' },
-		createElement('h1', { innerText: 'PUSHEEN\nPONG' }),
-		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
-		createElement('div', { className: 'button-vertical' },
-			createButton('ONLINE MATCH', () => {
-				menuScreen.remove();
-				ConnectWebsocket();
+	function drawMainMenu() {
+		const mainMenu = createElement('div', { className: 'menu' },
+			createElement('h1', { innerText: 'PUSHEEN\nPONG' }),
+			createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
+			createElement('div', { className: 'button-vertical' },
+				createButton('ONLINE MATCH', () => {
+					mainMenu.remove();
+					drawOnlineMenu();
+				}),
+				createButton('LOCAL MATCH', () => {
+					mainMenu.remove();
+				}),
+				createButton('TOURNAMENT', () => {
+					mainMenu.remove();
+				})
+			)
+		);
+		document.querySelector('.pong-container').appendChild(mainMenu);
+	}
 
-				// startGame(mode = 'online', player1, null);
-			}),
-			createButton('LOCAL MATCH', () => {
-				menuScreen.remove();
+	function drawOnlineMenu() {
+		const onlineMenu = createElement('div', { className: 'menu' },
+			createElement('h2', { innerText: 'ONLINE MATCH' }),
+			createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
+			createElement('div', { className: 'button-vertical' },
+				createButton('CREATE LOBBY', () => {
+					onlineMenu.remove();
+					drawLobbyMenu('create');
+				}),
+				createButton('JOIN LOBBY', () => {
+					onlineMenu.remove();
+					drawLobbyMenu('join');
+				}),
+				createButton('BACK', () => {
+					onlineMenu.remove();
+					drawMainMenu();
+				})
+			)
+		);
+		document.querySelector('.pong-container').appendChild(onlineMenu);
+	}
+
+	function drawLobbyMenu(mode) {
+		const lobbyMenu = createElement('div', { className: 'menu' },
+			createElement('h2', { innerText: 'ONLINE MATCH' }),
+			createElement('h3', { innerText: 'LOBBY' })
+		);
+
+		let player1Info;
+		let player2Info;
+
+		if (mode === 'create') {
+			let playerInfo = createElement('div',
+				createElement('h3', { innerText: this.userName }),
+				createElement('h3', { innerText: ' VS ' }),
+				player2Info = createElement('h3', { innerText: 'Waiting for player...' })
+			);
+			lobbyMenu.appendChild(playerInfo);
+		}
 
 
-			}),
-			createButton('TOURNAMENT', () => {
-				menuScreen.remove();
-				// tournamentSetup(startGame, game);
-			})
-		)
-	);
-	document.querySelector('.pong-container').appendChild(menuScreen);
 
-	// Start game with parameters
 
-		// function saveScore(score) {
-		// 	fetch('/invaders/save_match/', {
-		// 		method: 'POST',
-		// 		headers: {
-		// 			'Content-Type': 'application/json',
-		// 			'X-CSRFToken': getCookie('csrftoken')
-		// 		},
-		// 		body: JSON.stringify({ score: score }),
-		// 	})
-		// 	.then(response => response.json())
-		// 	.then(data => {
-		// 		if (data.status === 'success') {
-		// 			console.log('Score saved successfully in the database!');
-		// 		} else {
-		// 			console.error('Error saving score:', data.message);
-		// 		}
-		// 	})
-		// 	.catch(error => {
-		// 		console.error('Error: ', error);
-		// 	});
-		// }
 
-		// function getCookie(name) {
-		// 	let cookieValue = null;
-		// 	if (document.cookie && document.cookie !== '') {
-		// 		const cookies = document.cookie.split(';');
-		// 		for (let i = 0; i < cookies.length; i++) {
-		// 			const cookie = cookies[i].trim();
-		// 			if (cookie.substring(0, name.length + 1) === (name + '=')) {
-		// 				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-		// 				break;
-		// 			}
-		// 		}
-		// 	}
-		// 	return cookieValue;
-		// }
+		document.querySelector('.pong-container').appendChild(lobbyMenu);
 
+	}
+
+
+	drawMainMenu();
 }
 
 // initPong();

@@ -1,13 +1,19 @@
 {% load static %}
 <header class="font-balsamiq">
-	<nav class="navbar navbar-expand-lg bg-primary">
+	<nav class="navbar navbar-expand-md fixed-top bg-primary">
 		<div class="container-fluid">
 			<img src="{% static 'img/pusheen-nav.gif' %}" alt="gif de pusheen" width="70" height="70">
 			<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 				<div class="navbar-nav fs-5">
-					<a class="nav-link" aria-current="page" href="#" id="home">Home</a>
-					<a class="nav-link" href="#" id="navbar-games">Games</a>
-					<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+					<li class="nav-item">
+						<a class="nav-link" aria-current="page" href="#" id="navbar-home">Home</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#" id="navbar-games">Games</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+					</li>
 					<a class="nav-link" href="#" id="navbar-about-us">About us</a>
 				</div>
 			</div>
@@ -44,8 +50,8 @@
 				<!-- <button type="submit" class="btn btn-outline-primary me-2">Sign out</button> -->
 			<!-- </form> -->
 			{% else %}
-			<button type="button" class="btn btn-outline-primary me-2" id="navbar-login">Login</button>
-			<button type="button" class="btn btn-primary me-2" id="navbar-signup">Sign up</button>
+				<button type="button" class="btn btn-outline-primary me-2" id="navbar-login">Login</button>
+				<button type="button" class="btn btn-primary me-2" id="navbar-signup">Sign up</button>
 			{% endif %}
 		</div>
 	</nav>
