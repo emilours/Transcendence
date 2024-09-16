@@ -1,6 +1,36 @@
 import { initializeGame } from '/static/js/invaders.js';
 
 document.addEventListener("DOMContentLoaded", () => {
+	// Font size adjustment
+	const increaseFontBtn = document.getElementById('increase-font');
+	const decreaseFontBtn = document.getElementById('decrease-font');
+	const rootElement = document.documentElement;
+	let currentFontSize = 100;
+
+	increaseFontBtn.addEventListener('click', function() {
+		if (currentFontSize < 150) {
+			currentFontSize += 10;
+			rootElement.style.fontSize = currentFontSize + '%';
+		}
+	});
+
+	decreaseFontBtn.addEventListener('click', function() {
+		if (currentFontSize > 50) {
+			currentFontSize -= 10;
+			rootElement.style.fontSize = currentFontSize + '%';
+		}
+	});
+
+	const toggleContrastBtn = document.getElementById('toggle-contrast');
+	let isHighContrast = localStorage.getItem('highContrast') === 'true';
+
+	toggleContrastBtn.addEventListener('click', function () {
+		document.body.classList.toggle('high-contrast');
+		isHighContrast = !isHighContrast;
+		localStorage.setItem('highContrast', isHighContrast);
+	});
+
+
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
 
@@ -34,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			const data = await response.json();
 			const headerElement = document.querySelector('header');
 			headerElement.innerHTML = data.html;
-			attachNavListeners();
 		} catch (error) {
 			console.error('Error loading header:', error);
 		}
@@ -72,61 +101,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
-	const attachNavListeners = () => {
-		// Font size adjustment
-		const increaseFontBtn = document.getElementById('increase-font');
-		const decreaseFontBtn = document.getElementById('decrease-font');
-		const rootElement = document.documentElement;
-		let currentFontSize = 100;
-
-		increaseFontBtn.addEventListener('click', function() {
-			if (currentFontSize < 150) {
-				currentFontSize += 10;
-				rootElement.style.fontSize = currentFontSize + '%';
-			}
-		});
-
-		decreaseFontBtn.addEventListener('click', function() {
-			if (currentFontSize > 50) {
-				currentFontSize -= 10;
-				rootElement.style.fontSize = currentFontSize + '%';
-			}
-		});
-
-		const toggleContrastBtn = document.getElementById('toggle-contrast');
-		let isHighContrast = localStorage.getItem('highContrast') === 'true';
-
-		toggleContrastBtn.addEventListener('click', function () {
-			document.body.classList.toggle('high-contrast');
-			isHighContrast = !isHighContrast;
-			localStorage.setItem('highContrast', isHighContrast);
-		});
-
-		const NavLinks = [
-			{ id: 'navbar-home', url: '/home/' },
-			{ id: 'navbar-login', url: '/login/' },
-			{ id: 'navbar-signup', url: '/signup/' },
-			{ id: 'navbar-profile', url: '/profile/' },
-			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
-			{ id: 'navbar-games', url: '/games/' },
-		];
-
-		NavLinks.forEach(link => {
-			const element = document.getElementById(link.id);
-			if (element) {
-				element.addEventListener('click', event => {
-					event.preventDefault();
-					loadContent(link.url);
-				});
-			}
-		});
-	};
-
 	const attachListeners = () => {
 		const links = [
+			{ id: 'home', url: '/home/' },
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
 			{ id: 'signup-from-login', url: '/signup/' },
+			{ id: 'navbar-signup', url: '/signup/' },
+			{ id: 'navbar-login', url: '/login/' },
+			{ id: 'navbar-profile', url: '/profile/' },
+			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
+			{ id: 'navbar-games', url: '/games/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },
 			{ id: 'games', url: '/games/' },
@@ -273,7 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
-	loadHeader();
 });
 
 	// // Manage alerts

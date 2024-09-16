@@ -55,7 +55,7 @@ body.high-contrast {
 
 /* image */
 .high-contrast img#logo-42 {
-	content: url("../img/42_Logo_white.jpg");
+	content: url("../img/42_Logo_white.png");
 }
 
 .high-contrast .btn:hover {
