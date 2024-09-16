@@ -110,8 +110,8 @@
 								<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 							</div>
 							<h3 class="card-title text-center mb-4 font-potta">{{ user.display_name }}</h3>
-							<p class="text-center mb-4 inversed-color"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-							<p class="text-center mb-4 inversed-color"><strong>Email:</strong> {{ user.email }}</p>
+							<p class="text-center mb-4 darky-color"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+							<p class="text-center mb-4 darky-color"><strong>Email:</strong> {{ user.email }}</p>
 							<div class="text-center">
 								<a href="" class="btn btn-secondary mb-2 rounded-3" id="edit-profile">Edit Profile</a>
 								<a href="" class="btn btn-secondary ms-2 mb-2 rounded-3" id="edit-password">Edit Password</a>
@@ -122,15 +122,15 @@
 							<div class="d-flex justify-content-around mb-4">
 								<div>
 									<h5 class="text-center">Victories</h5>
-									<p class="text-center inversed-color">Not defined in model</p>
+									<p class="text-center darky-color">Not defined in model</p>
 								</div>
 								<div>
 									<h5 class="text-center">Defeats</h5>
-									<p class="text-center inversed-color">Not defined in model</p>
+									<p class="text-center darky-color">Not defined in model</p>
 								</div>
 								<div>
 									<h5 class="text-center">Score</h5>
-									<p class="text-center inversed-color">Not defined in model</p>
+									<p class="text-center darky-color">Not defined in model</p>
 								</div>
 							</div>
 							<hr>
@@ -138,15 +138,15 @@
 							<div class="d-flex justify-content-around mb-4">
 								<div>
 									<h5 class="text-center">Victories</h5>
-									<p class="text-center inversed-color">{{ user.victories }}</p>
+									<p class="text-center darky-color">{{ user.victories }}</p>
 								</div>
 								<div>
 									<h5 class="text-center">Defeats</h5>
-									<p class="text-center inversed-color">{{ user.defeats }}</p>
+									<p class="text-center darky-color">{{ user.defeats }}</p>
 								</div>
 								<div>
 									<h5 class="text-center">Score</h5>
-									<p class="text-center inversed-color">Not defined in model</p>
+									<p class="text-center darky-color">Not defined in model</p>
 								</div>
 							</div>
 
@@ -186,7 +186,7 @@
 								{% endfor %}
 							</ul>
 						{% else %}
-							<p class="text-center inversed-color">You have no friends added yet.</p>
+							<p class="text-center darky-color">You have no friends added yet.</p>
 						{% endif %}
 						</div>
 					</div>
@@ -222,7 +222,7 @@
 									{% endfor %}
 								</ul>
 							{% else %}
-								<p class="text-center inversed-color">No pending friend requests.</p>
+								<p class="text-center darky-color">No pending friend requests.</p>
 							{% endif %}
 
 							<h4 class="text-center mb-3">Sent</h4>
@@ -245,7 +245,7 @@
 									{% endfor %}
 								</ul>
 							{% else %}
-								<p class="text-center inversed-color">No sent friend requests.</p>
+								<p class="text-center darky-color">No sent friend requests.</p>
 							{% endif %}
 
 						</div>

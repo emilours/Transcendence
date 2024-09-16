@@ -21,9 +21,9 @@ body.high-contrast {
 }
 
 /* Focus outline for better navigation visibility */
-/* .high-contrast button:focus, .high-contrast a:focus {
-	outline: 2px solid blue;
-} */
+.high-contrast button:focus, .high-contrast a:focus {
+	outline: 2px solid #000;
+}
 
 /* Links and text adjustments */
 /* .high-contrast a {
@@ -35,9 +35,13 @@ body.high-contrast {
 }
 
 
-.high-contrast .inversed-color {
+.high-contrast .darky-color {
 	/* background-color: #fff; */
 	color: #000;
+}
+
+.high-contrast .whity-color {
+	color: #fff
 }
 
 
@@ -61,7 +65,7 @@ body.high-contrast {
 .high-contrast .btn:hover {
 	background-color: #fff;
 	color: #000;
-	border-color: #fff;
+	border-color: #000;
 	border: 2px;
 }
 
