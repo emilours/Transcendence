@@ -374,29 +374,6 @@ def delete_profile(request):
 # # ===                                                      USER UPDATE PASSWORD                                                                                ===
 # # ================================================================================================================================================================
 
-# @login_required
-# def update_password(request):
-#     if request.method == 'POST':
-#         user = request.user
-#         form = PasswordChangeForm(user, request.POST)
-
-#         if form.is_valid():
-#             user = form.save()
-#             update_session_auth_hash(request, user)  # pour éviter la déconnexion
-#             return JsonResponse({
-#                 'message': 'Password successfully updated'
-#             }, status=200)
-#         else:
-#             errors = {field: [error['message'] for error in form.errors.get_json_data()[field]] for field in form.errors}
-#             return JsonResponse({
-#                 'error': 'Please correct the errors below.',
-#                 'errors': errors
-#             }, status=400)
-
-#     return JsonResponse({
-#         'error': 'Invalid request method.'
-#     }, status=405)
-
 @login_required
 def update_password(request):
     if request.method == 'POST':
@@ -404,7 +381,6 @@ def update_password(request):
         form = PasswordChangeForm(user, request.POST)
 
         if form.is_valid():
-            # Vérification si le nouveau mot de passe est le même que l'ancien
             new_password = form.cleaned_data.get('new_password1')
             
             if check_password(new_password, user.password):
@@ -412,14 +388,12 @@ def update_password(request):
                     'error': 'New password cannot be the same as the current password.'
                 }, status=400)
 
-            # Si tout est bon, on sauvegarde le nouveau mot de passe
             user = form.save()
             update_session_auth_hash(request, user)  # Pour éviter la déconnexion
             return JsonResponse({
                 'message': 'Password successfully updated'
             }, status=200)
         else:
-            # Si le formulaire n'est pas valide, on renvoie les erreurs
             errors = {field: [error['message'] for error in form.errors.get_json_data()[field]] for field in form.errors}
             return JsonResponse({
                 'error': 'Please correct the errors below.',
