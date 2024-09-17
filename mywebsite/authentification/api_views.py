@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.models import User
 from frontend.models import CustomUser
-from .serializers import AuthorizationCodeSerializer
+from .serializers import AuthorizationCodeSerializer, CustomUserSerializer
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -48,8 +48,6 @@ def callback_42(request):
     token_json = token_response.json()
     access_token = token_json.get('access_token')
 
-    # access_token = token_response.json().get('access_token')
-
     if not access_token:
         return Response({'error': 'Access token not provided'}, status=400)
 
@@ -80,10 +78,20 @@ def callback_42(request):
             'last_name': last_name
         }
     )
+    user_serializer = CustomUserSerializer(
+        user, 
+        data={'first_name': first_name, 'last_name': last_name, 'display_name': display_name}, 
+        context={'avatar_url': avatar_url},
+        partial=True  # Permet la mise à jour partielle (sans obliger tous les champs)
+    )
 
+    if user_serializer.is_valid():
+        user_serializer.save()
+    else:
+        return Response(user_serializer.errors, status=400)
 
     token, _ = Token.objects.get_or_create(user=user)
-    print(f" ******------******* Token DRF généré pour le user{user.email}: {token.key}")
+    # print(f" ******------******* Token DRF généré pour le user{user.email}: {token.key}")
 
     if not created:
         user.first_name = first_name
@@ -106,58 +114,29 @@ def callback_42(request):
     # print(f"Access Token créé : {access_token}")
     return redirect('/profile/')
 
-    # Usage approprié : AllowAny est approprié ici parce que l'endpoint doit
-    # permettre à des utilisateurs non authentifiés de se connecter ou de
-    # s'enregistrer. C'est le point d'entrée pour obtenir un token d'accès,
-    # ce qui nécessite que les utilisateurs puissent accéder à cet endpoint
-    # sans être authentifiés au préalable.
-
 # # ================================================================================================================================================================
 # # ===                                                      DELETE USER ACCOUNT                                                                                 ===
 # # ================================================================================================================================================================
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def delete_profile_api(request):
-    try:
-        user = request.user
-        user.delete()
+# a voir
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def delete_profile_api(request):
+#     try:
+#         user = request.user
+#         user.delete()
 
-        return Response({
-            'message': 'Profile and all associated data successfully deleted.'
-        }, status=200)
+#         return Response({
+#             'message': 'Profile and all associated data successfully deleted.'
+#         }, status=200)
 
-    except IntegrityError as e:
-        return Response({
-            'error': 'An error occurred while deleting the profile.',
-            'details': str(e)
-        }, status=400)
-    except Exception as e:
-        return Response({
-            'error': 'An unexpected error occurred.',
-            'details': str(e)
-        }, status=400)
-
-# # ================================================================================================================================================================
-# # ===                                                      ANONYMIZATION                                                                                       ===
-# # ================================================================================================================================================================
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def request_anonymization_api(request):
-    user = request.user
-    try:
-        with transaction.atomic():
-            unique_suffix = get_random_string(length=8)
-            user.email = f'anonymized_{user.id}@example.com'
-            user.display_name = f'Anonymous_{unique_suffix}'
-            user.first_name = 'Anonymous'
-            user.last_name = 'Anonymous'
-            user.save()
-
-            return Response({'message': 'Your data has been anonymized successfully.'}, status=200)
-
-    except ObjectDoesNotExist:
-        return Response({'error': 'User not found.'}, status=404)
-    except Exception as e:
-        return Response({'error': str(e)}, status=400)
+#     except IntegrityError as e:
+#         return Response({
+#             'error': 'An error occurred while deleting the profile.',
+#             'details': str(e)
+#         }, status=400)
+#     except Exception as e:
+#         return Response({
+#             'error': 'An unexpected error occurred.',
+#             'details': str(e)
+#         }, status=400)
