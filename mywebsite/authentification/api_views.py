@@ -2,7 +2,7 @@ from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.models import User
 from frontend.models import CustomUser
@@ -113,30 +113,3 @@ def callback_42(request):
     user.save(update_fields=['is_online'])
     # print(f"Access Token créé : {access_token}")
     return redirect('/profile/')
-
-# # ================================================================================================================================================================
-# # ===                                                      DELETE USER ACCOUNT                                                                                 ===
-# # ================================================================================================================================================================
-
-# a voir
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def delete_profile_api(request):
-#     try:
-#         user = request.user
-#         user.delete()
-
-#         return Response({
-#             'message': 'Profile and all associated data successfully deleted.'
-#         }, status=200)
-
-#     except IntegrityError as e:
-#         return Response({
-#             'error': 'An error occurred while deleting the profile.',
-#             'details': str(e)
-#         }, status=400)
-#     except Exception as e:
-#         return Response({
-#             'error': 'An unexpected error occurred.',
-#             'details': str(e)
-#         }, status=400)

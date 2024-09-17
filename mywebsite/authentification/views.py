@@ -15,6 +15,7 @@ from django.contrib.auth import update_session_auth_hash, authenticate, login, l
 from django.utils.timezone import localtime
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
+from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 import os
 
@@ -346,11 +347,13 @@ def update_profile(request):
 # # ================================================================================================================================================================
 
 @login_required
+@require_POST
 def delete_profile(request):
     if request.method == 'POST':
         user = request.user
 
         try:
+            Token.objects.filter(user=user).delete()
             user.delete()
             return JsonResponse({
                 'message': 'Profile and all associated data successfully deleted.'
@@ -403,6 +406,29 @@ def update_password(request):
     return JsonResponse({
         'error': 'Invalid request method.'
     }, status=405)
+
+# # ================================================================================================================================================================
+# # ===                                                      ANONYMIZATION                                                                                       ===
+# # ================================================================================================================================================================
+
+@login_required
+def request_anonymization(request):
+    user = request.user
+
+    try:
+        with transaction.atomic():
+            unique_suffix = get_random_string(length=8)
+
+            user.email = f'anonymized_{unique_suffix}@example.com'
+            user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous'
+            user.last_name = 'Anonymous'
+            user.save()
+
+            return JsonResponse({'message': 'Your data has been anonymized successfully.'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 # # ================================================================================================================================================================
 # # ===                                                      MATCH HISTORY                                                                                     ===
