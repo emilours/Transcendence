@@ -2,7 +2,6 @@ from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-# from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.models import User
 from frontend.models import CustomUser
@@ -70,19 +69,26 @@ def callback_42(request):
     if not email or not display_name:
         return Response({'error': 'Incomplete user info'}, status=400)
 
+    base_display_name = display_name
+    counter = 1
+    while CustomUser.objects.filter(display_name=display_name).exists():
+        display_name = f"{base_display_name}_{counter}"
+        counter += 1
+    
     user, created = CustomUser.objects.get_or_create(
         email=email,
         defaults={
             'display_name': display_name,
             'first_name': first_name,
-            'last_name': last_name
+            'last_name': last_name,
+            'is_api_authenticated': True
         }
     )
     user_serializer = CustomUserSerializer(
         user, 
         data={'first_name': first_name, 'last_name': last_name, 'display_name': display_name}, 
         context={'avatar_url': avatar_url},
-        partial=True  # Permet la mise à jour partielle (sans obliger tous les champs)
+        partial=True
     )
 
     if user_serializer.is_valid():
@@ -91,7 +97,6 @@ def callback_42(request):
         return Response(user_serializer.errors, status=400)
 
     token, _ = Token.objects.get_or_create(user=user)
-    # print(f" ******------******* Token DRF généré pour le user{user.email}: {token.key}")
 
     if not created:
         user.first_name = first_name
@@ -111,5 +116,4 @@ def callback_42(request):
     login(request, user)
     user.is_online = True
     user.save(update_fields=['is_online'])
-    # print(f"Access Token créé : {access_token}")
     return redirect('/profile/')

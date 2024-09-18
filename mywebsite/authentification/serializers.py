@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from frontend.models import CustomUser
-import requests
 from urllib.parse import urlparse
 from django.core.files.base import ContentFile
+import random
+import string
+import requests
 import os
 
 class AuthorizationCodeSerializer(serializers.Serializer):
@@ -14,6 +16,22 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'display_name', 'first_name', 'last_name', 'avatar']
+
+    def validate_email(self, value):
+        email = CustomUser.objects.normalize_email(value)
+        
+        user_id = self.instance.id if self.instance else None
+        if CustomUser.objects.filter(email=email).exclude(id=user_id).exists():
+            raise serializers.ValidationError("Email already in use.")
+        
+        return email
+
+    def validate_display_name(self, value):
+        user_id = self.instance.id if self.instance else None
+        if CustomUser.objects.filter(display_name=value).exclude(id=user_id).exists():
+            raise serializers.ValidationError("Username already in use.")
+        
+        return value
 
     def update(self, instance, validated_data):
         avatar_url = self.context.get('avatar_url')

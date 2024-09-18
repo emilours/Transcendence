@@ -1,6 +1,6 @@
 # from django.contrib import messages
 # from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch, Game, Match
-# from datetime import timedelta
+from datetime import timedelta
 # from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -32,6 +32,9 @@ def signin(request):
 
     if not email or not password:
         return JsonResponse({"error": "Email and password are required."}, status=400)
+    
+    if not User.objects.filter(email=email).exists():
+        return JsonResponse({"error": "Please sign up first."}, status=404)
 
     user = authenticate(request, email=email, password=password)
     if user is not None:
@@ -248,12 +251,18 @@ def remove_friend(request, friend_id):
 def update_profile(request):
     if request.method == 'POST':
         user = request.user
+
         email = request.POST.get('email', user.email).strip()
         first_name = request.POST.get('first_name', user.first_name).strip()
         last_name = request.POST.get('last_name', user.last_name).strip()
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
         avatar_choice = request.POST.get('avatar_choice', None)
+
+        if user.is_api_authenticated and email != user.email:
+            return JsonResponse({
+                'error': 'For security reasons, please update your email directly through the 42 intranet platform.'
+            }, status=403)
 
         if email == '':
             email = user.email
@@ -381,6 +390,12 @@ def delete_profile(request):
 def update_password(request):
     if request.method == 'POST':
         user = request.user
+
+        if user.is_api_authenticated:
+            return JsonResponse({
+                'error': 'For security reasons, please update your password directly through the 42 intranet platform.'
+            }, status=403)
+
         form = PasswordChangeForm(user, request.POST)
 
         if form.is_valid():
