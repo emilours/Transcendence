@@ -18,216 +18,6 @@ from django.utils.crypto import get_random_string
 import requests
 import os
 
-# version qui fusionne api et session en mettant a jour avec infos api
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def callback_42(request):
-#     token_url = settings.FORTYTWO_TOKEN_URL
-#     serializer = AuthorizationCodeSerializer(data=request.GET)
-
-#     if not serializer.is_valid():
-#         return Response(serializer.errors, status=400)
-
-#     code = serializer.validated_data.get('code')
-#     if not code:
-#         return Response({'error': 'Code not provided'}, status=400)
-
-#     token_data = {
-#         'grant_type': 'authorization_code',
-#         'client_id': settings.FORTYTWO_CLIENT_ID,
-#         'client_secret': settings.FORTYTWO_CLIENT_SECRET,
-#         'code': code,
-#         'redirect_uri': settings.FORTYTWO_REDIRECT_URI,
-#     }
-
-#     token_response = requests.post(token_url, data=token_data)
-
-#     if token_response.status_code != 200:
-#         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
-
-#     token_json = token_response.json()
-#     access_token = token_json.get('access_token')
-
-#     if not access_token:
-#         return Response({'error': 'Access token not provided'}, status=400)
-
-#     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
-#         'Authorization': f'Bearer {access_token}'
-#     })
-
-#     if user_info_response.status_code != 200:
-#         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
-
-#     user_info = user_info_response.json()
-
-#     email = user_info.get('email')
-#     display_name = user_info.get('login')
-#     first_name = user_info.get('first_name')
-#     last_name = user_info.get('last_name')
-
-#     avatar_url = user_info.get('image', {}).get('link')
-
-#     if not email or not display_name:
-#         return Response({'error': 'Incomplete user info'}, status=400)
-
-#     base_display_name = display_name
-#     counter = 1
-#     while CustomUser.objects.filter(display_name=display_name).exists():
-#         display_name = f"{base_display_name}_{counter}"
-#         counter += 1
-    
-#     user, created = CustomUser.objects.get_or_create(
-#         email=email,
-#         defaults={
-#             'display_name': display_name,
-#             'first_name': first_name,
-#             'last_name': last_name,
-#             'is_api_authenticated': True
-#         }
-#     )
-#     user_serializer = CustomUserSerializer(
-#         user, 
-#         data={'first_name': first_name, 'last_name': last_name, 'display_name': display_name}, 
-#         context={'avatar_url': avatar_url},
-#         partial=True
-#     )
-
-#     if user_serializer.is_valid():
-#         user_serializer.save()
-#     else:
-#         return Response(user_serializer.errors, status=400)
-
-#     token, _ = Token.objects.get_or_create(user=user)
-
-#     if not created:
-#         user.first_name = first_name
-#         user.last_name = last_name
-
-#     if avatar_url:
-#         avatar_response = requests.get(avatar_url)
-#         if avatar_response.status_code == 200:
-#             avatar_name = os.path.basename(urlparse(avatar_url).path)
-#             avatar_content = ContentFile(avatar_response.content)
-#             user.avatar.save(avatar_name, avatar_content, save=False)
-#         else:
-#             return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
-
-#     user.save()
-
-#     login(request, user)
-#     user.is_online = True
-#     user.save(update_fields=['is_online'])
-#     return redirect('/profile/')
-
-# ********************************************************************************************************************************************************
-
-# version en creant deux comptes differents
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def callback_42(request):
-#     token_url = settings.FORTYTWO_TOKEN_URL
-#     serializer = AuthorizationCodeSerializer(data=request.GET)
-
-#     if not serializer.is_valid():
-#         return Response(serializer.errors, status=400)
-
-#     code = serializer.validated_data.get('code')
-#     if not code:
-#         return Response({'error': 'Code not provided'}, status=400)
-
-#     token_data = {
-#         'grant_type': 'authorization_code',
-#         'client_id': settings.FORTYTWO_CLIENT_ID,
-#         'client_secret': settings.FORTYTWO_CLIENT_SECRET,
-#         'code': code,
-#         'redirect_uri': settings.FORTYTWO_REDIRECT_URI,
-#     }
-
-#     token_response = requests.post(token_url, data=token_data)
-
-#     if token_response.status_code != 200:
-#         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
-
-#     token_json = token_response.json()
-#     access_token = token_json.get('access_token')
-
-#     if not access_token:
-#         return Response({'error': 'Access token not provided'}, status=400)
-
-#     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
-#         'Authorization': f'Bearer {access_token}'
-#     })
-
-#     if user_info_response.status_code != 200:
-#         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
-
-#     user_info = user_info_response.json()
-
-#     email = user_info.get('email')
-#     display_name = user_info.get('login')
-#     first_name = user_info.get('first_name')
-#     last_name = user_info.get('last_name')
-#     avatar_url = user_info.get('image', {}).get('link')
-
-#     if not email or not display_name:
-#         return Response({'error': 'Incomplete user info'}, status=400)
-
-#     if CustomUser.objects.filter(email=email).exists():
-#         return Response({'error': 'email already in use, please sign in.'}, status=400)
-
-#     base_display_name = display_name
-#     counter = 1
-#     while CustomUser.objects.filter(display_name=display_name).exists():
-#         display_name = f"{base_display_name}_{counter}"
-#         counter += 1
-    
-#     user = CustomUser(
-#         email=email,
-#         display_name=display_name,
-#         first_name=first_name,
-#         last_name=last_name,
-#         is_api_authenticated=True
-#     )
-
-#     try:
-#         user.full_clean()
-#     except ValidationError as e:
-#         return Response({'error': str(e)}, status=400)
-
-#     user.save()
-
-#     user_serializer = CustomUserSerializer(
-#         user, 
-#         data={'first_name': first_name, 'last_name': last_name, 'display_name': display_name}, 
-#         context={'avatar_url': avatar_url},
-#         partial=True
-#     )
-
-#     if user_serializer.is_valid():
-#         user_serializer.save()
-#     else:
-#         return Response(user_serializer.errors, status=400)
-
-#     if avatar_url:
-#         avatar_response = requests.get(avatar_url)
-#         if avatar_response.status_code == 200:
-#             avatar_name = os.path.basename(urlparse(avatar_url).path)
-#             avatar_content = ContentFile(avatar_response.content)
-#             user.avatar.save(avatar_name, avatar_content, save=False)
-#         else:
-#             return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
-
-#     token, _ = Token.objects.get_or_create(user=user)
-
-#     login(request, user)
-#     user.is_online = True
-#     user.save(update_fields=['is_online'])
-
-#     return redirect('/profile/')
-
-# ********************************************************************************************************************************************************
-
-# version avec comptes fusionnes mais pas de MAJ de api
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def callback_42(request):
@@ -240,6 +30,7 @@ def callback_42(request):
     code = serializer.validated_data.get('code')
     if not code:
         return Response({'error': 'Code not provided'}, status=400)
+        # return redirect('/error_api/')
 
     token_data = {
         'grant_type': 'authorization_code',
@@ -253,12 +44,14 @@ def callback_42(request):
 
     if token_response.status_code != 200:
         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
+        # return redirect('/error_api/')
 
     token_json = token_response.json()
     access_token = token_json.get('access_token')
 
     if not access_token:
         return Response({'error': 'Access token not provided'}, status=400)
+        # return redirect('/error_api/')
 
     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
         'Authorization': f'Bearer {access_token}'
@@ -266,6 +59,7 @@ def callback_42(request):
 
     if user_info_response.status_code != 200:
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
+        # return redirect('/error_api/')
 
     user_info = user_info_response.json()
 
@@ -278,6 +72,7 @@ def callback_42(request):
 
     if not email or not display_name:
         return Response({'error': 'Incomplete user info'}, status=400)
+        # return redirect('/error_api/')
 
     base_display_name = display_name
     counter = 1
@@ -307,6 +102,7 @@ def callback_42(request):
             user_serializer.save()
         else:
             return Response(user_serializer.errors, status=400)
+            # return redirect('/error_api/')
 
         if avatar_url:
             avatar_response = requests.get(avatar_url)
@@ -316,6 +112,7 @@ def callback_42(request):
                 user.avatar.save(avatar_name, avatar_content, save=False)
             else:
                 return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
+                # return redirect('/error_api/')
 
     token, _ = Token.objects.get_or_create(user=user)
 
