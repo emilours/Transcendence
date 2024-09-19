@@ -243,13 +243,13 @@ class Match(models.Model):
 		return f"{self.game.name} match on {self.date} with {self.players.count()} players"
 
 class PlayerMatch(models.Model):
-    player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    match = models.ForeignKey(Match, on_delete=models.CASCADE)
-    score = models.IntegerField(default=0)
-    is_winner = models.BooleanField(default=False)
+	player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+	match = models.ForeignKey(Match, on_delete=models.CASCADE)
+	score = models.IntegerField(default=0)
+	is_winner = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"{self.player.display_name} in match {self.match.id} with score {self.score}"
+	def __str__(self):
+		return f"{self.player.display_name} in match {self.match.id} with score {self.score}"
 
 	player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 	match = models.ForeignKey(Match, on_delete=models.CASCADE)
