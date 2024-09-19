@@ -36,6 +36,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,22 +56,21 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'mywebsite.asgi.application'
 
 # in production we would use redis for in-memory database
-CHANNEL_LAYERS={
-	'default':{
-		'BACKEND':'channels.layers.InMemoryChannelLayer'
-	}
-}
+# CHANNEL_LAYERS={
+# 	'default':{
+# 		'BACKEND':'channels.layers.InMemoryChannelLayer'
+# 	}
+# }
 
 # For production (using redis)
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [("127.0.0.1", 6380)],
-# 			# "hosts": [('redis://default:IUNiWfxeTzDbVdtFlSglIEVaokQaSOhi@redis.railway.internal:6379')]
-#         },
-#     },
-# }
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("redis", 6379)]
+        },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

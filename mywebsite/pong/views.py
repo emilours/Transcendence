@@ -9,14 +9,20 @@ from django.http import JsonResponse
 # 	liveGames += 1
 # 	return render(request, 'pong/pong_home.html', {'gameId': gameId})
 
-def lobby(request, id):
-	print(id)
+# def lobby(request, id):
+# 	print(id)
 
-	return render(request, 'pong/pong.html')
+# 	return render(request, 'pong/pong.html')
 
 
 def pong(request):
+	context = {}
+	if request.user.is_authenticated:
+		test_name = request.user.display_name
+		context = {
+			'test_name': test_name
+		}
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('pong.html', request=request)
-		return JsonResponse({'html': html})
+		html = render_to_string('pong.html', context, request=request)
+		return JsonResponse({'html': html, 'test_name': test_name})
 	return render(request, 'base.html')

@@ -1,10 +1,17 @@
 /* Font styles */
-.font-potta {
-	font-family: 'Potta One', sans-serif;
+.font-balsamiq {
+	font-family: 'Balsamiq Sans', cursive;
+	font-weight: 700;
 }
 
 .font-roboto {
 	font-family: 'Roboto', sans-serif;
+	color: 71, 46, 39;
+}
+
+header {
+	box-shadow: 0 4px 8px rgba(83, 53, 35, 0.2);
+	z-index: 10;
 }
 
 /* High contrast */

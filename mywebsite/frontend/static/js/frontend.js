@@ -1,5 +1,6 @@
 import { initInvaders } from '/static/js/invaders.js';
 import { initPong } from '/static/js/pongMenu.js';
+import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SPA - Single Page Application
@@ -23,6 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+		// close ws connection and cleanup threejsz
+		CloseWebsocket();
 	}
 
 	const loadHeader = async () => {
@@ -60,11 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('/static/js/invaders.js', 'script');
 				await initInvaders(data.test_name);
 			} else if (url.includes('pong')) {
-				await loadResource('/static/js/pongMenu.js', 'script');
+				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
-				await initPong();
-			} else if (url.includes('signup')) {
-				attachPolicyListeners();
+				await loadResource('/static/js/pongMenu.js', 'script');
+				await initPong(data.test_name);
 			}
 
 			attachListeners();

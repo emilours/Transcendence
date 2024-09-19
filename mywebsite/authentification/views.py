@@ -118,7 +118,7 @@ def contact(request):
         friends_count = friend_list.friend_count() if friend_list else 0
 
         last_login_local = localtime(user.last_login) if user.last_login else None
-        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M') if last_login_local else ''
+        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M')[:-3] if last_login_local else ''
 
         user_data = {
             'id': user.id,
@@ -467,7 +467,7 @@ def user_match_history(request, display_name):
 
     user = get_object_or_404(CustomUser, display_name=display_name)
 
-    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
 
     game_data = {}
 
@@ -475,18 +475,11 @@ def user_match_history(request, display_name):
         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
 
         total_matches = player_matches.count()
+        wins = player_matches.filter(is_winner=True).count() if 'is_winner' in player_matches.model._meta.get_fields() else 0
 
-        # Trouver le meilleur score et la date associée
-        best_score_match = player_matches.order_by('-score').first()  # Récupère le match avec le meilleur score
-        best_score = best_score_match.score if best_score_match else None
-        best_score_date = localtime(best_score_match.match.date).strftime('%Y-%m-%d %H:%M') if best_score_match else None
+        best_score = player_matches.aggregate(Max('score'))['score__max']
 
-        if game.name != 'Invaders':
-            wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
-            win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
-        else:
-            wins = None
-            win_ratio = None
+        win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
 
         matches_list = [
             {
@@ -516,17 +509,11 @@ def user_match_history(request, display_name):
 
     return JsonResponse(game_data)
 
-
 @login_required
 def recent_matches(request, display_name):
-    try:
-        user = CustomUser.objects.get(display_name=display_name)
-    except CustomUser.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-
     user = get_object_or_404(CustomUser, display_name=display_name)
 
-    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
 
     game_data = {}
 
@@ -537,6 +524,7 @@ def recent_matches(request, display_name):
             {
                 'game': match.match.game.name,
                 'score': match.score,
+                'is_winner': match.is_winner,
                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
                 'participants': [player.display_name for player in match.match.players.all()]
             }
@@ -560,8 +548,8 @@ def best_matches(request, display_name):
         return JsonResponse({'error': 'User not found'}, status=404)
 
     user = get_object_or_404(CustomUser, display_name=display_name)
-    
-    games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+
+    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
 
     game_data = {}
 
@@ -572,7 +560,7 @@ def best_matches(request, display_name):
             {
                 'game': match.match.game.name,
                 'score': match.score,
-                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
+                'date': match.match.date,
                 'participants': [player.display_name for player in match.match.players.all()]
             }
             for match in best_matches
@@ -599,10 +587,10 @@ def request_anonymization(request):
         with transaction.atomic():
             unique_suffix = get_random_string(length=8)
 
-            # user.email = f'anonymized_{unique_suffix}@example.com'
-            # user.display_name = f'Anonymous_{unique_suffix}'
-            user.first_name = 'Anonymous_{unique_suffix}'
-            user.last_name = 'Anonymous_{unique_suffix}'
+            user.email = f'anonymized_{unique_suffix}@example.com'
+            user.display_name = f'Anonymous_{unique_suffix}'
+            user.first_name = 'Anonymous'
+            user.last_name = 'Anonymous'
             user.save()
 
             return JsonResponse({'message': 'Your data has been anonymized successfully.'}, status=200)

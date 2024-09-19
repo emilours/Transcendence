@@ -6,7 +6,7 @@ import { Color } from "./Colors.js";
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import { tournamentSetup } from "./Tournament.js";
 
-export function initializeGame(userName) {
+export function initInvaders(userName) {
 
 	const game = new Canvas(userName);
 	let mode;
@@ -31,11 +31,7 @@ export function initializeGame(userName) {
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
 				tournamentSetup(startGame, game);
-			}),
-			// createButton('LEADERBOARD', () => {
-			// 	menuScreen.remove();
-			// 	displayLeaderboard();
-			// })
+			})
 		)
 	);
 	document.querySelector('.invaders-container').appendChild(menuScreen);
@@ -75,7 +71,7 @@ export function initializeGame(userName) {
 
 		const backButton = createButton('MENU', () => {
 			controlsScreen.remove();
-			initializeGame(game.userName);
+			initInvaders(game.userName);
 		});
 
 		const buttonContainer = createElement('div', { className: 'button-horizontal' }, backButton, startButton);
@@ -211,7 +207,7 @@ export function initializeGame(userName) {
 						createButton('MENU', () => {
 							gameOverScreen.remove();
 							resetGame(game);
-							initializeGame(game.userName);
+							initInvaders(game.userName);
 						}
 					));
 					appendChildren(gameOverScreen, titleText, scoreText, actionButton);
@@ -241,7 +237,7 @@ export function initializeGame(userName) {
 							actionButton = createButton('BACK TO MENU', () => {
 								gameOverScreen.remove();
 								resetGame(game);
-								initializeGame(game.userName);
+								initInvaders(game.userName);
 							});
 							appendChildren(gameOverScreen, titleText, winnerName, scoreText, actionButton);
 						}
@@ -316,43 +312,6 @@ export function initializeGame(userName) {
 			}
 			return cookieValue;
 		}
-	}
-
-	function displayLeaderboard() {
-		const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-		leaderboard.sort((a, b) => b.score - a.score);
-
-		const leaderboardScreen = createElement('div', { className: 'menu'});
-		const title = createElement('h2', { innerText: 'LEADERBOARD' });
-		leaderboardScreen.appendChild(title);
-
-		const list = createElement('div', { className: 'list-leader' });
-		const itemList = createElement('div', { className: 'list' },
-			createElement('p', { innerText: 'RANK', style: 'width: 60px;' }),
-			createElement('p', { innerText: 'USER', style: 'width: 200px;' }),
-			createElement('p', { innerText: 'SCORE' , style: 'width: 100px;'})
-		);
-		list.appendChild(itemList);
-
-		let i = 0;
-		leaderboard.slice(0, 10).forEach(entry => {
-			const itemList = createElement('div', { className: 'list' },
-				createElement('h4', { innerText: `${++i}.`, style: 'width: 60px;'  }),
-				createElement('h4', { innerText: entry.userName, style: 'width: 200px;' }),
-				createElement('h4', { innerText: entry.score, style: 'width: 100px;' })
-			);
-			itemList.style.display = 'flex';
-			itemList.style.alignItems = 'center';
-			list.appendChild(itemList);
-		});
-		leaderboardScreen.appendChild(list);
-
-		const backButton = createButton('MENU', () => {
-			leaderboardScreen.remove();
-			initializeGame(game.userName);
-		});
-		leaderboardScreen.appendChild(backButton);
-		document.querySelector('.invaders-container').appendChild(leaderboardScreen);
 	}
 }
 
