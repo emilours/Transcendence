@@ -27,35 +27,21 @@
 								<input type="text" id="display_name" name="display_name" class="form-control" value="{{ user.display_name }}" required>
 							</div>
 
-							<!-- Avatar options -->
 							<div class="form-group mb-3">
-								<label>Choose Avatar:</label>
-								<div class="d-flex justify-content-start">
-									<button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#predefined-avatars">Choose a New Avatar</button>
-									<button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#upload-avatar">Upload Avatar</button>
-								</div>
-							</div>
-
-							<!-- Predefined avatars (collapsed initially) -->
-							<div id="predefined-avatars" class="collapse form-group mb-3">
 								<label for="avatar">Choose a new avatar:</label>
 								<div class="d-flex flex-wrap justify-content-start">
 									{% for avatar in predefined_avatars %}
 									<label class="avatar-option me-3 mb-3 mb-md-0">
 										<input type="radio" name="avatar_choice" value="{{ avatar.url }}" {% if user.avatar.url == avatar.url %}checked{% endif %}>
-										<img src="{{ avatar.url }}" alt="Predefined avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
+										<img src="{{ avatar.url }}" alt="Your avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
 									</label>
 									{% endfor %}
 								</div>
 							</div>
-
-							<!-- File upload for avatar (collapsed initially) -->
-							<div id="upload-avatar" class="collapse form-group mb-3">
-								<label for="avatar">Upload your own avatar:</label>
+							<div class="form-group mb-3">
+								<label for="avatar">Or upload your own avatar:</label>
 								<input type="file" id="avatar" name="avatar" class="form-control">
 							</div>
-
-							<!-- Submit button -->
 							<button type="submit" class="btn btn-primary w-100">Save Changes</button>
 						</form>
 					</div>

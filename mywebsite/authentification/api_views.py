@@ -2,11 +2,10 @@ from django.shortcuts import redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.models import User
 from frontend.models import CustomUser
-from .serializers import AuthorizationCodeSerializer
+from .serializers import AuthorizationCodeSerializer, CustomUserSerializer
 from rest_framework import serializers
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -31,6 +30,7 @@ def callback_42(request):
     code = serializer.validated_data.get('code')
     if not code:
         return Response({'error': 'Code not provided'}, status=400)
+        # return redirect('/error_api/')
 
     token_data = {
         'grant_type': 'authorization_code',
@@ -44,14 +44,14 @@ def callback_42(request):
 
     if token_response.status_code != 200:
         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
+        # return redirect('/error_api/')
 
     token_json = token_response.json()
     access_token = token_json.get('access_token')
 
-    # access_token = token_response.json().get('access_token')
-
     if not access_token:
         return Response({'error': 'Access token not provided'}, status=400)
+        # return redirect('/error_api/')
 
     user_info_response = requests.get(settings.FORTYTWO_USER_URL, headers={
         'Authorization': f'Bearer {access_token}'
@@ -59,6 +59,7 @@ def callback_42(request):
 
     if user_info_response.status_code != 200:
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
+        # return redirect('/error_api/')
 
     user_info = user_info_response.json()
 
@@ -71,93 +72,54 @@ def callback_42(request):
 
     if not email or not display_name:
         return Response({'error': 'Incomplete user info'}, status=400)
+        # return redirect('/error_api/')
 
+    base_display_name = display_name
+    counter = 1
+    while CustomUser.objects.filter(display_name=display_name).exists():
+        display_name = f"{base_display_name}_{counter}"
+        counter += 1
+    
     user, created = CustomUser.objects.get_or_create(
         email=email,
         defaults={
             'display_name': display_name,
             'first_name': first_name,
-            'last_name': last_name
+            'last_name': last_name,
+            'is_api_authenticated': True
         }
     )
 
+    if created:
+        user_serializer = CustomUserSerializer(
+            user, 
+            data={'first_name': first_name, 'last_name': last_name, 'display_name': display_name}, 
+            context={'avatar_url': avatar_url},
+            partial=True
+        )
+
+        if user_serializer.is_valid():
+            user_serializer.save()
+        else:
+            return Response(user_serializer.errors, status=400)
+            # return redirect('/error_api/')
+
+        if avatar_url:
+            avatar_response = requests.get(avatar_url)
+            if avatar_response.status_code == 200:
+                avatar_name = os.path.basename(urlparse(avatar_url).path)
+                avatar_content = ContentFile(avatar_response.content)
+                user.avatar.save(avatar_name, avatar_content, save=False)
+            else:
+                return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
+                # return redirect('/error_api/')
 
     token, _ = Token.objects.get_or_create(user=user)
-    print(f" ******------******* Token DRF généré pour le user{user.email}: {token.key}")
-
-    if not created:
-        user.first_name = first_name
-        user.last_name = last_name
-
-    if avatar_url:
-        avatar_response = requests.get(avatar_url)
-        if avatar_response.status_code == 200:
-            avatar_name = os.path.basename(urlparse(avatar_url).path)
-            avatar_content = ContentFile(avatar_response.content)
-            user.avatar.save(avatar_name, avatar_content, save=False)
-        else:
-            return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
 
     user.save()
 
     login(request, user)
     user.is_online = True
     user.save(update_fields=['is_online'])
-    # print(f"Access Token créé : {access_token}")
+
     return redirect('/profile/')
-
-    # Usage approprié : AllowAny est approprié ici parce que l'endpoint doit
-    # permettre à des utilisateurs non authentifiés de se connecter ou de
-    # s'enregistrer. C'est le point d'entrée pour obtenir un token d'accès,
-    # ce qui nécessite que les utilisateurs puissent accéder à cet endpoint
-    # sans être authentifiés au préalable.
-
-# # ================================================================================================================================================================
-# # ===                                                      DELETE USER ACCOUNT                                                                                 ===
-# # ================================================================================================================================================================
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def delete_profile_api(request):
-    try:
-        user = request.user
-        user.delete()
-
-        return Response({
-            'message': 'Profile and all associated data successfully deleted.'
-        }, status=200)
-
-    except IntegrityError as e:
-        return Response({
-            'error': 'An error occurred while deleting the profile.',
-            'details': str(e)
-        }, status=400)
-    except Exception as e:
-        return Response({
-            'error': 'An unexpected error occurred.',
-            'details': str(e)
-        }, status=400)
-
-# # ================================================================================================================================================================
-# # ===                                                      ANONYMIZATION                                                                                       ===
-# # ================================================================================================================================================================
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def request_anonymization_api(request):
-    user = request.user
-    try:
-        with transaction.atomic():
-            unique_suffix = get_random_string(length=8)
-            user.email = f'anonymized_{user.id}@example.com'
-            user.display_name = f'Anonymous_{unique_suffix}'
-            user.first_name = 'Anonymous'
-            user.last_name = 'Anonymous'
-            user.save()
-
-            return Response({'message': 'Your data has been anonymized successfully.'}, status=200)
-
-    except ObjectDoesNotExist:
-        return Response({'error': 'User not found.'}, status=404)
-    except Exception as e:
-        return Response({'error': str(e)}, status=400)

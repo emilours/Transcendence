@@ -125,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-profile', url: '/profile/' },
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
 			{ id: 'navbar-games', url: '/games/' },
+			{ id: 'navbar-contact', url: '/contact/' },
 		];
 
 		NavLinks.forEach(link => {
@@ -143,6 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
 			{ id: 'signup-from-login', url: '/signup/' },
+			{ id: 'home-from-deleted', url: '/home/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },
 			{ id: 'games', url: '/games/' },
@@ -196,8 +198,11 @@ document.addEventListener("DOMContentLoaded", () => {
 							alert(data.error);
 						} else {
 							// alert(data.message);
-							if (id === 'logout-form' || id === 'delete-account-form') {
+							if (id === 'logout-form') {
 								loadContent('/home/', true);
+								loadHeader();
+							} else if (id === 'delete-account-form') {
+								loadContent('/deleted_profile/', true);
 								loadHeader();
 							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
 								loadContent('/profile/', true);
