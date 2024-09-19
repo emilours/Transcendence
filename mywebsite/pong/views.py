@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 # def pong(request):
@@ -14,7 +15,7 @@ from django.http import JsonResponse
 
 # 	return render(request, 'pong/pong.html')
 
-
+@login_required
 def pong(request):
 	context = {}
 	if request.user.is_authenticated:

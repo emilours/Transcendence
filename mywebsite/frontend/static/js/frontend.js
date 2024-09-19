@@ -26,6 +26,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 		// close ws connection and cleanup threejsz
 		CloseWebsocket();
+
+		// Close any open Bootstrap modals
+		const modals = document.querySelectorAll('.modal.show');
+		modals.forEach(modal => {
+			const modalInstance = bootstrap.Modal.getInstance(modal);
+			if (modalInstance) {
+				modalInstance.hide();
+			}
+		});
 	}
 
 	const loadHeader = async () => {
@@ -67,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
 				await initPong(data.test_name);
+			} else if (url.includes('signup')) {
+				attachPolicyListeners();
 			}
 
 			attachListeners();
@@ -233,29 +244,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
-
 	const attachPolicyListeners = () => {
+		const privacyPolicyLink = document.getElementById('privacyPolicyLink');
 		const privacyPolicyModal = new bootstrap.Modal(document.getElementById('privacyPolicyModal'));
-		const acceptPrivacyPolicyBtn = document.getElementById('accept-privacy-policy');
-		const privacyPolicyAgreement = document.getElementById('privacyPolicyAgreement');
-		const signupSubmitBtn = document.getElementById('signup-submit');
-		let privacyPolicyAccepted = localStorage.getItem('privacyPolicyAccepted') === 'true';
 
-		if (!privacyPolicyAccepted) {
-			privacyPolicyModal.show();
-		} else {
-			signupSubmitBtn.disabled = false;
-		}
-
-		if (acceptPrivacyPolicyBtn) {
-			acceptPrivacyPolicyBtn.addEventListener('click', () => {
-				if (privacyPolicyAgreement.checked) {
-					localStorage.setItem('privacyPolicyAccepted', 'true');
-					privacyPolicyModal.hide();
-					signupSubmitBtn.disabled = false;
-				} else {
-					alert('You must agree to the privacy policy to proceed.');
-				}
+		if (privacyPolicyLink) {
+			privacyPolicyLink.addEventListener('click', (event) => {
+				event.preventDefault();
+				privacyPolicyModal.show();
 			});
 		}
 	};
@@ -277,6 +273,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
+
+
 	loadContent(window.location.pathname, false);
 	loadHeader();
 });

@@ -1,9 +1,9 @@
 {% load static %}
-<header class="font-potta">
+<header class="font-balsamiq">
 	<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
-		<div class="container-fluid bg-secondary">
+		<div class="container-fluid bg-primary">
 			<a class="navbar-brand">
-				<img src="{% static 'img/pusheen_nav.png' %}" alt="pusheen face icon" width="60" height="60">
+				<img src="{% static 'img/pusheen-nav.gif' %}" alt="pusheen face icon" width="80" height="80">
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
 			aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -12,60 +12,60 @@
 			<div class="collapse navbar-collapse align justify-content-between my-2" id="navbarContent">
 				<ul class="navbar-nav mx-auto align-items-center">
 					<li class="nav-item">
-						<a class="nav-link" aria-current="page" href="#" id="navbar-home">Home</a>
+						<a class="nav-link fs-4" aria-current="page" href="#" id="navbar-home">Home</a>
 					</li>
 					{% if user.is_authenticated %}
 					<li class="nav-item">
-						<a class="nav-link" href="#" id="navbar-games">Games</a>
+						<a class="nav-link fs-4" href="#" id="navbar-games">Games</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link" href="#" id="navbar-leaderboard">Leaderboard</a>
+						<a class="nav-link fs-4" href="#" id="navbar-leaderboard">Leaderboard</a>
 					</li>
 					{% endif %}
 					<li class="nav-item">
-						<button id="decrease-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
+						<button id="decrease-font" class="btn btn-icon shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
 							<i class="bi bi-dash-circle"></i>
-							<span class="d-md-none ms-1 fs-6">Decrease font size</span>
+							<span class="d-md-none ms-1 fs-1">Decrease font size</span>
 						</button>
 					</li>
 					<li class="nav-item">
-						<button id="increase-font" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Increase font size">
+						<button id="increase-font" class="btn btn-icon shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Increase font size">
 							<i class="bi bi-plus-circle"></i>
-							<span class="d-md-none ms-1 fs-6">Increase font size</span>
+							<span class="d-md-none ms-1 fs-1">Increase font size</span>
 						</button>
 					</li>
 					<li class="nav-item">
-						<button id="toggle-contrast" class="btn btn-secondary shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
+						<button id="toggle-contrast" class="btn btn-icon shadow-none btn-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle high contrast">
 							<i class="bi bi-eye"></i>
-							<span class="d-md-none ms-1 fs-6">High Contrast</span>
+							<span class="d-md-none ms-1 fs-1">High Contrast</span>
 						</button>
 					</li>
-					<li class="nav-item dropdown ms-3 mb-4 mb-md-0">
-						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-							<img src="{% static 'img/global.png' %}" alt="Choose your language icon" width="24" height="24">
-							<span class="d-md-none ms-1 fs-6">Languages</span>
+					<div class="navbar-nav nav-item dropdown text-secondary-emphasis me-3">
+						<a class="nav-link dropdown-toggle fs-5" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<i class="bi bi-globe"></i>
+							<span class="d-md-none ms-1 fs-5">Account</span>
 						</a>
-						<ul class="dropdown-menu rounded-3 bg-secondary dropdown-menu-primary" aria-labelledby="navbarDropdown">
-							<li><a class="dropdown-item" href="#">English</a></li>
-							<li><a class="dropdown-item" href="#">French</a></li>
-							<li><a class="dropdown-item" href="#">Spanish</a></li>
+						<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
+							<li><a class="dropdown-item text-link" href="#">English</a></li>
+							<li><a class="dropdown-item text-link" href="#">French</a></li>
+							<li><a class="dropdown-item text-link" href="#">Spanish</a></li>
 						</ul>
-					</li>
+					</div>
 				</ul>
 				{% if user.is_authenticated %}
 				<div class="d-flex justify-content-center align-items-center">
 					<img src="{{ user.avatar.url }}" alt="Profile Image/Avatar icon" class="rounded-circle" width="60" height="60">
-					<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark ms-2" id="navbar-profile">Profile</button>
+					<button type="button" class="btn btn-primary ms-2" id="navbar-profile">Profile</button>
 					<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 						{% csrf_token %}
-						<button type="submit" class="btn btn-primary rounded-pill ms-2">Sign out</button>
+						<button type="submit" class="btn btn-outline-primary ms-2">Sign out</button>
 					</form>
 				</div>
 				{% else %}
 				<div class="d-flex justify-content-center">
 
-					<button type="button" class="btn btn-outline-primary rounded-pill border-dark text-dark" id="navbar-login">Login</button>
-					<button type="button" class="btn btn-primary rounded-pill ms-2" id="navbar-signup">Sign up</button>
+					<button type="button" class="btn btn-outline-primary" id="navbar-login">Login</button>
+					<button type="button" class="btn btn-primary ms-2" id="navbar-signup">Sign up</button>
 				</div>
 				{% endif %}
 			</div>
