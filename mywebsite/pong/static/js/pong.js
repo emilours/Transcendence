@@ -30,8 +30,8 @@ import { FontLoader } from './FontLoader.js';
 	export function ConnectWebsocket()
 	{
 	// WEBSOCKET
-	// const url = `ws://${window.location.host}/ws/pong-socket-server/`;
-	const url = `ws://${window.location.host}/ws/pong-tournament/`;
+	const url = `ws://${window.location.host}/ws/pong-socket-server/`;
+	// const url = `ws://${window.location.host}/ws/pong-tournament/`;
 	console.log("Url: " + url);
 	pongSocket = new WebSocket(url);
 

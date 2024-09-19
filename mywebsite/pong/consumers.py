@@ -1,5 +1,10 @@
 import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
+import django
+django.setup()
+from frontend.models import Game, Match, PlayerMatch
+from django.contrib.auth import get_user_model
+
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -19,7 +24,6 @@ def log(message):
 	print(f"[PONG LOG] {message}")
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):
-
 	games = {}
 	players = {}
 	# Don't know if i need or why i used it ...
@@ -40,22 +44,20 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 		await self.accept()
 
-		# for game in self.games:
-		# 	if game["status"] == "paused":
-		# 		if game[""]
-		# if game["player1"] == self.user.display_name or game["player2"] == self.user.display_name:
-
-		async with self.update_lock:
-			self.players[self.user.display_name] = "online"
-
 		for game in self.games.values():
 			if game["players"] != 2 or game["player2"] == self.user.display_name:
 				self.is_main = True
 				game_found = True
 				self.game_id = game["id"]
 				self.room_group_name = self.game_id
+
+				if self.game_id not in self.players:
+					self.players[self.game_id] = []
+				# [0] == player1
+				self.players[self.game_id].insert(1, self.user)
+
 				if game["player1"] == self.user.display_name:
-					self.players[self.user.display_name] = "online"
+					self.players[self.user] = "online"
 					self.games[self.game_id]["status"] = "running"
 					break
 				log(f"Game not full found: {game['id']}")
@@ -93,6 +95,15 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 					'text': "Game Starting!"
 					# waiting (for a 2nd player), paused (player disconnected), running
 				}
+
+				if self.game_id not in self.players:
+					self.players[self.game_id] = []
+				# [0] == player1
+				self.players[self.game_id].insert(0, self.user)
+
+
+
+
 			await self.send(text_data=json.dumps({
 				'type': 'waiting',
 				'message': 'Waiting for another player to join...'
@@ -114,8 +125,8 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 	async def game_loop(self):
 		log("STARTING GAME LOOP")
 		while True:
-			log("In game loop..")
-			log(f"status: {self.games[self.game_id]['status']}")
+			# log("In game loop..")
+			# log(f"status: {self.games[self.game_id]['status']}")
 			while self.games[self.game_id]["status"] == "paused":
 				await asyncio.sleep(1 / 2)
 				log("GAME IS PAUSE, SLEEPING!")
@@ -161,6 +172,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 			if self.games[self.game_id]['gameOver'] == 1 and self.game_task:
 				# TODO: Save game in db
+				await self.save_match()
 				self.game_task.cancel()
 				self.game_task = None
 				self.games[self.game_id] = {}
@@ -170,9 +182,42 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 			# Control the game loop speed
 			await asyncio.sleep(1 / 60)
 
+
+	async def save_match(self):
+
+		log("SAVING MATCH TO DB")
+		# description
+		game_type = 'normal game'
+
+		# player1
+		player1 = self.players[self.game_id][0]
+		log(f"type of player1: {type(player1)}")
+		score1 = self.games[self.game_id]['player1Score']
+		if score1 >= 5 :
+			is_player_winner = True
+		else:
+			is_player_winner = False
+
+		game = Game.objects.get_or_create(name='Pong', description=game_type)
+		match = Match.objects.create(game=game, status='completed', details=game_type)
+		PlayerMatch.objects.create(player=player1, match=match, score=score1, is_winner=is_player_winner)
+
+		#player2
+		player2 = self.players[self.game_id][1]
+		score2 = self.games[self.game_id]['player2Score']
+		if score2 >= 5 :
+			is_player_winner = True
+		else:
+			is_player_winner = False
+
+		PlayerMatch.objects.create(player=player2, match=match, score=score2, is_winner=is_player_winner)
+
+
+
 	async def send_game_state(self, event):
 		# Send the updated game state to the client
 		await self.send(text_data=json.dumps(event['game_state']))
+
 
 	def reset_ball(self):
 
@@ -200,13 +245,12 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 				log("GAME PAUSED")
 				if self.games[self.game_id]["players"] == 0:
 					del self.games[self.game_id]
-			if self.user.display_name in self.players:
-				del self.players[self.user.display_name]
+				if self.game_id in self.players:
+					del self.players[self.game_id]
 
 		# Debug
 		for game in self.games.values():
 			log(f"values: {game}")
-
 
 
 	async def receive(self, text_data):
@@ -238,6 +282,7 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 
 	# 4 players tournament
 	games = {}
+	players = {}
 	update_lock = asyncio.Lock()
 
 	async def connect(self):
