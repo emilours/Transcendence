@@ -30,8 +30,8 @@ import { FontLoader } from './FontLoader.js';
 	export function ConnectWebsocket()
 	{
 	// WEBSOCKET
-	const url = `ws://${window.location.host}/ws/pong-socket-server/`;
-	// const url = `ws://${window.location.host}/ws/pong-tournament/`;
+	// const url = `ws://${window.location.host}/ws/pong-socket-server/`;
+	const url = `ws://${window.location.host}/ws/pong-tournament/`;
 	console.log("Url: " + url);
 	pongSocket = new WebSocket(url);
 
@@ -323,7 +323,7 @@ function StartGame()
 		scene.add(cube);
 		scene.add(ball);
 
-		ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
+		// ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
 
 
 		// Paddles

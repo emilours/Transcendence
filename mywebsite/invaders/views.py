@@ -26,7 +26,7 @@ def save_match(request):
 			print('--------HERE--------')
 			if request.user.is_authenticated:
 				user = request.user
-				print(f"[LOGGGGG] type of user: {type(user)}")
+				print(f"[INVADER LOG] type of user: {type(user)}")
 
 			data = json.loads(request.body)
 

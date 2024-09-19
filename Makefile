@@ -61,6 +61,8 @@ clean: stop down
 		echo "Removing images..."; \
 		docker rmi -f $(IMAGES); \
 	fi
+# removing daphne_volume for CRITICAL Listen failure
+	@docker volume rm -f daphne_volume
 
 fclean: clean
 	@echo "$(YELLOW)\n. . . Performing full cleanup . . .\n$(RESET)"

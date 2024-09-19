@@ -18,6 +18,7 @@ LEFT_WALL = -8.0
 RIGHT_WALL = 8.0
 PLAYER1_X = -7.5
 PLAYER2_X = 7.5
+WINNING_SCORE = 5
 
 
 def log(message):
@@ -25,16 +26,13 @@ def log(message):
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 	games = {}
+	# players is used to save the user class for the lobby
 	players = {}
-	# Don't know if i need or why i used it ...
-	# Player can be in game --> online or not in game --> offline
-	# game_state = {}
 
 	update_lock = asyncio.Lock()
 
 	async def connect(self):
 		self.user = self.scope['user']
-		# user is always connected !?
 		game_found = False
 
 		if not self.user.is_authenticated:
@@ -60,7 +58,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 					self.players[self.user] = "online"
 					self.games[self.game_id]["status"] = "running"
 					break
-				log(f"Game not full found: {game['id']}")
+				log(f"Available pong lobby found: {game['id']}")
 				async with self.update_lock:
 					game["player2"] = self.user.display_name
 					game["players"] += 1
@@ -101,9 +99,6 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 				# [0] == player1
 				self.players[self.game_id].insert(0, self.user)
 
-
-
-
 			await self.send(text_data=json.dumps({
 				'type': 'waiting',
 				'message': 'Waiting for another player to join...'
@@ -119,7 +114,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 		# Debug
 		for game in self.games.values():
-			log(f"values: {game}")
+			log(f"game: {game}")
 
 
 	async def game_loop(self):
@@ -146,10 +141,10 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 				self.games[self.game_id]['player1Score'] += 1
 				self.reset_ball()
 
-			if self.games[self.game_id]['player1Score'] >= 5:
+			if self.games[self.game_id]['player1Score'] >= WINNING_SCORE:
 				log(f"Player 1 {self.games[self.game_id]['player1']} Won!")
 				self.games[self.game_id]['gameOver'] = 1
-			elif self.games[self.game_id]['player2Score'] >= 5:
+			elif self.games[self.game_id]['player2Score'] >= WINNING_SCORE:
 				log(f"Player 2 {self.games[self.game_id]['player2']} Won!")
 				self.games[self.game_id]['gameOver'] = 1
 
@@ -172,7 +167,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 			if self.games[self.game_id]['gameOver'] == 1 and self.game_task:
 				# TODO: Save game in db
-				await self.save_match()
+				self.save_match()
 				self.game_task.cancel()
 				self.game_task = None
 				self.games[self.game_id] = {}
@@ -183,29 +178,29 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 			await asyncio.sleep(1 / 60)
 
 
-	async def save_match(self):
+	def save_match(self):
 
 		log("SAVING MATCH TO DB")
-		# description
-		game_type = 'normal game'
+		# normal or tournament
+		game_type = 'normal'
+		game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
+		match = Match.objects.create(game=game, status='completed', details=game_type)
 
 		# player1
 		player1 = self.players[self.game_id][0]
 		log(f"type of player1: {type(player1)}")
 		score1 = self.games[self.game_id]['player1Score']
-		if score1 >= 5 :
+		if score1 >= WINNING_SCORE :
 			is_player_winner = True
 		else:
 			is_player_winner = False
 
-		game = Game.objects.get_or_create(name='Pong', description=game_type)
-		match = Match.objects.create(game=game, status='completed', details=game_type)
 		PlayerMatch.objects.create(player=player1, match=match, score=score1, is_winner=is_player_winner)
 
 		#player2
 		player2 = self.players[self.game_id][1]
 		score2 = self.games[self.game_id]['player2Score']
-		if score2 >= 5 :
+		if score2 >= WINNING_SCORE :
 			is_player_winner = True
 		else:
 			is_player_winner = False
@@ -227,10 +222,10 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 
 	async def disconnect(self, close_code):
-		# Remove user from group
 		if not self.scope["user"].is_authenticated:
 			return
 
+		# Remove user from group
 		await self.channel_layer.group_discard(
 			self.room_group_name,
 			self.channel_name
@@ -250,7 +245,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 		# Debug
 		for game in self.games.values():
-			log(f"values: {game}")
+			log(f"game: {game}")
 
 
 	async def receive(self, text_data):
@@ -287,7 +282,6 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		self.user = self.scope['user']
-		# user is always connected !?
 		game_found = False
 
 		if not self.user.is_authenticated:
@@ -297,99 +291,115 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 
 		await self.accept()
 		log(f"Websocket connection oppened to TournamentPongConsumer")
-		self.games["test"] = {
-			"id": "test",
-			"players": [],
-		}
-		self.games["test"]["players"].append("test1")
-		self.game_task = asyncio.create_task(self.tournament_loop())
+		# TESTING
+		# self.games["test"] = {
+		# 	"id": "test",
+		# 	"players": [],
+		# }
+		# self.games["test"]["players"].append("test1")
+		# self.game_task = asyncio.create_task(self.tournament_loop())
 
 		# async with self.update_lock:
 		# 	self.players[self.user.display_name] = "online"
 
-		# for game in self.games.values():
-		# 	if game["players"] < 4 or game["player2"] == self.user.display_name: #change for game["player2"]
-		# 		self.is_main = True
-		# 		game_found = True
-		# 		self.game_id = game["id"]
-		# 		self.room_group_name = self.game_id
-		# 		if game["player1"] == self.user.display_name:
-		# 			self.players[self.user.display_name] = "online"
-		# 			self.games[self.game_id]["status"] = "running"
-		# 			break
-		# 		log(f"Game not full found: {game['id']}")
-		# 		async with self.update_lock:
-		# 			game["player2"] = self.user.display_name
-		# 			game["players"] += 1
-		# 			game["status"] = "running"
-		# 		self.game_task = asyncio.create_task(self.game_loop())
-		# 		await self.channel_layer.group_send(
-		# 			self.room_group_name,
-		# 			{
-		# 				'type': 'send_game_state',
-		# 				'game_state': self.games[self.game_id]
-		# 			}
-		# 		)
-		# 		break
+		for game in self.games.values():
+			if game["playerCount"] < 4: #TODO: change 'or game["player2"] == self.user.display_name'
+				self.is_main = False
+				game_found = True
+				self.game_id = game["id"]
+				self.room_group_name = self.game_id
+				for i in range(1, 4):
+					if i < game['playerCount'] and game['players'][i] == self.user.display_name :
+						if self.game_id not in self.players:
+							self.players[self.game_id] = []
+						self.players[self.game_id].insert(i, self.user)
+						# self.games[self.game_id]['status'] = "running"
+						break
+				log(f"Available tournament lobby found: {game['id']}")
+				async with self.update_lock:
+					game['players'].insert(game['playerCount'] ,self.user.display_name)
+					game['scores'].insert(0, 0)
+					game['pos'].insert(0, 0)
+					game['playerCount'] += 1
+					# game["status"] = "running"
 
-		# if game_found == False:
-		# 	self.game_id = str(uuid.uuid4())
-		# 	self.is_main = False
-		# 	async with self.update_lock:
-		# 		self.games[self.game_id] = {
-		# 			"id": self.game_id,
-		# 			"players": 1,
-		# 			"player1": self.user.display_name,
-		# 			"player2": None,
-		# 			"player3": None,
-		# 			"player4": None,
-		# 			"score1": 0,
-		# 			"score2": 0,
-		# 			"status": "waiting",
-		# 			'ballPosition': [0, 0],
-		# 			'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
-		# 			'pos1': 0,
-		# 			'pos2': 0,
-		# 			'gameOver': 0,
-		# 			'text': "Game Starting!"
-		# 			# waiting (for a 2nd player), paused (player disconnected), running
-		# 		}
-		# 	await self.send(text_data=json.dumps({
-		# 		'type': 'waiting',
-		# 		'message': 'Waiting for another player to join...'
-		# 	}))
+				await self.channel_layer.group_send(
+					self.room_group_name,
+					{
+						'type': 'send_game_state',
+						'game_state': self.games[self.game_id]
+					}
+				)
+				break
 
-		# # All cases
-		# self.room_group_name = self.game_id
-		# await self.channel_layer.group_add(
-		# 	self.room_group_name, self.channel_name
-		# 	)
+		if game_found == False:
+			self.game_id = str(uuid.uuid4())
+			self.is_main = True
+			async with self.update_lock:
+				self.games[self.game_id] = {
+					"id": self.game_id,
+					"playerCount": 1,
+					"players": [],
+					"scores": [],
+					"pos": [],
+					'ballPosition': [0, 0],
+					'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
+					'gameOver': 0,
+					'text': "Game Starting!",
+					"status": "waiting",
+					# waiting (for a 2nd player), paused (player disconnected), running
+				}
+				self.games[self.game_id]['players'].insert(0, self.user.display_name)
+				self.games[self.game_id]['scores'].insert(0, 0)
+				self.games[self.game_id]['pos'].insert(0, 0)
 
-		# log(f"Room name: {self.room_group_name}")
+				if self.game_id not in self.players:
+					self.players[self.game_id] = []
+				self.players[self.game_id].insert(0, self.user)
 
-		# # Debug
-		# for game in self.games.values():
-		# 	log(f"values: {game}")
+				self.game_task = asyncio.create_task(self.tournament_loop())
+
+			await self.send(text_data=json.dumps({
+				'type': 'waiting',
+				'message': 'Waiting for another player to join...'
+			}))
+
+		# All cases
+		self.room_group_name = self.game_id
+		await self.channel_layer.group_add(
+			self.room_group_name, self.channel_name
+			)
+
+		log(f"Room name: {self.room_group_name} has {self.games[self.game_id]['playerCount']} players")
+
+		# DEBUG
+		for game in self.games.values():
+			log(f"game: {game}")
 
 
 	async def tournament_loop(self):
 		log("TOURNAMENT LOOP")
-		# while True:
-			# while self.games[self.game_id]['players'] != 4:
-			# 	await asyncio.sleep(1)
-		self.games["test"]["players"].append("test2")
-		log("STARTING TOURNAMENT")
-		log(f"Length of players: {len(self.games['test']['players'])}")
-		log(f"Players: {self.games['test']['players']}")
-		i = 2
-		log(f"player{i} is {self.games['test']['players'][i - 1]}")
+		while True:
+			while self.games[self.game_id]['playerCount'] < 4:
+				await asyncio.sleep(1)
+
+			log(f"FIRST GAME OF TOURNAMENT STARTING GO GO GO")
+
+		# MORE TESTING
+		# self.games["test"]["players"].append("test2")
+		# log("STARTING TOURNAMENT")
+		# log(f"Length of players: {len(self.games['test']['players'])}")
+		# log(f"Players: {self.games['test']['players']}")
+		# i = 2
+		# log(f"player{i} is {self.games['test']['players'][i - 1]}")
 
 	async def game_loop(self):
+		# TODO: game_loop will take the index of the two players playing
 		log("STARTING GAME LOOP")
 		while True:
 			log("In game loop..")
 			log(f"status: {self.games[self.game_id]['status']}")
-			while self.games[self.game_id]["status"] == "paused":
+			while self.games[self.game_id]['status'] == "paused":
 				await asyncio.sleep(1 / 2)
 				log("GAME IS PAUSE, SLEEPING!")
 			# Update the ball position
@@ -408,10 +418,10 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 				self.games[self.game_id]['player1Score'] += 1
 				self.reset_ball()
 
-			if self.games[self.game_id]['player1Score'] >= 5:
+			if self.games[self.game_id]['player1Score'] >= WINNING_SCORE:
 				log(f"Player 1 {self.games[self.game_id]['player1']} Won!")
 				self.games[self.game_id]['gameOver'] = 1
-			elif self.games[self.game_id]['player2Score'] >= 5:
+			elif self.games[self.game_id]['player2Score'] >= WINNING_SCORE:
 				log(f"Player 2 {self.games[self.game_id]['player2']} Won!")
 				self.games[self.game_id]['gameOver'] = 1
 
@@ -434,6 +444,7 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 
 			if self.games[self.game_id]['gameOver'] == 1 and self.game_task:
 				# TODO: Save game in db
+				# self.save_match()
 				self.game_task.cancel()
 				self.game_task = None
 				self.games[self.game_id] = {}
@@ -456,31 +467,30 @@ class TournamentPongConsumer(AsyncWebsocketConsumer):
 
 
 	async def disconnect(self, close_code):
-		pass
-		# # Remove user from group
-		# if not self.scope["user"].is_authenticated:
-		# 	return
+		if not self.scope["user"].is_authenticated:
+			return
 
-		# await self.channel_layer.group_discard(
-		# 	self.room_group_name,
-		# 	self.channel_name
-		# )
+		# Remove user from group
+		await self.channel_layer.group_discard(
+			self.room_group_name,
+			self.channel_name
+		)
 
-		# log(f"User {self.user.display_name} has disconnected")
+		log(f"User {self.user.display_name} has disconnected")
 
-		# async with self.update_lock:
-		# 	if self.game_id in self.games:
-		# 		self.games[self.game_id]["players"] -= 1
-		# 		self.games[self.game_id]["status"] = "paused"
-		# 		log("GAME PAUSED")
-		# 		if self.games[self.game_id]["players"] == 0:
-		# 			del self.games[self.game_id]
-		# 	if self.user.display_name in self.players:
-		# 		del self.players[self.user.display_name]
+		async with self.update_lock:
+			if self.game_id in self.games:
+				self.games[self.game_id]["playerCount"] -= 1
+				self.games[self.game_id]["status"] = "paused"
+				log("TOURNAMENT GAME PAUSED")
+				if self.games[self.game_id]["playerCount"] == 0:
+					del self.games[self.game_id]
+			if self.game_id in self.players:
+				del self.players[self.game_id]
 
-		# # Debug
-		# for game in self.games.values():
-		# 	log(f"values: {game}")
+		# Debug
+		for game in self.games.values():
+			log(f"game: {game}")
 
 
 	async def receive(self, text_data):
