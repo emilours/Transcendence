@@ -1,5 +1,5 @@
-import { initInvaders } from '/static/js/invaders.js';
-import { initPong } from '/static/js/pongMenu.js';
+import { initializeGame } from '/static/js/invaders.js';
+// import { initPong } from '/static/js/pongMenu.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SPA - Single Page Application
@@ -58,11 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initInvaders(data.test_name);
+				await initializeGame();
 			} else if (url.includes('pong')) {
 				await loadResource('/static/js/pongMenu.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
-				await initPong();
+				// await initPong();
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			}
