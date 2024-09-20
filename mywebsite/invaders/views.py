@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -48,3 +49,29 @@ def save_match(request):
 		except Exception as e:
 			return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+def invader_leaderboard(request):
+	leaderboard_data = []
+	print('+++++++++++++++++AQUI')
+
+	invader_game = Game.objects.filter(name='Invaders').first()
+	if invader_game:
+		matches = Match.objects.filter(game=invader_game).prefetch_related(
+			Prefetch('playermatch_set', queryset=PlayerMatch.objects.select_related('player'))
+		)
+
+		for match in matches:
+			for player_match in match.playermatch_set.all():
+				leaderboard_data.append({
+					'score': player_match.score,
+					'display_name': player_match.player.display_name,
+					'date': match.date.strftime('%Y-%m-%d'),
+					'game': match.details,
+				})
+				print('score', player_match.score)
+				print('display_name', player_match.player.display_name)
+				print('date', match.date.strftime('%Y-%m-%d'))
+				print('game', match.details)
+
+	return JsonResponse(leaderboard_data, safe=False)

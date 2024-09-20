@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Game, Match, PlayerMatch
+from .models import Game, Match, PlayerMatch, CustomUser
+
+class CustomUserAdmin(admin.ModelAdmin):
+	list_display = ('display_name', 'email', 'is_staff', 'is_active')
 
 class PlayerMatchInline(admin.TabularInline):  # O StackedInline
 	model = PlayerMatch
@@ -28,3 +31,4 @@ class GameAdmin(admin.ModelAdmin):
 
 admin.site.register(Game, GameAdmin)
 admin.site.register(Match, MatchAdmin)
+admin.site.register(CustomUser, CustomUserAdmin)
