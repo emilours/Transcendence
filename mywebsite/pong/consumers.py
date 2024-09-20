@@ -1,7 +1,5 @@
 import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
-import django
-django.setup()
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 
@@ -51,7 +49,6 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 
 				if self.game_id not in self.players:
 					self.players[self.game_id] = []
-				# [0] == player1
 				self.players[self.game_id].insert(1, self.user)
 
 				if game["player1"] == self.user.display_name:
@@ -183,6 +180,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 		log("SAVING MATCH TO DB")
 		# normal or tournament
 		game_type = 'normal'
+		
 		game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
 		match = Match.objects.create(game=game, status='completed', details=game_type)
 

@@ -8,11 +8,13 @@ import { FontLoader } from './FontLoader.js';
 
 	// standard global variables
 	var scene, camera, renderer, controls, loader;
-	// var keyboard = new THREEx.KeyboardState();
 
 	// custom global variables
 	var cube, line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
-	var pongSocket;
+	var pongSocket, overlayText;
+	// TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
+	// OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
+	var threadID;
 	var scoreGeometry, scoreFont, gameOver;
 	// const PADDLE_SPEED = 0.2;
 	const BALL_SPEED = 0.1;
@@ -27,11 +29,15 @@ import { FontLoader } from './FontLoader.js';
 
 	// ConnectWebsocket();
 
-	export function ConnectWebsocket()
+	export function ConnectWebsocket(type)
 	{
 	// WEBSOCKET
-	// const url = `ws://${window.location.host}/ws/pong-socket-server/`;
-	const url = `ws://${window.location.host}/ws/pong-tournament/`;
+	var url;
+	if (type == 'tournament')
+		url = `ws://${window.location.host}/ws/pong-tournament/`;
+	else
+		url = `ws://${window.location.host}/ws/pong-socket-server/`;
+	
 	console.log("Url: " + url);
 	pongSocket = new WebSocket(url);
 
@@ -59,12 +65,12 @@ import { FontLoader } from './FontLoader.js';
 	}
 
 
-	function abs(num)
-	{
-		if (num < 0)
-			return (-num);
-		return (num);
-	}
+	// function abs(num)
+	// {
+	// 	if (num < 0)
+	// 		return (-num);
+	// 	return (num);
+	// }
 
 	function onWindowResize()
 	{
@@ -110,6 +116,7 @@ function StartGame()
 					createScoreText();
 				}
 			}
+			overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
 		};
 		Loop();
 		//Cleanup();
@@ -252,6 +259,9 @@ function StartGame()
 		// const textPlane = new THREE.Mesh(textGeometry, textMaterial);
 		// scene.add(textPlane);
 
+		// OVERLAY TEXT
+		overlayText = document.getElementById('overlay-text');
+
 		// LIGHT
 		// can't see textures without light
 		var light = new THREE.PointLight(0xffffff);
@@ -316,11 +326,11 @@ function StartGame()
 		arenaLeftSide.position.x -= 8.25;
 
 		// Ball
-		const cubeGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+		// const cubeGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 		const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-		cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
+		// cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
 		ball = new THREE.Mesh(ballGeometry, ballMaterial);
-		scene.add(cube);
+		// scene.add(cube);
 		scene.add(ball);
 
 		// ballBB = new THREE.Sphere(ball.position, BALL_SIZE);

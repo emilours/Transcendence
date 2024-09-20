@@ -10,7 +10,7 @@ export function initPong(userName) {
 		createElement('div', { className: 'button-vertical' },
 			createButton('ONLINE MATCH', () => {
 				menuScreen.remove();
-				ConnectWebsocket();
+				ConnectWebsocket('normal');
 				
 				// startGame(mode = 'online', player1, null);
 			}),
@@ -21,6 +21,7 @@ export function initPong(userName) {
 			}),
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
+				ConnectWebsocket('tournament')
 				// tournamentSetup(startGame, game);
 			})
 		)
