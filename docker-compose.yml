@@ -2,9 +2,8 @@ services:
   mywebsite:
     build: ./mywebsite
     container_name: mywebsite
+    # command: daphne -u daphne/daphne.sock mywebsite.asgi:application
     # command: python manage.py runserver 0.0.0.0:8000
-    # -v2 == more detailed logs
-    command: daphne -u daphne/daphne.sock mywebsite.asgi:application
     # command: gunicorn mywebsite.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles/
@@ -13,6 +12,7 @@ services:
       - daphne_volume:/app/daphne
     ports:
       - 8000:8000
+      - 6789:6789
     env_file:
       - .env
     depends_on:
