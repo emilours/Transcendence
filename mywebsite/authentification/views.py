@@ -58,6 +58,11 @@ def signup(request):
     if not firstname or not lastname or not email or not password1 or not password2 or not display_name:
         return JsonResponse({"error": "All fields are required."}, status=400)
 
+    if not firstname.isalpha():
+        return JsonResponse({"error": "No special chars in first name field."}, status=400)
+    if not lastname.isalpha():
+        return JsonResponse({"error": "No special chars in last name field."}, status=400)
+
     if password1 != password2:
         return JsonResponse({"error": "Passwords do not match."}, status=400)
 
@@ -104,6 +109,7 @@ def signout(request):
         request.user.is_online = False
         request.user.save(update_fields=['is_online'])
         logout(request)
+        # request.session.flush()
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -156,12 +162,15 @@ def contact(request):
 @transaction.atomic
 def send_friend_request(request):
     try:
-        receiver_email = request.POST.get('receiver_email')
+        receiver_display_name = request.POST.get('receiver_display_name')
 
-        if not receiver_email:
-            return JsonResponse({"error": "Receiver email is required."}, status=400)
+        if not receiver_display_name:
+            return JsonResponse({"error": "A username is required."}, status=400)
 
-        receiver = CustomUser.objects.get(email=receiver_email.lower())
+        receiver = CustomUser.objects.filter(display_name=receiver_display_name).first()
+
+        if not receiver:
+            return JsonResponse({"error": "User not found."}, status=404)
 
         if receiver == request.user:
             return JsonResponse({"error": "Cannot send friend request to yourself."}, status=400)
@@ -184,10 +193,9 @@ def send_friend_request(request):
         else:
             return JsonResponse({"error": "Friend request already exists."}, status=400)
 
-    except CustomUser.DoesNotExist:
-        return JsonResponse({"error": "Receiver not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 @login_required
 @require_POST
@@ -230,6 +238,7 @@ def cancel_friend_request(request, friend_request_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def remove_friend(request, friend_id):
     try:
         friend_list = FriendList.objects.get(user=request.user)
