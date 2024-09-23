@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList, CustomUser
+from frontend.models import FriendRequest, FriendList, CustomUser, validate_no_special_characters
 from django.db import IntegrityError
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
@@ -57,11 +57,12 @@ def signup(request):
 
     if not firstname or not lastname or not email or not password1 or not password2 or not display_name:
         return JsonResponse({"error": "All fields are required."}, status=400)
-
-    if not firstname.isalpha():
-        return JsonResponse({"error": "No special chars in first name field."}, status=400)
-    if not lastname.isalpha():
-        return JsonResponse({"error": "No special chars in last name field."}, status=400)
+    
+    try:
+        validate_no_special_characters(firstname)
+        validate_no_special_characters(lastname)
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
     if password1 != password2:
         return JsonResponse({"error": "Passwords do not match."}, status=400)
@@ -267,6 +268,12 @@ def update_profile(request):
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
         avatar_choice = request.POST.get('avatar_choice', None)
+
+        try:
+            validate_no_special_characters(first_name)
+            validate_no_special_characters(last_name)
+        except ValidationError as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
         if user.is_api_authenticated and email != user.email:
             return JsonResponse({
