@@ -258,3 +258,5 @@ class PlayerMatch(models.Model):
 
 	def __str__(self):
 		return f"{self.player.display_name} in match {self.match.id} with score {self.score}"
+
+

@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from .models import PlayerMatch
 
 def index(request):
 	redirect('home')
@@ -74,10 +75,34 @@ def games(request):
 
 @login_required
 def leaderboard(request):
+	leaderboard_data = PlayerMatch.objects.select_related('player', 'match').order_by('-score')
+
+	pong_leaderboard = []
+	invaders_leaderboard = []
+
+	pong_rank = 1
+	invaders_rank = 1
+
+	for entry in leaderboard_data:
+		if entry.match.game.name == "Pong":
+			pong_leaderboard.append((pong_rank, entry))
+			pong_rank += 1
+
+	for entry in leaderboard_data:
+		if entry.match.game.name == "Invaders":
+			invaders_leaderboard.append((invaders_rank, entry))
+			invaders_rank += 1
+
+	context = {
+		'pong_leaderboard': pong_leaderboard,
+		'invaders_leaderboard': invaders_leaderboard,
+	}
+
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('leaderboard.html', request=request)
+		html = render_to_string('leaderboard.html', context, request=request)
 		return JsonResponse({'html': html})
-	return render(request, 'base.html')
+
+	return render(request, 'base.html', context)
 
 def load_header(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
