@@ -96,6 +96,7 @@ NORMAL_GAME = 'normal'
 TOURNAMENT_GAME = 'tournament'
 
 client_count = 0
+connected_users = {}
 games = {}
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
@@ -106,12 +107,22 @@ app = socketio.ASGIApp(sio)
 def log(message):
     print(f"[SOCKET] {message}")
 
+async def UserAlreadyConnected(username):
+    global connected_users
+    for sid in connected_users.keys():
+        session = await sio.get_session(sid)
+        if username == session.get('username'):
+            log(f"User {username} is already connected to a socket")
+            return True
+    return False
+
 async def GetUserRoom(username):
+
     global games
 
     for game in games.values():
         if 'players' in game and username in game['players']:
-            log(f"User: {username} is already in a game")
+            log(f"User {username} is already in a game")
             return game['room_id']
     return None
 
@@ -148,7 +159,7 @@ async def CreateRoom(game_type):
 
 async def JoinRoom(sid, username, room_id):
     if room_id not in games:
-        log(f"[Error] Can't join room: {room_id}")
+        log(f"[Error] Can't join room {room_id}")
         return
     index = games[room_id]['player_count']
     games[room_id]['players'].insert(index, username)
@@ -156,8 +167,8 @@ async def JoinRoom(sid, username, room_id):
     games[room_id]['pos'].insert(index, 0)
     games[room_id]['player_count'] += 1
     await sio.enter_room(sid, room_id)
-    log(f"User [{username}] joined room: [{room_id}]")
-    # 
+    log(f"User [{username}] joined room [{room_id}]")
+    #
     game_type = games[room_id]['game_type']
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
         log(f"Room {room_id} is now full")
@@ -181,13 +192,16 @@ async def DeleteRoom(room_id):
 
 @sio.event
 async def connect(sid, environ):
-    global client_count
+    global client_count, connected_users
 
     username = environ.get('HTTP_X_USERNAME')
     game_type = environ.get('HTTP_X_GAMETYPE')
     if not username or not game_type:
-        return False
+        raise ConnectionRefusedError('No username or game type')
+    if await UserAlreadyConnected(username):
+        raise ConnectionRefusedError('User already connected to socket')
     client_count += 1
+    connected_users[sid] = True
     log(f"User {username} connected")
 
     room_id = await GetUserRoom(username)
@@ -196,8 +210,12 @@ async def connect(sid, environ):
     if room_id is None:
         room_id = await CreateRoom(game_type)
     # HERE
-    await sio.save_session(sid, {'username': username})
-    await sio.save_session(sid, {'room_id': room_id})
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+        })
+    session = await sio.get_session(sid)
+    log(f"session in connect: {session}")
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
     await sio.emit('client_count', client_count)
@@ -211,21 +229,23 @@ async def message(sid, data):
 
 @sio.event
 async def disconnect(sid):
-    global client_count
+    global client_count, connected_users
 
     client_count -= 1
     await sio.emit('client_count', client_count)
     # log(f"Client disconnected: {sid}")
-    # HERE
-    try:
-        session = await sio.get_session(sid)
-        log(f"session in disconnect: {session}")
 
-        username = session.get('username', 'Unknown User')
-        await sio.emit('user_left', username)
-        log(f"User {username} disconnected")
-    except KeyError:
-        log(f"No 'username' found for {sid}")
+
+    session = await sio.get_session(sid)
+    log(f"session in disconnect: {session}")
+    room_id = session.get('room_id')
+    await LeaveRoom(sid, room_id)
+
+    username = session.get('username')
+    if sid in connected_users:
+        del connected_users[sid]
+    await sio.emit('user_left', username)
+    log(f"User {username} disconnected")
 
 
 if __name__ == "__main__":
@@ -235,4 +255,5 @@ if __name__ == "__main__":
 
     # Run the server
     # eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 6789)), app)
+    log("STARTING SOCKET SERVER")
     uvicorn.run(app, host='0.0.0.0', port=6789)

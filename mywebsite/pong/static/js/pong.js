@@ -13,7 +13,7 @@ var pongSocket, overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 var threadID;
-var gameType;
+var gameType, socket;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -43,7 +43,7 @@ export function ConnectWebsocket(type, username)
 	console.log("gametype: " + gameType + " | ws url: " + url);
 
 	pongSocket = new WebSocket(url);
-	const socket = io("http://localhost:6789", {
+	socket = io("http://localhost:6789", {
 		transportOptions: {
 			polling: {
 				extraHeaders: {
@@ -72,6 +72,9 @@ export function ConnectWebsocket(type, username)
 	socket.on("disconnect", function() {
 		console.log("Disconnected from the server");
 	});
+	socket.on('connect_error', (error) => {
+		console.error('Connection error:', error.message);  // Display the reason for the rejection
+	});
 
 	pongSocket.onmessage = function(e){
 		//TEST
@@ -98,6 +101,11 @@ export function ConnectWebsocket(type, username)
 		if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
 			pongSocket.close(1000, "Closing normally");
 			console.log("WebSocket closed");
+		}
+
+		if (socket && socket.connected) {
+			socket.disconnect();
+			console.log("Socket.IO connection closed");
 		}
 	}
 
