@@ -89,8 +89,11 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
-MAX_PLAYER_TOURNAMENT = 4
+MAX_PLAYER_TOURNAMENT = 2
 MAX_PLAYER_NORMAL = 4
+
+NORMAL_GAME = 'normal'
+TOURNAMENT_GAME = 'tournament'
 
 client_count = 0
 games = {}
@@ -115,9 +118,9 @@ def GetAvailableRoom(game_type):
 
     for game in games.values():
         if 'game_type' in game and game['game_type'] == game_type:
-            if game_type == 'normal' and game['player_count'] < MAX_PLAYER_NORMAL:
+            if game_type == NORMAL_GAME and game['player_count'] < MAX_PLAYER_NORMAL:
                 return game['room_id']
-            elif game_type == 'tournament' and game['player_count'] < MAX_PLAYER_TOURNAMENT:
+            elif game_type == TOURNAMENT_GAME and game['player_count'] < MAX_PLAYER_TOURNAMENT:
                 return game['room_id']
     return None
 
@@ -152,6 +155,12 @@ def JoinRoom(sid, username, room_id):
     games[room_id]['player_count'] += 1
     sio.enter_room(sid, room_id)
     print(f"User [{username}] joined room: [{room_id}]")
+    # 
+    game_type = games[room_id]['game_type']
+    if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
+        print(f"Room {room_id} is now full")
+    elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
+        print(f"Room {room_id} is now full")
 
 def LeaveRoom(sid, room_id):
     global games

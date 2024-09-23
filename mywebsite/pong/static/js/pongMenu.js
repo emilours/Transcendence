@@ -36,7 +36,9 @@ export function initPong(userName) {
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
-					drawLobbyMenu('join');
+					// FOR DEVELOPMENT
+					ConnectWebsocket('tournament');
+					// drawLobbyMenu('join');
 				}),
 				createButton('BACK', () => {
 					onlineMenu.remove();

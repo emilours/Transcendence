@@ -41,8 +41,8 @@ function fetchUserData() {
 
         // Access the username from the response
         if (data.username) {
-            console.log('Logged in as:', data.username);
-			username = data.username;
+			username = data.test_name;
+            console.log('Logged in as:', username);
 		} else {
             console.log('User not authenticated');
             // Handle unauthenticated users
