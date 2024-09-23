@@ -15,7 +15,7 @@
 						<a class="nav-link fs-4" aria-current="page" href="#" id="navbar-home">Home</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link fs-4" aria-current="page" href="#" id="navbar-contact">Contact Us</a>
+						<a class="nav-link fs-4 text-nowrap" aria-current="page" href="#" id="navbar-contact">Contact Us</a>
 					</li>
 					{% if user.is_authenticated %}
 					<li class="nav-item">
@@ -61,14 +61,14 @@
 					<button type="button" class="btn btn-primary ms-2" id="navbar-profile">Profile</button>
 					<form id="logout-form" method="POST" action="{% url 'home' %}" data-csrf-token="{{ csrf_token }}">
 						{% csrf_token %}
-						<button type="submit" class="btn btn-outline-primary ms-2">Sign out</button>
+						<button type="submit" class="btn btn-outline-primary ms-2 text-nowrap ">Sign out</button>
 					</form>
 				</div>
 				{% else %}
 				<div class="d-flex justify-content-center">
 
 					<button type="button" class="btn btn-outline-primary" id="navbar-login">Login</button>
-					<button type="button" class="btn btn-primary ms-2" id="navbar-signup">Sign up</button>
+					<button type="button" class="btn btn-primary ms-2 text-nowrap " id="navbar-signup">Sign up</button>
 				</div>
 				{% endif %}
 			</div>

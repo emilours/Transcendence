@@ -14,5 +14,5 @@ urlpatterns = [
 	path('load_header/', views.load_header, name='load_header'),
 	path('contact/', views.contact, name='contact'),
 	path('deleted_profile/', views.deleted_profile, name='deleted_profile'),
-	# path('error_api/', views.error_api, name='error_api'),
+	path('error_api/', views.error_api, name='error_api'),
 ]

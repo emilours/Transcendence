@@ -10,34 +10,37 @@
 					<div class="card-body p-5">
 						<form id="edit-profile-form" method="POST" enctype="multipart/form-data" action="{% url 'authentification:update_profile' %}">
 							{% csrf_token %}
-							<div class="form-group mb-3">
+							<!-- <div class="form-group mb-3">
 								<label for="email">Email:</label>
 								<input type="email" id="email" name="email" class="form-control" value="{{ user.email }}" required>
-							</div>
+							</div> -->
+
 							<div class="form-group mb-3">
 								<label for="first_name">First Name:</label>
 								<input type="text" id="first_name" name="first_name" class="form-control" value="{{ user.first_name }}" required>
 							</div>
+
 							<div class="form-group mb-3">
 								<label for="last_name">Last Name:</label>
 								<input type="text" id="last_name" name="last_name" class="form-control" value="{{ user.last_name }}" required>
 							</div>
+							
 							<div class="form-group mb-3">
 								<label for="display_name">Display Name:</label>
 								<input type="text" id="display_name" name="display_name" class="form-control" value="{{ user.display_name }}" required>
 							</div>
 
-							<!-- Avatar options -->
 							<div class="form-group mb-3">
-								<label>Choose Avatar:</label>
-								<div class="d-flex justify-content-start">
-									<button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#predefined-avatars">Choose a New Avatar</button>
-									<button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#upload-avatar">Upload Avatar</button>
+								<div class="d-flex justify-content-center">
+									<input type="radio" class="btn-check" name="avatar_option" id="predefined-option" autocomplete="off" checked>
+									<label class="btn btn-secondary me-3" for="predefined-option" data-bs-toggle="collapse" data-bs-target="#predefined-avatars" aria-expanded="true" aria-controls="predefined-avatars" onclick="document.getElementById('upload-avatar').classList.remove('show')">Choose a New Avatar</label>
+
+									<input type="radio" class="btn-check" name="avatar_option" id="upload-option" autocomplete="off">
+									<label class="btn btn-secondary" for="upload-option" data-bs-toggle="collapse" data-bs-target="#upload-avatar" aria-expanded="false" aria-controls="upload-avatar" onclick="document.getElementById('predefined-avatars').classList.remove('show')">Upload Avatar</label>
 								</div>
 							</div>
 
-							<!-- Predefined avatars (collapsed initially) -->
-							<div id="predefined-avatars" class="collapse form-group mb-3">
+							<div id="predefined-avatars" class="collapse form-group mb-3 show">
 								<label for="avatar">Choose a new avatar:</label>
 								<div class="d-flex flex-wrap justify-content-start">
 									{% for avatar in predefined_avatars %}
@@ -49,13 +52,11 @@
 								</div>
 							</div>
 
-							<!-- File upload for avatar (collapsed initially) -->
 							<div id="upload-avatar" class="collapse form-group mb-3">
 								<label for="avatar">Upload your own avatar:</label>
 								<input type="file" id="avatar" name="avatar" class="form-control">
 							</div>
 
-							<!-- Submit button -->
 							<button type="submit" class="btn btn-primary w-100">Save Changes</button>
 						</form>
 					</div>

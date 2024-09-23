@@ -40,6 +40,12 @@ def deleted_profile(request):
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
+def error_api(request):
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('error_api.html', request=request)
+		return JsonResponse({'html': html})
+	return render(request, 'base.html')
+
 @login_required
 def profile(request):
 	pending_requests = request.user.get_pending_friend_requests()
