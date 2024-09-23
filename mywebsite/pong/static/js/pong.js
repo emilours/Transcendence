@@ -76,7 +76,6 @@ export function ConnectWebsocket(type)
 
 		socket.on("connect", function() {
 			console.log("Connected to the server");
-			socket.send("test")
 		});
 		socket.on("message", function(message) {
 			console.log("Message from server: ", message);

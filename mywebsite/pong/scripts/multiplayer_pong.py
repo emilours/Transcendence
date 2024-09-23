@@ -73,14 +73,82 @@ if __name__ == "__main__":
 # 	main()
 
 
-import socketio
+import socketio, uuid
+
+# CONST VARIABLES
+PADDLE_SPEED = 0.2
+BALL_SPEED = 0.1
+BALL_SIZE = 0.2
+PADDLE_HEIGHT = 2.0
+PADDLE_WIDTH = 0.2
+TOP_WALL = 4.5
+BOTTOM_WALL = -4.5
+LEFT_WALL = -8.0
+RIGHT_WALL = 8.0
+PLAYER1_X = -7.5
+PLAYER2_X = 7.5
+WINNING_SCORE = 5
+
+client_count = 0
+games = {}
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
 sio = socketio.Server(cors_allowed_origins='*')  # You can specify domains like ['http://localhost:8080']
 # Wrap the Socket.IO server with a WSGI app
 app = socketio.WSGIApp(sio)
 
-client_count = 0
+
+def UserAlreadyInRoom(username):
+    global games
+    for game in games.values():
+        if 'players' in game and username in game['players']:
+            print("User:", username, "is already in a game")
+            return True
+    return False
+
+def CreateRoom():
+    global games
+    room_id = str(uuid.uuid4())
+    games[room_id] = {
+        'room_id': room_id,
+        'player_count': 0,
+        'players': [],
+        'scores': [],
+        'pos': [],
+        'ballPosition': [0, 0],
+        'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
+        'gameOver': 0,
+        'text': "waiting for 2 players",
+        'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
+	}
+    print(f"Room {room_id} created")
+    return room_id
+
+def JoinRoom(sid, username, room_id):
+    if room_id not in games:
+        print("[Error] Can't join room:", room_id)
+        return
+    index = games[room_id]['player_count']
+    games[room_id]['players'].insert(index, username)
+    games[room_id]['scores'].insert(index, 0)
+    games[room_id]['pos'].insert(index, 0)
+    games[room_id]['player_count'] += 1
+    sio.enter_room(sid, room_id)
+    print(f"User: {username} joined room: {room_id}")
+
+def LeaveRoom(sid, room_id):
+    global games
+
+    sio.leave_room(sid, room_id)
+    with sio.session(sid) as session:
+    	print(f"User: {session['username']} left room: {room_id}")
+
+def DeleteRoom(room_id):
+    sio.close_room(room_id)
+    print(f"Room {room_id} deleted")
+
+
+
 
 @sio.event
 def connect(sid, environ):
@@ -89,15 +157,18 @@ def connect(sid, environ):
     username = environ.get('HTTP_X_USERNAME')
     if not username:
         return False
-    print("username:", username)
-
+    client_count += 1
+    print("User:", username, "connected")
+    if not UserAlreadyInRoom(username):
+        room_id = CreateRoom()
+        JoinRoom(sid, username, room_id)
     with sio.session(sid) as session:
         session['username'] = username
+        session['room_id'] = room_id
     sio.emit('user_joined', username)
-    client_count += 1
     sio.emit('client_count', client_count)
     sio.send("Hello from server")
-    print(f"Client connected: {sid}")
+    # print(f"Client connected: {sid}")
 
 @sio.event
 def message(sid, data):
@@ -107,11 +178,14 @@ def message(sid, data):
 @sio.event
 def disconnect(sid):
     global client_count
+
     client_count -= 1
     sio.emit('client_count', client_count)
-    print(f"Client disconnected: {sid}")
+    # print(f"Client disconnected: {sid}")
     with sio.session(sid) as session:
         sio.emit('user_left', session['username'])
+        print("User:", session['username'], "disconnected")
+
 
 if __name__ == "__main__":
     import eventlet
