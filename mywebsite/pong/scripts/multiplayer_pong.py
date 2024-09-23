@@ -77,12 +77,27 @@ import socketio
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
 sio = socketio.Server(cors_allowed_origins='*')  # You can specify domains like ['http://localhost:8080']
+# Wrap the Socket.IO server with a WSGI app
+app = socketio.WSGIApp(sio)
 
+client_count = 0
 
 @sio.event
 def connect(sid, environ):
-    print(f"Client connected: {sid}")
+    global client_count
+
+    username = environ.get('HTTP_X_USERNAME')
+    if not username:
+        return False
+    print("username:", username)
+
+    with sio.session(sid) as session:
+        session['username'] = username
+    sio.emit('user_joined', username)
+    client_count += 1
+    sio.emit('client_count', client_count)
     sio.send("Hello from server")
+    print(f"Client connected: {sid}")
 
 @sio.event
 def message(sid, data):
@@ -91,10 +106,12 @@ def message(sid, data):
 
 @sio.event
 def disconnect(sid):
+    global client_count
+    client_count -= 1
+    sio.emit('client_count', client_count)
     print(f"Client disconnected: {sid}")
-
-# Wrap the Socket.IO server with a WSGI app
-app = socketio.WSGIApp(sio)
+    with sio.session(sid) as session:
+        sio.emit('user_left', session['username'])
 
 if __name__ == "__main__":
     import eventlet
