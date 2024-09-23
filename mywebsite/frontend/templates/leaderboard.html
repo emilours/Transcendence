@@ -1,6 +1,6 @@
 {% load static %}
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<div class="flex-grow-1 d-flex flex-column">
+<div class="flex-grow-1 d-flex flex-column mb-4">
 	<div class="container mt-5 pt-2">
 		<div class="d-flex justify-content-between align-items-center">
 			<h1 class="card-title text-center font-balsamiq text-secondary-emphasis">Leaderboard</h1>
@@ -22,15 +22,22 @@
 						</tr>
 					</thead>
 					<tbody id="leaderboard-body">
-						{% for rank, entry in pong_leaderboard %}
+						{% if pong_leaderboard %}
+							{% for rank, entry in pong_leaderboard %}
+								<tr>
+									<td class="text-secondary-emphasis">{{ rank }}</td>
+									<td class="text-secondary-emphasis">{{ entry.score }}</td>
+									<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
+								</tr>
+							{% endfor %}
+						{% else %}
 							<tr>
-								<td class="text-secondary-emphasis">{{ rank }}</td>
-								<td class="text-secondary-emphasis">{{ entry.score }}</td>
-								<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
-								<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
-								<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
+								<td colspan="5" class="text-center text-secondary-emphasis">No games</td>
 							</tr>
-						{% endfor %}
+						{% endif %}
+					</tbody>
 					</tbody>
 				</table>
 			</div>
@@ -53,15 +60,21 @@
 						</tr>
 					</thead>
 					<tbody id="leaderboard-body">
-						{% for rank, entry in invaders_leaderboard %}
+						{% if invaders_leaderboard %}
+							{% for rank, entry in invaders_leaderboard %}
+								<tr>
+									<td class="text-secondary-emphasis">{{ rank }}</td>
+									<td class="text-secondary-emphasis">{{ entry.score }}</td>
+									<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
+								</tr>
+							{% endfor %}
+						{% else %}
 							<tr>
-								<td class="text-secondary-emphasis">{{ rank }}</td>
-								<td class="text-secondary-emphasis">{{ entry.score }}</td>
-								<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
-								<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
-								<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
+								<td colspan="5" class="text-center text-secondary-emphasis">No games</td>
 							</tr>
-						{% endfor %}
+						{% endif %}
 					</tbody>
 				</table>
 			</div>
