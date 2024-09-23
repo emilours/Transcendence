@@ -13,7 +13,7 @@ var pongSocket, overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 var threadID;
-var username, gameType;
+var gameType;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -28,30 +28,8 @@ var rightPlayerScore = 0; // player 2
 
 // ConnectWebsocket();
 
-function fetchUserData() {
-    return fetch('/pong/', {
-        headers: {
-            'x-requested-with': 'XMLHttpRequest'  // Identify as AJAX request
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Insert the returned HTML into the DOM
-        document.getElementById('content').innerHTML = data.html;
 
-        // Access the username from the response
-        if (data.username) {
-			username = data.test_name;
-            console.log('Logged in as:', username);
-		} else {
-            console.log('User not authenticated');
-            // Handle unauthenticated users
-        }
-    })
-    .catch(error => console.error('Error fetching data:', error));
-}
-
-export function ConnectWebsocket(type)
+export function ConnectWebsocket(type, username)
 {
 	// WEBSOCKET
 	var url;
@@ -61,61 +39,59 @@ export function ConnectWebsocket(type)
 	else
 		url = `ws://${window.location.host}/ws/pong-socket-server/`;
 
+	console.log("username: " + username);
 	console.log("gametype: " + gameType + " | ws url: " + url);
 
-	fetchUserData().then(() => {
-		pongSocket = new WebSocket(url);
-		const socket = io("http://localhost:6789", {
-			transportOptions: {
-				polling: {
-					extraHeaders: {
-						'X-Username': username,
-						'X-Gametype': gameType
-					}
+	pongSocket = new WebSocket(url);
+	const socket = io("http://localhost:6789", {
+		transportOptions: {
+			polling: {
+				extraHeaders: {
+					'X-Username': username,
+					'X-Gametype': gameType
 				}
 			}
-		});
-
-		socket.on("connect", function() {
-			console.log("Connected to the server");
-		});
-		socket.on("message", function(message) {
-			console.log("Message from server: ", message);
-		});
-		socket.on("client_count", function(count) {
-			console.log("There is " + count + " client connected");
-		});
-		socket.on("user_joined", function(username) {
-			console.log("User " + username + " has joined.");
-		});
-		socket.on("user_left", function(username) {
-			console.log("User " + username + " has left.");
-		});
-		socket.on("disconnect", function() {
-			console.log("Disconnected from the server");
-		});
-
-		pongSocket.onmessage = function(e){
-			//TEST
-			// let data = JSON.parse(e.data);
-			// console.log('Data:', data);
-			//
-			console.log('Data:', e);
-		};
-
-		pongSocket.onopen = function(e){
-			console.log('CLIENT Connected!');
-			// TEST
-			// pongSocket.send("Hello from javascript!");
-			//
-			// StartGame();
 		}
-
-		pongSocket.onclose = function(e){
-			console.log('CLIENT Disconnect!');
-		}
-
 	});
+
+	socket.on("connect", function() {
+		console.log("Connected to the server");
+	});
+	socket.on("message", function(message) {
+		console.log("Message from server: ", message);
+	});
+	socket.on("client_count", function(count) {
+		console.log("There is " + count + " client connected");
+	});
+	socket.on("user_joined", function(user) {
+		console.log("User " + user + " has joined.");
+	});
+	socket.on("user_left", function(user) {
+		console.log("User " + user + " has left.");
+	});
+	socket.on("disconnect", function() {
+		console.log("Disconnected from the server");
+	});
+
+	pongSocket.onmessage = function(e){
+		//TEST
+		// let data = JSON.parse(e.data);
+		// console.log('Data:', data);
+		//
+		console.log('Data:', e);
+	};
+
+	pongSocket.onopen = function(e){
+		console.log('CLIENT Connected!');
+		// TEST
+		// pongSocket.send("Hello from javascript!");
+		//
+		// StartGame();
+	}
+
+	pongSocket.onclose = function(e){
+		console.log('CLIENT Disconnect!');
+	}
 }
 
 	export function CloseWebsocket() {

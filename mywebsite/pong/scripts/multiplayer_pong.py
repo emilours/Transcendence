@@ -73,7 +73,7 @@ if __name__ == "__main__":
 # 	main()
 
 
-import socketio, uuid
+import socketio, uuid, asyncio
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -99,21 +99,23 @@ client_count = 0
 games = {}
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
-sio = socketio.Server(cors_allowed_origins='*')  # You can specify domains like ['http://localhost:8080']
+sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='asgi')  # You can specify domains like ['http://localhost:8080']
 # Wrap the Socket.IO server with a WSGI app
-app = socketio.WSGIApp(sio)
+app = socketio.ASGIApp(sio)
 
+def log(message):
+    print(f"[SOCKET] {message}")
 
-def GetUserRoom(username):
+async def GetUserRoom(username):
     global games
 
     for game in games.values():
         if 'players' in game and username in game['players']:
-            print("User:", username, "is already in a game")
+            log(f"User: {username} is already in a game")
             return game['room_id']
     return None
 
-def GetAvailableRoom(game_type):
+async def GetAvailableRoom(game_type):
     global games
 
     for game in games.values():
@@ -125,7 +127,7 @@ def GetAvailableRoom(game_type):
     return None
 
 
-def CreateRoom(game_type):
+async def CreateRoom(game_type):
     global games
     room_id = str(uuid.uuid4())
     games[room_id] = {
@@ -141,43 +143,44 @@ def CreateRoom(game_type):
         'text': "waiting for 2 players",
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
 	}
-    print(f"Room {room_id} created")
+    log(f"Room {room_id} created")
     return room_id
 
-def JoinRoom(sid, username, room_id):
+async def JoinRoom(sid, username, room_id):
     if room_id not in games:
-        print("[Error] Can't join room:", room_id)
+        log(f"[Error] Can't join room: {room_id}")
         return
     index = games[room_id]['player_count']
     games[room_id]['players'].insert(index, username)
     games[room_id]['scores'].insert(index, 0)
     games[room_id]['pos'].insert(index, 0)
     games[room_id]['player_count'] += 1
-    sio.enter_room(sid, room_id)
-    print(f"User [{username}] joined room: [{room_id}]")
+    await sio.enter_room(sid, room_id)
+    log(f"User [{username}] joined room: [{room_id}]")
     # 
     game_type = games[room_id]['game_type']
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
-        print(f"Room {room_id} is now full")
+        log(f"Room {room_id} is now full")
     elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
-        print(f"Room {room_id} is now full")
+        log(f"Room {room_id} is now full")
 
-def LeaveRoom(sid, room_id):
+async def LeaveRoom(sid, room_id):
     global games
 
-    sio.leave_room(sid, room_id)
-    with sio.session(sid) as session:
-    	print(f"User [{session['username']}] left room [{room_id}]")
+    await sio.leave_room(sid, room_id)
+    # HERE
+    session = await sio.get_session(sid)
+    log(f"User [{session['username']}] left room [{room_id}]")
 
-def DeleteRoom(room_id):
-    sio.close_room(room_id)
-    print(f"Room {room_id} deleted")
+async def DeleteRoom(room_id):
+    await sio.close_room(room_id)
+    log(f"Room {room_id} deleted")
 
 
 
 
 @sio.event
-def connect(sid, environ):
+async def connect(sid, environ):
     global client_count
 
     username = environ.get('HTTP_X_USERNAME')
@@ -185,43 +188,51 @@ def connect(sid, environ):
     if not username or not game_type:
         return False
     client_count += 1
-    print("User", username, "connected")
+    log(f"User {username} connected")
 
-    room_id = GetUserRoom(username)
+    room_id = await GetUserRoom(username)
     if room_id is None:
-        room_id = GetAvailableRoom(game_type)
+        room_id = await GetAvailableRoom(game_type)
     if room_id is None:
-        room_id = CreateRoom(game_type)
-    
-    with sio.session(sid) as session:
-        session['username'] = username
-        session['room_id'] = room_id
-    JoinRoom(sid, username, room_id)
-    sio.emit('user_joined', username)
-    sio.emit('client_count', client_count)
-    sio.send("Hello from server")
-    # print(f"Client connected: {sid}")
+        room_id = await CreateRoom(game_type)
+    # HERE
+    await sio.save_session(sid, {'username': username})
+    await sio.save_session(sid, {'room_id': room_id})
+    await JoinRoom(sid, username, room_id)
+    await sio.emit('user_joined', username)
+    await sio.emit('client_count', client_count)
+    await sio.send("Hello from server")
+    # log(f"Client connected: {sid}")
 
 @sio.event
-def message(sid, data):
-    print(f"Message from {sid}: {data}")
-    sio.send(f"Server received {data} from {sid}!")
+async def message(sid, data):
+    log(f"Message from {sid}: {data}")
+    await sio.send(f"Server received {data} from {sid}!")
 
 @sio.event
-def disconnect(sid):
+async def disconnect(sid):
     global client_count
 
     client_count -= 1
-    sio.emit('client_count', client_count)
-    # print(f"Client disconnected: {sid}")
-    with sio.session(sid) as session:
-        sio.emit('user_left', session['username'])
-        print("User", session['username'], "disconnected")
+    await sio.emit('client_count', client_count)
+    # log(f"Client disconnected: {sid}")
+    # HERE
+    try:
+        session = await sio.get_session(sid)
+        log(f"session in disconnect: {session}")
+
+        username = session.get('username', 'Unknown User')
+        await sio.emit('user_left', username)
+        log(f"User {username} disconnected")
+    except KeyError:
+        log(f"No 'username' found for {sid}")
 
 
 if __name__ == "__main__":
-    import eventlet
-    import eventlet.wsgi
+    # import eventlet
+    # import eventlet.wsgi
+    import uvicorn
 
     # Run the server
-    eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 6789)), app)
+    # eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 6789)), app)
+    uvicorn.run(app, host='0.0.0.0', port=6789)

@@ -9,6 +9,7 @@ services:
       - static_volume:/app/staticfiles/
       - media_volume:/app/media/
       - ./mywebsite:/app
+      - daphne_volume:/app/daphne
     ports:
       - 8000:8000
       - 6789:6789
@@ -42,6 +43,7 @@ services:
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media/
+      - daphne_volume:/daphne
     ports:
       - 8080:8080
     depends_on:
@@ -72,6 +74,8 @@ volumes:
   #   name: uploads_volume
   media_volume:
     name: media_volume
+  daphne_volume:
+    name: daphne_volume
 
 networks:
   ft_transcendence:
