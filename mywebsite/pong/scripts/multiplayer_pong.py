@@ -89,6 +89,9 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
+MAX_PLAYER_TOURNAMENT = 4
+MAX_PLAYER_NORMAL = 4
+
 client_count = 0
 games = {}
 
@@ -98,19 +101,33 @@ sio = socketio.Server(cors_allowed_origins='*')  # You can specify domains like 
 app = socketio.WSGIApp(sio)
 
 
-def UserAlreadyInRoom(username):
+def GetUserRoom(username):
     global games
+
     for game in games.values():
         if 'players' in game and username in game['players']:
             print("User:", username, "is already in a game")
-            return True
-    return False
+            return game['room_id']
+    return None
 
-def CreateRoom():
+def GetAvailableRoom(game_type):
+    global games
+
+    for game in games.values():
+        if 'game_type' in game and game['game_type'] == game_type:
+            if game_type == 'normal' and game['player_count'] < MAX_PLAYER_NORMAL:
+                return game['room_id']
+            elif game_type == 'tournament' and game['player_count'] < MAX_PLAYER_TOURNAMENT:
+                return game['room_id']
+    return None
+
+
+def CreateRoom(game_type):
     global games
     room_id = str(uuid.uuid4())
     games[room_id] = {
         'room_id': room_id,
+        'game_type': game_type,
         'player_count': 0,
         'players': [],
         'scores': [],
@@ -134,14 +151,14 @@ def JoinRoom(sid, username, room_id):
     games[room_id]['pos'].insert(index, 0)
     games[room_id]['player_count'] += 1
     sio.enter_room(sid, room_id)
-    print(f"User: {username} joined room: {room_id}")
+    print(f"User [{username}] joined room: [{room_id}]")
 
 def LeaveRoom(sid, room_id):
     global games
 
     sio.leave_room(sid, room_id)
     with sio.session(sid) as session:
-    	print(f"User: {session['username']} left room: {room_id}")
+    	print(f"User [{session['username']}] left room [{room_id}]")
 
 def DeleteRoom(room_id):
     sio.close_room(room_id)
@@ -155,16 +172,22 @@ def connect(sid, environ):
     global client_count
 
     username = environ.get('HTTP_X_USERNAME')
-    if not username:
+    game_type = environ.get('HTTP_X_GAMETYPE')
+    if not username or not game_type:
         return False
     client_count += 1
-    print("User:", username, "connected")
-    if not UserAlreadyInRoom(username):
-        room_id = CreateRoom()
-        JoinRoom(sid, username, room_id)
+    print("User", username, "connected")
+
+    room_id = GetUserRoom(username)
+    if room_id is None:
+        room_id = GetAvailableRoom(game_type)
+    if room_id is None:
+        room_id = CreateRoom(game_type)
+    
     with sio.session(sid) as session:
         session['username'] = username
         session['room_id'] = room_id
+    JoinRoom(sid, username, room_id)
     sio.emit('user_joined', username)
     sio.emit('client_count', client_count)
     sio.send("Hello from server")
@@ -184,7 +207,7 @@ def disconnect(sid):
     # print(f"Client disconnected: {sid}")
     with sio.session(sid) as session:
         sio.emit('user_left', session['username'])
-        print("User:", session['username'], "disconnected")
+        print("User", session['username'], "disconnected")
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ var pongSocket, overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 var threadID;
-var username;
+var username, gameType;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -55,12 +55,13 @@ export function ConnectWebsocket(type)
 {
 	// WEBSOCKET
 	var url;
-	if (type == 'tournament')
+	gameType = type;
+	if (gameType == 'tournament')
 		url = `ws://${window.location.host}/ws/pong-tournament/`;
 	else
 		url = `ws://${window.location.host}/ws/pong-socket-server/`;
 
-	console.log("ws url: " + url);
+	console.log("gametype: " + gameType + " | ws url: " + url);
 
 	fetchUserData().then(() => {
 		pongSocket = new WebSocket(url);
@@ -68,7 +69,8 @@ export function ConnectWebsocket(type)
 			transportOptions: {
 				polling: {
 					extraHeaders: {
-						'X-Username': username
+						'X-Username': username,
+						'X-Gametype': gameType
 					}
 				}
 			}
