@@ -1,43 +1,51 @@
 {% load static %}
-<section class="d-flex align-items-center justify-content-center">
-	<div class="container mt-5">
+<section class="d-flex align-items-center justify-content-center mt-5">
+	<div class="container">
 		<div class="row justify-content-center">
-			<div class="col-12 col-md-8 col-lg-6">
-
-				<div class="card shadow rounded-4">
-					<div class="card-body p-5">
-						<h3 class="card-title text-center mb-4 font-potta">Sign Up</h3>
+			<div class="col-12 col-md-8 d-flex flex-column align-items-center mb-md-0">
+				<div class="card shadow rounded-2 w-100">
+					<div class="card-body p-5 text-secondary-emphasis">
+						<div class="d-flex justify-content-center align-items-center">
+							<h1 class="card-title text-center font-balsamiq mb-4 mb-md-0">Sign up</h1>
+							<img src="{% static 'img/pusheen-sing-up.gif' %}" alt="gif de pusheen" class="img-fluid" style="max-width: 100px;">
+						</div>
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
 							{% csrf_token %}
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="display_name" class="form-label">Username</label>
-								<input type="text" class="form-control rounded-3" id="display_name" name="display_name" maxlength="100" required>
+								<input type="text" class="form-control rounded-1" id="display_name" name="display_name" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="firstName" class="form-label">First Name</label>
-								<input type="text" class="form-control rounded-3" id="firstName" name="firstname" maxlength="100" required>
+								<input type="text" class="form-control rounded-1" id="firstName" name="firstname" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="lastName" class="form-label">Last Name</label>
-								<input type="text" class="form-control rounded-3" id="lastName" name="lastname" maxlength="100" required>
+								<input type="text" class="form-control rounded-1" id="lastName" name="lastname" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="email" class="form-label">Email Address</label>
-								<input type="email" class="form-control rounded-3" id="email" name="email" maxlength="100" required>
+								<input type="email" class="form-control rounded-1" id="email" name="email" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="password" class="form-label">Password</label>
-								<input type="password" class="form-control rounded-3" id="password" name="password1" maxlength="100" required>
+								<input type="password" class="form-control rounded-1" id="password" name="password1" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="confirmPassword" class="form-label">Confirm Password</label>
-								<input type="password" class="form-control rounded-3" id="confirmPassword" name="password2" maxlength="100" required>
+								<input type="password" class="form-control rounded-1" id="confirmPassword" name="password2" maxlength="100" required>
 							</div>
-							<div class="mb-3">
+							<div class="mb-2">
 								<label for="avatar" class="form-label">Avatar (optional)</label>
-								<input type="file" class="form-control rounded-3" id="avatar" name="avatar">
+								<input type="file" class="form-control rounded-1" id="avatar" name="avatar">
 							</div>
-							<button type="submit" class="btn btn-outline-primary w-100 rounded-3" id="signup-submit">Sign Up</button>
+							<div class="mb-3 form-check">
+								<input type="checkbox" class="form-check-input" id="privacyPolicy" name="privacyPolicy" required>
+								<label class="form-check-label" for="privacyPolicy">
+									I agree to the <a href="#" id="privacyPolicyLink">privacy policy</a>
+								</label>
+							</div>
+							<button type="submit" class="btn btn-secondary w-100 rounded-2" id="signup-submit">Sign Up</button>
 						</form>
 					</div>
 				</div>
@@ -49,13 +57,14 @@
 			</div>
 		</div>
 	</div>
+
 	<!-- Privacy Policy Modal -->
 	<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
+		<div class="modal-dialog modal-dialog-centered" style="max-width: 80%;">
+			<div class="modal-content rounded-2">
 				<div class="modal-header">
 					<h5 class="modal-title" id="privacyPolicyModalLabel">Privacy Policy</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="display: none;"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<p>
@@ -119,22 +128,20 @@
 						We reserve the right to modify this Privacy Policy at any time. Any changes will be posted on this page and will take effect immediately. We encourage you to regularly review this page to stay informed of any updates.
 					</p>
 					<p>
-						Last updated: [Date]
+						Last updated: 19/09/2024
 					</p>
-					<div class="form-check">
+					<!-- <div class="form-check">
 						<input class="form-check-input" type="checkbox" id="privacyPolicyAgreement">
 						<label class="form-check-label" for="privacyPolicyAgreement">
 							I agree to the privacy policy
 						</label>
-					</div>
+					</div> -->
 				</div>
 				<div class="modal-footer">
-					<!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
-					<button type="button" class="btn btn-primary" id="accept-privacy-policy">Accept</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<!-- <button type="button" class="btn btn-primary" id="accept-privacy-policy">Accept</button> -->
 				</div>
 			</div>
 		</div>
 	</div>
-
 </section>
-

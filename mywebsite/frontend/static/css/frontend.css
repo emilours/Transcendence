@@ -1,10 +1,17 @@
 /* Font styles */
-.font-potta {
-	font-family: 'Potta One', sans-serif;
+.font-balsamiq {
+	font-family: 'Balsamiq Sans', cursive;
+	font-weight: 700;
 }
 
 .font-roboto {
 	font-family: 'Roboto', sans-serif;
+	color: 71, 46, 39;
+}
+
+header {
+	box-shadow: 0 4px 8px rgba(83, 53, 35, 0.2);
+	z-index: 10;
 }
 
 /* High contrast */
@@ -21,9 +28,9 @@ body.high-contrast {
 }
 
 /* Focus outline for better navigation visibility */
-/* .high-contrast button:focus, .high-contrast a:focus {
-	outline: 2px solid blue;
-} */
+.high-contrast button:focus, .high-contrast a:focus {
+	outline: 2px solid #000;
+}
 
 /* Links and text adjustments */
 /* .high-contrast a {
@@ -35,9 +42,13 @@ body.high-contrast {
 }
 
 
-.high-contrast .inversed-color {
+.high-contrast .darky-color {
 	/* background-color: #fff; */
 	color: #000;
+}
+
+.high-contrast .whity-color {
+	color: #fff
 }
 
 
@@ -61,7 +72,7 @@ body.high-contrast {
 .high-contrast .btn:hover {
 	background-color: #fff;
 	color: #000;
-	border-color: #fff;
+	border-color: #000;
 	border: 2px;
 }
 

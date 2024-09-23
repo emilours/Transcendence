@@ -1,4 +1,6 @@
-import { initializeGame } from '/static/js/invaders.js';
+import { initInvaders } from '/static/js/invaders.js';
+import { initPong } from '/static/js/pongMenu.js';
+import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SPA - Single Page Application
@@ -22,6 +24,17 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
+		// close ws connection and cleanup threejsz
+		CloseWebsocket();
+
+		// Close any open Bootstrap modals
+		const modals = document.querySelectorAll('.modal.show');
+		modals.forEach(modal => {
+			const modalInstance = bootstrap.Modal.getInstance(modal);
+			if (modalInstance) {
+				modalInstance.hide();
+			}
+		});
 	}
 
 	const loadHeader = async () => {
@@ -57,9 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initializeGame();
+				await initInvaders(data.test_name);
 			} else if (url.includes('pong')) {
-				await loadResource('/static/js/pong.js', 'script');
+				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
+				await loadResource('/static/css/pong.css', 'link');
+				await loadResource('/static/js/pongMenu.js', 'script');
+				await initPong(data.test_name);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			}
@@ -109,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'navbar-profile', url: '/profile/' },
 			{ id: 'navbar-leaderboard', url: '/leaderboard/' },
 			{ id: 'navbar-games', url: '/games/' },
+			{ id: 'navbar-contact', url: '/contact/' },
 		];
 
 		NavLinks.forEach(link => {
@@ -127,6 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
 			{ id: 'signup-from-login', url: '/signup/' },
+			{ id: 'home-from-deleted', url: '/home/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },
 			{ id: 'games', url: '/games/' },
@@ -180,8 +198,11 @@ document.addEventListener("DOMContentLoaded", () => {
 							alert(data.error);
 						} else {
 							// alert(data.message);
-							if (id === 'logout-form' || id === 'delete-account-form') {
+							if (id === 'logout-form') {
 								loadContent('/home/', true);
+								loadHeader();
+							} else if (id === 'delete-account-form') {
+								loadContent('/deleted_profile/', true);
 								loadHeader();
 							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
 								loadContent('/profile/', true);
@@ -228,29 +249,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
-
 	const attachPolicyListeners = () => {
+		const privacyPolicyLink = document.getElementById('privacyPolicyLink');
 		const privacyPolicyModal = new bootstrap.Modal(document.getElementById('privacyPolicyModal'));
-		const acceptPrivacyPolicyBtn = document.getElementById('accept-privacy-policy');
-		const privacyPolicyAgreement = document.getElementById('privacyPolicyAgreement');
-		const signupSubmitBtn = document.getElementById('signup-submit');
-		let privacyPolicyAccepted = localStorage.getItem('privacyPolicyAccepted') === 'true';
 
-		if (!privacyPolicyAccepted) {
-			privacyPolicyModal.show();
-		} else {
-			signupSubmitBtn.disabled = false;
-		}
-
-		if (acceptPrivacyPolicyBtn) {
-			acceptPrivacyPolicyBtn.addEventListener('click', () => {
-				if (privacyPolicyAgreement.checked) {
-					localStorage.setItem('privacyPolicyAccepted', 'true');
-					privacyPolicyModal.hide();
-					signupSubmitBtn.disabled = false;
-				} else {
-					alert('You must agree to the privacy policy to proceed.');
-				}
+		if (privacyPolicyLink) {
+			privacyPolicyLink.addEventListener('click', (event) => {
+				event.preventDefault();
+				privacyPolicyModal.show();
 			});
 		}
 	};
@@ -272,6 +278,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
+
+
 	loadContent(window.location.pathname, false);
 	loadHeader();
 });

@@ -32,7 +32,7 @@ def signin(request):
 
     if not email or not password:
         return JsonResponse({"error": "Email and password are required."}, status=400)
-    
+
     if not User.objects.filter(email=email).exists():
         return JsonResponse({"error": "Please sign up first."}, status=404)
 
@@ -109,7 +109,8 @@ def signout(request):
     if request.user.is_authenticated:
         request.user.is_online = False
         request.user.save(update_fields=['is_online'])
-        request.session.flush()
+        logout(request)
+        # request.session.flush()
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -415,7 +416,7 @@ def update_password(request):
 
         if form.is_valid():
             new_password = form.cleaned_data.get('new_password1')
-            
+
             if check_password(new_password, user.password):
                 return JsonResponse({
                     'error': 'New password cannot be the same as the current password.'
@@ -567,7 +568,7 @@ def request_anonymization(request):
 #         return JsonResponse({'error': 'User not found'}, status=404)
 
 #     user = get_object_or_404(CustomUser, display_name=display_name)
-    
+
 #     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
 
 #     game_data = {}

@@ -1,0 +1,83 @@
+{% load static %}
+<section class="d-flex align-items-center justify-content-center mt-5">
+	<div class="container mb-5">
+		<div class="row justify-content-center mt-2 g-3">
+			<div class="col-12 col-lg-8">
+				<div class="card shadow rounded-4">
+					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+						<h2>Edit Profile</h2>
+					</div>
+					<div class="card-body p-5">
+						<form id="edit-profile-form" method="POST" enctype="multipart/form-data" action="{% url 'authentification:update_profile' %}">
+							{% csrf_token %}
+							<!-- <div class="form-group mb-3">
+								<label for="email">Email:</label>
+								<input type="email" id="email" name="email" class="form-control" value="{{ user.email }}" required>
+							</div> -->
+
+							<div class="form-group mb-3">
+								<label for="first_name">First Name:</label>
+								<input type="text" id="first_name" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+							</div>
+
+							<div class="form-group mb-3">
+								<label for="last_name">Last Name:</label>
+								<input type="text" id="last_name" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+							</div>
+
+							<div class="form-group mb-3">
+								<label for="display_name">Display Name:</label>
+								<input type="text" id="display_name" name="display_name" class="form-control" value="{{ user.display_name }}" required>
+							</div>
+
+							<!-- <div class="form-group mb-3">
+								<label for="avatar">Choose a new avatar:</label>
+								<div class="d-flex flex-wrap justify-content-start">
+									{% for avatar in predefined_avatars %}
+									<label class="avatar-option me-3 mb-3 mb-md-0">
+										<input type="radio" name="avatar_choice" value="{{ avatar.url }}" {% if user.avatar.url == avatar.url %}checked{% endif %}>
+										<img src="{{ avatar.url }}" alt="Your avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
+									</label>
+									{% endfor %}
+								</div>
+							</div>
+
+							<div class="form-group mb-3">
+								<label for="avatar">Or upload your own avatar:</label>
+								<input type="file" id="avatar" name="avatar" class="form-control">
+							</div> -->
+
+							<div class="form-group mb-3">
+								<label>Choose a new avatar:</label>
+								<div class="d-flex flex-wrap justify-content-start">
+									{% for avatar in predefined_avatars %}
+									<label class="avatar-option me-3 mb-3 mb-md-0">
+										<input type="radio" name="avatar_choice" value="{{ avatar.url }}" class="form-check-input" id="avatar_{{ forloop.counter }}"
+										{% if user.avatar.url == avatar.url %}checked{% endif %}
+										onchange="toggleCustomAvatar(false)">
+										<img src="{{ avatar.url }}" alt="Your avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
+									</label>
+									{% endfor %}
+									<!-- Adding a 'None' or 'Custom' option -->
+									<label class="avatar-option me-3 mb-3 mb-md-0">
+										<input type="radio" name="avatar_choice" value="custom" class="form-check-input" id="custom-avatar-choice"
+										{% if not user.avatar.url in predefined_avatars %}checked{% endif %}
+										onchange="toggleCustomAvatar(true)">
+										<span>Custom Avatar</span>
+									</label>
+								</div>
+							</div>
+							<div class="form-group mb-3">
+								<label for="avatar">Upload your own avatar:</label>
+								<input type="file" id="custom-avatar" name="avatar" class="form-control"
+								{% if user.avatar.url in predefined_avatars %}disabled{% endif %}>
+							</div>
+
+							<button type="submit" class="btn btn-primary w-100">Save Changes</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

@@ -27,6 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == 'True'
 
+
 # ALLOWED_HOSTS = ["127.0.0.1"]
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
@@ -36,6 +37,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 	'rest_framework',
 	'rest_framework.authtoken',
-    'rest_framework_simplejwt',
     'frontend',
     'authentification',
     'invaders',
@@ -55,28 +56,27 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'mywebsite.asgi.application'
 
 # in production we would use redis for in-memory database
-CHANNEL_LAYERS={
-	'default':{
-		'BACKEND':'channels.layers.InMemoryChannelLayer'
-	}
-}
+# CHANNEL_LAYERS={
+# 	'default':{
+# 		'BACKEND':'channels.layers.InMemoryChannelLayer'
+# 	}
+# }
 
 # For production (using redis)
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [("127.0.0.1", 6380)],
-# 			# "hosts": [('redis://default:IUNiWfxeTzDbVdtFlSglIEVaokQaSOhi@redis.railway.internal:6379')]
-#         },
-#     },
-# }
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("redis", 6379)]
+        },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

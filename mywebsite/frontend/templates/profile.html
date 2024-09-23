@@ -1,58 +1,59 @@
 {% load static %}
 <section class="d-flex align-items-center justify-content-center mt-5">
 	<div class="container mb-5">
-		<div class="row justify-content-center mt-2 g-3">
+		<div class="row justify-content-center g-3">
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow rounded-4">
-					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+				<div class="card shadow rounded-2">
+					<div class="card-header text-center bg-primary font-balsamiq text-secondary-emphasis rounded-top-2 pt-3">
 						<h2>Profile</h2>
 					</div>
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
 							<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 						</div>
-						<h3 class="card-title text-center mb-4 font-potta">{{ user.display_name }}</h3>
-						<p class="text-center mb-4 inversed-color"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-						<p class="text-center mb-4 inversed-color"><strong>Email:</strong> {{ user.email }}</p>
-						<div class="text-center">
-							<a href="" class="btn btn-secondary mb-2 rounded-3" id="edit-profile">Edit Profile</a>
-							<a href="" class="btn btn-secondary ms-2 mb-2 rounded-3" id="edit-password">Edit Password</a>
+						<h3 class="card-title text-center mb-4 font-balsamiq text-secondary-emphasis">{{ user.display_name }}</h3>
+						<p class="text-center mb-4 text-secondary-emphasis"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+						<p class="text-center mb-4 text-secondary-emphasis"><strong>Email:</strong> {{ user.email }}</p>
+						<div class="text-center ">
+
+							<a href="" class="btn btn-primary mb-2" id="edit-profile">Edit Profile</a>
+							<a href="" class="btn btn-primary ms-2 mb-2" id="edit-password">Edit Password</a>
 							<!-- <a href="" class="btn btn-danger ms-2 mb-2 rounded-3" id="delete-account" onclick="return confirm('Are you sure you want to delete your account?');">Delete Account</a> -->
 							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}">
 								{% csrf_token %}
-								<button type="submit" class="btn btn-danger ms-2 mb-2 rounded-3" onclick="return confirm('Are you sure you want to delete your account?');">Delete Account</button>
+								<button type="submit" class="btn btn-danger ms-2 mb-2 rounded-2" onclick="return confirm('Are you sure you want to delete your account?');">Delete Account</button>
 							</form>
 						</div>
 						<hr>
-						<h4 class="text-center font-roboto mb-4">Pong Stats</h4>
-						<div class="d-flex justify-content-around mb-4">
+						<h4 class="text-center font-roboto text-secondary-emphasis mb-4">Pong Stats</h4>
+						<div class="d-flex justify-content-around mb-4 ">
 							<div>
 								<h5 class="text-center">Victories</h5>
-								<p class="text-center inversed-color">Not defined in model</p>
+								<p class="text-center text-secondary-emphasis">Not defined in model</p>
 							</div>
 							<div>
 								<h5 class="text-center">Defeats</h5>
-								<p class="text-center inversed-color">Not defined in model</p>
+								<p class="text-center text-secondary-emphasis">Not defined in model</p>
 							</div>
 							<div>
 								<h5 class="text-center">Score</h5>
-								<p class="text-center inversed-color">Not defined in model</p>
+								<p class="text-center text-secondary-emphasis">Not defined in model</p>
 							</div>
 						</div>
 						<hr>
-						<h4 class="text-center font-roboto mb-4">Invaders Stats</h4>
+						<h4 class="text-center font-roboto text-secondary-emphasis mb-4">Invaders Stats</h4>
 						<div class="d-flex justify-content-around mb-4">
 							<div>
 								<h5 class="text-center">Victories</h5>
-								<p class="text-center inversed-color">{{ user.victories }}</p>
+								<p class="text-center text-secondary-emphasis">{{ user.victories }}</p>
 							</div>
 							<div>
 								<h5 class="text-center">Defeats</h5>
-								<p class="text-center inversed-color">{{ user.defeats }}</p>
+								<p class="text-center text-secondary-emphasis">{{ user.defeats }}</p>
 							</div>
 							<div>
 								<h5 class="text-center">Score</h5>
-								<p class="text-center inversed-color">Not defined in model</p>
+								<p class="text-center text-secondary-emphasis">Not defined in model</p>
 							</div>
 						</div>
 
@@ -61,46 +62,46 @@
 			</div>
 
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow rounded-4">
-					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+				<div class="card shadow rounded-2">
+					<div class="card-header text-center bg-primary font-balsamiq text-secondary-emphasis rounded-top-2 pt-3">
 						<h2>Friends</h2>
 					</div>
 					<div class="card-body p-4">
 						<form id="add-friend-form" method="POST" action="{% url 'profile' %}">
 							{% csrf_token %}
 							<div class="input-group mb-3">
-								<input id="receiver_email" type="email" name="receiver_email" class="form-control rounded-start-3" placeholder="Enter friend's email" required>
-								<button type="submit" class="btn btn-secondary rounded-end-3">Add Friend</button>
+								<input id="receiver_display_name" type="text" name="receiver_display_name" class="form-control rounded-start-2" placeholder="Enter friend's username" required>
+								<button type="submit" class="btn btn-primary rounded-start-0">Add Friend</button>
 							</div>
 						</form>
 						{% if user.friend_list.friends.all %}
 						<ul class="list-group">
 							{% for friend in user.friend_list.friends.all %}
-								<li class="list-group-item d-flex justify-content-between align-items-center rounded-3">
+								<li class="list-group-item d-flex justify-content-between align-items-center rounded-1">
 									<div>
 										<img src="{{ friend.avatar.url }}" alt="{{ friend.display_name }}'s Avatar" class="rounded-circle me-2" width="40" height="40">
 										<strong>{{ friend.display_name }}</strong>
 									</div>
 									<div>
-										<span class="badge rounded-3 {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
+										<span class="badge rounded-1 {% if friend.is_online %}bg-secondary text-black{% else %}bg-light{% endif %} p-2">{{ friend.is_online|yesno:"Online,Offline" }}</span>
 										<form method="POST" action="/auth/remove_friend/{{ friend.id }}/" class="d-inline remove-friend-form">
 											{% csrf_token %}
-											<button type="submit" class="btn btn-light btn-sm rounded-3">Remove</button>
+											<button type="submit" class="btn btn-light btn-sm rounded-1">Remove</button>
 										</form>
 									</div>
 								</li>
 							{% endfor %}
 						</ul>
 					{% else %}
-						<p class="text-center inversed-color">You have no friends added yet.</p>
+						<p class="text-center text-secondary-emphasis">You have no friends added yet.</p>
 					{% endif %}
 					</div>
 				</div>
 			</div>
 
 			<div class="col-12 col-lg-6 col-xxl-4">
-				<div class="card shadow rounded-4">
-					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+				<div class="card shadow rounded-2">
+					<div class="card-header text-center bg-primary font-balsamiq text-secondary-emphasis rounded-top-2 pt-3">
 						<h2>Friend's Invitations</h2>
 					</div>
 					<div class="card-body p-4">
@@ -128,7 +129,7 @@
 								{% endfor %}
 							</ul>
 						{% else %}
-							<p class="text-center inversed-color">No pending friend requests.</p>
+							<p class="text-center text-secondary-emphasis">No pending friend requests.</p>
 						{% endif %}
 
 						<h4 class="text-center mb-3">Sent</h4>
@@ -151,7 +152,7 @@
 								{% endfor %}
 							</ul>
 						{% else %}
-							<p class="text-center inversed-color">No sent friend requests.</p>
+							<p class="text-center text-secondary-emphasis">No sent friend requests.</p>
 						{% endif %}
 
 					</div>
