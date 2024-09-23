@@ -73,7 +73,6 @@ def games(request):
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
-@login_required
 def leaderboard(request):
 	leaderboard_data = PlayerMatch.objects.select_related('player', 'match').order_by('-score')
 
