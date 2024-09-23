@@ -220,4 +220,3 @@ export function tournamentSetup(startGame, game) {
 		tournament.playNextMatch();
 	}
 }
-

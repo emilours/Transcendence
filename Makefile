@@ -9,7 +9,6 @@ NETWORKS		=	$(shell docker network ls -q)
 
 all:
 	@echo "$(YELLOW)\n. . . Launching . . .\n$(RESET)"
-	@mkdir -p mywebsite/daphne
 #	@mkdir -p $(DATA_DIR)
 	@docker compose -f ./docker-compose.yml up -d
 	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"

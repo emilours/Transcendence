@@ -32,10 +32,6 @@ export function initInvaders(userName) {
 				menuScreen.remove();
 				tournamentSetup(startGame, game);
 			})
-			// createButton('LEADERBOARD', () => {
-			// 	menuScreen.remove();
-			// 	displayLeaderboard();
-			// })
 		)
 	);
 	document.querySelector('.invaders-container').appendChild(menuScreen);
@@ -316,43 +312,6 @@ export function initInvaders(userName) {
 			}
 			return cookieValue;
 		}
-	}
-
-	function displayLeaderboard() {
-		const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-		leaderboard.sort((a, b) => b.score - a.score);
-
-		const leaderboardScreen = createElement('div', { className: 'menu'});
-		const title = createElement('h2', { innerText: 'LEADERBOARD' });
-		leaderboardScreen.appendChild(title);
-
-		const list = createElement('div', { className: 'list-leader' });
-		const itemList = createElement('div', { className: 'list' },
-			createElement('p', { innerText: 'RANK', style: 'width: 60px;' }),
-			createElement('p', { innerText: 'USER', style: 'width: 200px;' }),
-			createElement('p', { innerText: 'SCORE' , style: 'width: 100px;'})
-		);
-		list.appendChild(itemList);
-
-		let i = 0;
-		leaderboard.slice(0, 10).forEach(entry => {
-			const itemList = createElement('div', { className: 'list' },
-				createElement('h4', { innerText: `${++i}.`, style: 'width: 60px;'  }),
-				createElement('h4', { innerText: entry.userName, style: 'width: 200px;' }),
-				createElement('h4', { innerText: entry.score, style: 'width: 100px;' })
-			);
-			itemList.style.display = 'flex';
-			itemList.style.alignItems = 'center';
-			list.appendChild(itemList);
-		});
-		leaderboardScreen.appendChild(list);
-
-		const backButton = createButton('MENU', () => {
-			leaderboardScreen.remove();
-			initInvaders(game.userName);
-		});
-		leaderboardScreen.appendChild(backButton);
-		document.querySelector('.invaders-container').appendChild(leaderboardScreen);
 	}
 }
 

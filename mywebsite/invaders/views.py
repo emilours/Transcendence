@@ -4,8 +4,10 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 import json
 
+@login_required
 def invaders(request):
 	context = {}
 	if request.user.is_authenticated:

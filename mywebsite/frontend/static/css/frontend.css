@@ -1,16 +1,93 @@
-/* html, body {
-	height: 100%;
-}
-
-body {
-	display: flex;
-	flex-direction: column;
-} */
-
-.font-potta {
-	font-family: 'Potta One', sans-serif;
+/* Font styles */
+.font-balsamiq {
+	font-family: 'Balsamiq Sans', cursive;
+	font-weight: 700;
 }
 
 .font-roboto {
 	font-family: 'Roboto', sans-serif;
+	color: 71, 46, 39;
+}
+
+header {
+	box-shadow: 0 4px 8px rgba(83, 53, 35, 0.2);
+	z-index: 10;
+}
+
+/* High contrast */
+body.high-contrast {
+	background-color: #000;
+	color: #fff;
+}
+
+/* Navbar and buttons in high contrast */
+.high-contrast .navbar, .high-contrast .btn, .high-contrast span {
+	background-color: #222;
+	color: #fff;
+	border: 1px solid #fff;
+}
+
+/* Focus outline for better navigation visibility */
+.high-contrast button:focus, .high-contrast a:focus {
+	outline: 2px solid #000;
+}
+
+/* Links and text adjustments */
+/* .high-contrast a {
+	text-decoration: underline;
+} */
+
+.high-contrast p {
+	color: #fff;
+}
+
+
+.high-contrast .darky-color {
+	/* background-color: #fff; */
+	color: #000;
+}
+
+.high-contrast .whity-color {
+	color: #fff
+}
+
+
+/* Form */
+.high-contrast input[type="text"],
+.high-contrast input[type="email"],
+.high-contrast input[type="password"],
+.high-contrast input[type="file"],
+.high-contrast textarea,
+.high-contrast select {
+	background-color: #fdfdfd;
+	border: 2px solid #000;
+	color: #000;
+}
+
+/* image */
+.high-contrast img#logo-42 {
+	content: url("../img/42_Logo_white.png");
+}
+
+.high-contrast .btn:hover {
+	background-color: #fff;
+	color: #000;
+	border-color: #000;
+	border: 2px;
+}
+
+
+.high-contrast .btn:active {
+	background-color: #ccc;
+	color: #000;
+	border-color: #000;
+	border: 2px;
+}
+
+
+.high-contrast .btn:focus {
+	outline: 2px solid #fff;
+	background-color: #444;
+	color: #fff;
+	border: 2px;
 }

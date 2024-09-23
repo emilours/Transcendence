@@ -1,27 +1,31 @@
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-# import threading
-# from .scripts.multiplayer_pong import start_game
+from django.contrib.auth.decorators import login_required
 
+# Create your views here.
+# def pong(request):
+# 	liveGames = 0
+# 	gameId = liveGames
+# 	liveGames += 1
+# 	return render(request, 'pong/pong_home.html', {'gameId': gameId})
 
-# def play(request):
-# 	start_game()
+# def lobby(request, id):
+# 	print(id)
 
+# 	return render(request, 'pong/pong.html')
 
+@login_required
 def pong(request):
-	# pong_thread = threading.Thread(target=start_game)
-	# pong_thread.start()
-	# print(f"[PONG VIEW] {threading.enumerate()}")
-	# if request.user.is_authenticated:
-		# redirect to login ?
-
+	context = {}
+	if request.user.is_authenticated:
+		test_name = request.user.display_name
+		context = {
+			'test_name': test_name
+		}
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('pong.html', request=request)
-
-		if request.user.is_authenticated:
-			username = request.user.display_name
-		return JsonResponse({'html': html, 'username': username})
+		html = render_to_string('pong.html', context, request=request)
+		return JsonResponse({'html': html, 'test_name': test_name})
 	return render(request, 'base.html')
 
 

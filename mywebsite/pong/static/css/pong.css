@@ -3,8 +3,6 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-top: 20px;
-	margin-bottom: 15px;
 	background: rgba(0, 0, 0, 0);
 	font-family: 'Orbitron', sans-serif;
 }
@@ -70,9 +68,9 @@ h3 {
 }
 
 h4 {
-	font-size: 2.5em;
+	font-size: 1em;
 	color: white;
-	line-height: 0.2;
+	line-height: 1;
 }
 
 p {

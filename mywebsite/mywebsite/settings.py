@@ -27,6 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == 'True'
 
+
 # ALLOWED_HOSTS = ["127.0.0.1"]
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
@@ -46,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 	'rest_framework',
 	'rest_framework.authtoken',
-    'rest_framework_simplejwt',
     'frontend',
     'authentification',
     'invaders',
@@ -76,7 +76,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -131,10 +131,24 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        }
+    },
+    {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django_password_validators.password_character_requirements.password_validation.PasswordCharacterValidator',
+        'OPTIONS': {
+            'min_length_digit': 1,
+            'min_length_alpha': 1,
+            'min_length_special': 1,
+            'min_length_lower': 1,
+            'min_length_upper': 1,
+            'special_characters': "!@#$%^&*()-_=+[]{}|;:'\",.<>/?`~",
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -193,6 +207,7 @@ AUTH_USER_MODEL = 'frontend.CustomUser'
 FORTYTWO_AUTHORIZATION_BASE_URL = 'https://api.intra.42.fr/oauth/authorize'
 FORTYTWO_TOKEN_URL = 'https://api.intra.42.fr/v2/oauth/token'
 FORTYTWO_USER_URL = 'https://api.intra.42.fr/v2/me'
+API_42_AUTH_URL = os.environ.get('API_42_AUTH_URL')
 
 # API 42 AUTHENTIFICATION
 FORTYTWO_CLIENT_ID = os.getenv('CLIENT_ID')
