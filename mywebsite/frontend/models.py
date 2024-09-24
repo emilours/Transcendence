@@ -105,6 +105,7 @@ class FriendList(models.Model):
 	def __str__(self):
 		return f"{self.user.username}'s Friend List"
 
+	@transaction.atomic
 	def add_friend(self, account):
 		if account != self.user and account not in self.friends.all():
 			with transaction.atomic():
@@ -112,6 +113,7 @@ class FriendList(models.Model):
 				friend_list = FriendList.objects.get(user=account)
 				friend_list.friends.add(self.user)
 
+	@transaction.atomic
 	def remove_friend(self, account):
 		if account != self.user and account in self.friends.all():
 			with transaction.atomic():
@@ -119,6 +121,12 @@ class FriendList(models.Model):
 				friend_list = FriendList.objects.get(user=account)
 				friend_list.friends.remove(self.user)
 
+				self.user.friends_count -= 1
+				account.friends_count -= 1
+				self.user.save()
+				account.save()
+
+	@transaction.atomic
 	def unfriend(self, removee):
 		self.remove_friend(removee)
 		try:
@@ -131,9 +139,11 @@ class FriendList(models.Model):
 		except FriendList.DoesNotExist:
 			pass
 
+	@transaction.atomic
 	def is_mutual_friend(self, friend):
 		return friend in self.friends.all()
 
+	@transaction.atomic
 	def friend_count(self):
 		count = self.friends.count()
 		return count
@@ -176,13 +186,13 @@ class FriendRequest(models.Model):
 			self.sender.save()
 			self.receiver.save()
 
-		sender_friend_list, _ = FriendList.objects.get_or_create(user=self.sender)
-		receiver_friend_list, _ = FriendList.objects.get_or_create(user=self.receiver)
+			sender_friend_list, _ = FriendList.objects.get_or_create(user=self.sender)
+			receiver_friend_list, _ = FriendList.objects.get_or_create(user=self.receiver)
 
-		sender_friend_list.add_friend(self.receiver)
-		receiver_friend_list.add_friend(self.sender)
+			sender_friend_list.add_friend(self.receiver)
+			receiver_friend_list.add_friend(self.sender)
 
-		self.save()
+			self.save()
 
 	@transaction.atomic
 	def decline(self):
