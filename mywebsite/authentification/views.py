@@ -18,6 +18,11 @@ from django.contrib.auth.hashers import check_password
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 import os
+import json
+import time
+from django.http import HttpResponse
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -450,7 +455,6 @@ def request_anonymization(request):
         with transaction.atomic():
             unique_suffix = get_random_string(length=8)
 
-            user.email = f'anonymized_{unique_suffix}@example.com'
             user.display_name = f'Anonymous_{unique_suffix}'
             user.first_name = 'Anonymous'
             user.last_name = 'Anonymous'
@@ -460,6 +464,34 @@ def request_anonymization(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+# # ================================================================================================================================================================
+# # ===                                                      SSE - HANDLING FRIEND REQUEST EVENTS                                                                ===
+# # ================================================================================================================================================================
+
+@login_required
+def sse_view(request):
+    response = HttpResponse(content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['Connection'] = 'keep-alive'
+
+    def event_stream():
+        last_seen_id = 0
+        while True:
+            time.sleep(5)
+            requests = FriendRequest.objects.filter(id__gt=last_seen_id)
+            for req in requests:
+                last_seen_id = max(last_seen_id, req.id)
+                data = {
+                    "id": req.id,
+                    "sender": req.sender.username,
+                    "receiver": req.receiver.username,
+                    "status": req.status
+                }
+                yield f"data: {json.dumps(data)}\n\n"
+    
+    response.streaming_content = event_stream()
+    return response
 
 # # ================================================================================================================================================================
 # # ===                                                      MATCH HISTORY                                                                                     ===
