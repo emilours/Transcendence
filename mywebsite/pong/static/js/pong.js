@@ -25,9 +25,17 @@ var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 
 
-
+// FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 // ConnectWebsocket();
-
+export function StartGameEvent()
+{
+	if (!socket || !socket.connected)
+	{
+		console.log("Socket.io connection not open")
+		return
+	}
+	socket.emit('start_game');
+}
 
 export function ConnectWebsocket(type, username)
 {
@@ -97,17 +105,17 @@ export function ConnectWebsocket(type, username)
 	}
 }
 
-	export function CloseWebsocket() {
-		if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
-			pongSocket.close(1000, "Closing normally");
-			console.log("WebSocket closed");
-		}
-
-		if (socket && socket.connected) {
-			socket.disconnect();
-			console.log("Socket.IO connection closed");
-		}
+export function CloseWebsocket() {
+	if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
+		pongSocket.close(1000, "Closing normally");
+		console.log("WebSocket closed");
 	}
+
+	if (socket && socket.connected) {
+		socket.disconnect();
+		console.log("Socket.IO connection closed");
+	}
+}
 
 
 // function abs(num)

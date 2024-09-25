@@ -99,25 +99,43 @@ client_count = 0
 connected_users = {}
 games = {}
 
+# set instrument to `True` to accept connections from the official Socket.IO
+# Admin UI hosted at https://admin.socket.io
+instrument = True
+admin_login = {
+    'username': 'admin',
+    'password': 'python',  # change this to a strong secret for production use!
+}
+
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
-sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='asgi')  # You can specify domains like ['http://localhost:8080']
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=None if not instrument else [
+    'http://localhost:8080',
+    'https://admin.socket.io',
+])
+if instrument:
+    sio.instrument(auth=admin_login)
+
+# You can specify domains like ['http://localhost:8080']
 # Wrap the Socket.IO server with a WSGI app
 app = socketio.ASGIApp(sio)
 
 def log(message):
-    print(f"[SOCKET] {message}")
+    print(f"[LOG] {message}")
+
+async def StartGameLoop(sid, username, room_id):
+    global games
+    log(f"")
 
 async def UserAlreadyConnected(username):
     global connected_users
     for sid in connected_users.keys():
         session = await sio.get_session(sid)
         if username == session.get('username'):
-            log(f"User {username} is already connected to a socket")
+            log(f"User {username} is already connected to a socket at {sid}")
             return True
     return False
 
 async def GetUserRoom(username):
-
     global games
 
     for game in games.values():
@@ -158,6 +176,7 @@ async def CreateRoom(game_type):
     return room_id
 
 async def JoinRoom(sid, username, room_id):
+    global games
     if room_id not in games:
         log(f"[Error] Can't join room {room_id}")
         return
@@ -169,18 +188,28 @@ async def JoinRoom(sid, username, room_id):
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
     #
+
+def IsRoomFull(room_id):
+    global games
+
     game_type = games[room_id]['game_type']
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
         log(f"Room {room_id} is now full")
+        return True
     elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
         log(f"Room {room_id} is now full")
+        return True
+    return False
 
 async def LeaveRoom(sid, room_id):
     global games
 
     await sio.leave_room(sid, room_id)
+    games[room_id]['player_count'] -= 1
     # HERE
     session = await sio.get_session(sid)
+    if not session:
+        return False
     log(f"User [{session['username']}] left room [{room_id}]")
 
 async def DeleteRoom(room_id):
@@ -188,21 +217,37 @@ async def DeleteRoom(room_id):
     log(f"Room {room_id} deleted")
 
 
+@sio.on('start_game')
+async def StartGame(sid, environ):
+    global games
+
+    log('StartGame()')
+    username = environ.get('HTTP_X_USERNAME')
+    game_type = environ.get('HTTP_X_GAMETYPE')
+    room_id = GetUserRoom(username)
+    if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
+        log(f"Room {room_id} is now full, starting normal game")
+        asyncio.create_task(StartGameLoop(sid, username, room_id))
+    elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
+        log(f"Room {room_id} is now full")
 
 
 @sio.event
 async def connect(sid, environ):
     global client_count, connected_users
 
+    client_count += 1
+    await sio.emit('client_count', client_count)
     username = environ.get('HTTP_X_USERNAME')
     game_type = environ.get('HTTP_X_GAMETYPE')
     if not username or not game_type:
-        raise ConnectionRefusedError('No username or game type')
+        await sio.disconnect(sid)
+        return False, 'No username or game type'
     if await UserAlreadyConnected(username):
-        raise ConnectionRefusedError('User already connected to socket')
-    client_count += 1
+        await sio.disconnect(sid)
+        return False, 'User already connected to socket'
     connected_users[sid] = True
-    log(f"User {username} connected")
+    log(f"User {username} connected ({sid})")
 
     room_id = await GetUserRoom(username)
     if room_id is None:
@@ -218,9 +263,6 @@ async def connect(sid, environ):
     log(f"session in connect: {session}")
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
-    await sio.emit('client_count', client_count)
-    await sio.send("Hello from server")
-    # log(f"Client connected: {sid}")
 
 @sio.event
 async def message(sid, data):
@@ -236,16 +278,22 @@ async def disconnect(sid):
     # log(f"Client disconnected: {sid}")
 
 
-    session = await sio.get_session(sid)
-    log(f"session in disconnect: {session}")
-    room_id = session.get('room_id')
-    await LeaveRoom(sid, room_id)
+    try:
+        session = await sio.get_session(sid)
+        log(f"session in disconnect: {session}")
+        room_id = session.get('room_id')
+        if await LeaveRoom(sid, room_id) == False:
+            log(f"User {username} disconnected ({sid})")
+            return
 
-    username = session.get('username')
-    if sid in connected_users:
-        del connected_users[sid]
-    await sio.emit('user_left', username)
-    log(f"User {username} disconnected")
+        username = session.get('username')
+        if sid in connected_users:
+            del connected_users[sid]
+        await sio.emit('user_left', username)
+        log(f"User {username} disconnected ({sid})")
+    except KeyError:
+        log(f"No session found for {sid}")
+
 
 
 if __name__ == "__main__":

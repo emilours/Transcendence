@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket } from './pong.js';
+import { ConnectWebsocket, StartGameEvent } from './pong.js';
 
 export function initPong(userName) {
 	// let user = 'userName';
