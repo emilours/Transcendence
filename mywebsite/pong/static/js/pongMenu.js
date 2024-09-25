@@ -32,13 +32,15 @@ export function initPong(userName) {
 			createElement('div', { className: 'button-vertical' },
 				createButton('CREATE LOBBY', () => {
 					onlineMenu.remove();
+					// FOR DEVELOPMENT
+					console.log("CREATE LOBBY button clicked")
+					ConnectWebsocket('normal', userName);
+					// 
 					drawLobbyMenu('create');
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
-					// FOR DEVELOPMENT
-					ConnectWebsocket('tournament', userName);
-					// drawLobbyMenu('join');
+					drawLobbyMenu('join');
 				}),
 				createButton('BACK', () => {
 					onlineMenu.remove();
@@ -93,6 +95,8 @@ export function initPong(userName) {
 			buttonReady = createButtonGreen('READY', () => {
 				buttonReady.style.backgroundColor = '#0ccf0c';
 				buttonReady.innerText = 'OK';
+				console.log("READY button clicked")
+				StartGameEvent();
 			})
 		);
 		return playerInfo;

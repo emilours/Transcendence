@@ -89,8 +89,8 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
-MAX_PLAYER_TOURNAMENT = 2
-MAX_PLAYER_NORMAL = 4
+MAX_PLAYER_NORMAL = 2
+MAX_PLAYER_TOURNAMENT = 4
 
 NORMAL_GAME = 'normal'
 TOURNAMENT_GAME = 'tournament'
@@ -122,9 +122,89 @@ app = socketio.ASGIApp(sio)
 def log(message):
     print(f"[LOG] {message}")
 
+def reset_ball(room_id):
+
+    # Reset the ball position and velocity after scoring
+    games[room_id]['ballPosition'] = [0, 0]
+    games[room_id]['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
+
+# HERE adjust the code so it works with new games {}
+# 'player1'
+# 'player2'
+# 'player1Pos'
+# 'player2Pos'
+# 'player1Score'
+# 'player2Score'
+
+# I assume 1 --> index 0 and 2 --> index 1 would work:
+# ['player1'] --> ['players'][0]
+
+
 async def StartGameLoop(sid, username, room_id):
     global games
-    log(f"")
+    log(f"STARTING GAME LOOP")
+    namespace = sio.namespaces()
+    log(f"Namespaces: {namespace}")
+    sids = sio.manager.get_participants('/', room_id)
+    log(f"Clients in room {room_id}: {sids}")
+    current_task = asyncio.current_task()
+    while True:
+        while games[room_id]['status'] == "paused":
+            await asyncio.sleep(1 / 2)
+            log("GAME IS PAUSE, SLEEPING!")
+
+        # Handle collisions with walls
+    
+        if games[room_id]['ballPosition'][1] <= BOTTOM_WALL or games[room_id]['ballPosition'][1] >= TOP_WALL:
+            games[room_id]['ballVelocity'][1] *= -1
+
+        # Handle paddle collisions
+        if (abs(games[room_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][0]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            games[room_id]['ballVelocity'][0] *= -1
+        if (abs(games[room_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][1]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            games[room_id]['ballVelocity'][0] *= -1
+        
+        # Handle scoring
+        if games[room_id]['ballPosition'][0] >= RIGHT_WALL:
+            games[room_id]['scores'][0] += 1 #
+            reset_ball(room_id)
+        elif games[room_id]['ballPosition'][0] <= LEFT_WALL: 
+            games[room_id]['scores'][1] += 1 #
+            reset_ball(room_id)
+
+        if games[room_id]['scores'][0] >= WINNING_SCORE: #
+            # log(f"Player 1 {games[room_id]['player1']} Won!") #
+            log(f"player 1 {games[room_id]['players'][0]} won the game")
+            games[room_id]['game_over'] = 1
+        elif games[room_id]['scores'][1] >= WINNING_SCORE: #
+            # log(f"Player 2 {games[room_id]['player2']} Won!") #
+            log(f"player 2 {games[room_id]['players'][1]} won the game")
+            games[room_id]['game_over'] = 1 
+
+
+        
+        # Update the ball position
+        games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0]
+        games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1]
+
+        # Check if game is over
+        if games[room_id]['game_over'] == 1 and current_task:
+            # TODO: Save game in db
+            # save_match()
+            current_task.cancel()
+            current_task = None
+            # TODO: Disconnect both client ?
+            games[room_id] = {}
+            del games[room_id]
+            return
+
+        # Broadcast the updated game state to all clients
+        await sio.emit('game_update', games[room_id], room=room_id)
+
+        # Control the game loop speed
+        await asyncio.sleep(1 / 60)
 
 async def UserAlreadyConnected(username):
     global connected_users
@@ -135,16 +215,15 @@ async def UserAlreadyConnected(username):
             return True
     return False
 
-async def GetUserRoom(username):
+def GetUserRoom(username):
     global games
 
     for game in games.values():
         if 'players' in game and username in game['players']:
-            log(f"User {username} is already in a game")
             return game['room_id']
     return None
 
-async def GetAvailableRoom(game_type):
+def GetAvailableRoom(game_type):
     global games
 
     for game in games.values():
@@ -156,7 +235,7 @@ async def GetAvailableRoom(game_type):
     return None
 
 
-async def CreateRoom(game_type):
+def CreateRoom(game_type):
     global games
     room_id = str(uuid.uuid4())
     games[room_id] = {
@@ -168,7 +247,7 @@ async def CreateRoom(game_type):
         'pos': [],
         'ballPosition': [0, 0],
         'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
-        'gameOver': 0,
+        'game_over': 0,
         'text': "waiting for 2 players",
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
 	}
@@ -187,26 +266,25 @@ async def JoinRoom(sid, username, room_id):
     games[room_id]['player_count'] += 1
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
-    #
 
 def IsRoomFull(room_id):
     global games
 
     game_type = games[room_id]['game_type']
+    log(f"{games[room_id]['player_count']} players in room for {game_type} game")
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
-        log(f"Room {room_id} is now full")
-        return True
+        log(f"Room {room_id} is full")
+        return NORMAL_GAME
     elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
-        log(f"Room {room_id} is now full")
-        return True
-    return False
+        log(f"Room {room_id} is full with")
+        return TOURNAMENT_GAME
+    return None
 
 async def LeaveRoom(sid, room_id):
     global games
 
     await sio.leave_room(sid, room_id)
     games[room_id]['player_count'] -= 1
-    # HERE
     session = await sio.get_session(sid)
     if not session:
         return False
@@ -216,20 +294,29 @@ async def DeleteRoom(room_id):
     await sio.close_room(room_id)
     log(f"Room {room_id} deleted")
 
+@sio.on('input')
+def Input(sid):
+    global games
+    log("Input()")
+
+
 
 @sio.on('start_game')
-async def StartGame(sid, environ):
+async def StartGame(sid):
     global games
 
     log('StartGame()')
+    environ = sio.get_environ(sid)
     username = environ.get('HTTP_X_USERNAME')
-    game_type = environ.get('HTTP_X_GAMETYPE')
     room_id = GetUserRoom(username)
-    if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
-        log(f"Room {room_id} is now full, starting normal game")
+    room_full = IsRoomFull(room_id)
+    if room_full == NORMAL_GAME:
         asyncio.create_task(StartGameLoop(sid, username, room_id))
-    elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
-        log(f"Room {room_id} is now full")
+    elif room_full == TOURNAMENT_GAME:
+          pass
+    else:
+        log("room not full")
+
 
 
 @sio.event
@@ -249,12 +336,13 @@ async def connect(sid, environ):
     connected_users[sid] = True
     log(f"User {username} connected ({sid})")
 
-    room_id = await GetUserRoom(username)
+    room_id = GetUserRoom(username)
+    if room_id is not None:
+        log(f"User {username} is already in a game")
+    else:
+        room_id = GetAvailableRoom(game_type)
     if room_id is None:
-        room_id = await GetAvailableRoom(game_type)
-    if room_id is None:
-        room_id = await CreateRoom(game_type)
-    # HERE
+        room_id = CreateRoom(game_type)
     await sio.save_session(sid, {
         'username': username,
         'room_id': room_id

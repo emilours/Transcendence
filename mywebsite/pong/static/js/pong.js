@@ -29,6 +29,7 @@ var rightPlayerScore = 0; // player 2
 // ConnectWebsocket();
 export function StartGameEvent()
 {
+	console.log("StartGameEvent()")
 	if (!socket || !socket.connected)
 	{
 		console.log("Socket.io connection not open")
@@ -43,9 +44,9 @@ export function ConnectWebsocket(type, username)
 	var url;
 	gameType = type;
 	if (gameType == 'tournament')
-		url = `ws://${window.location.host}/ws/pong-tournament/`;
+		url = `ws:/StartGameEvent().location.host}/ws/pong-tournament/`;
 	else
-		url = `ws://${window.location.host}/ws/pong-socket-server/`;
+		url = `ws:/StartGameEvent().location.host}/ws/pong-socket-server/`;
 
 	console.log("username: " + username);
 	console.log("gametype: " + gameType + " | ws url: " + url);
@@ -82,6 +83,9 @@ export function ConnectWebsocket(type, username)
 	});
 	socket.on('connect_error', (error) => {
 		console.error('Connection error:', error.message);  // Display the reason for the rejection
+	});
+	socket.on('game_update', function(data) {
+		console.log(data);
 	});
 
 	pongSocket.onmessage = function(e){
@@ -148,19 +152,18 @@ function StartGame()
 		let data = JSON.parse(e.data);
 		console.log('Data:', data);
 
-		if (data.ballPosition && data.ballVelocity && typeof data.player1Pos !== 'undefined'
-			&& typeof data.player2Pos !== 'undefined' && typeof data.player1Score !== 'undefined'
-			&& typeof data.player2Score !== 'undefined' && typeof data.gameOver !== 'undefined')
+		if (data.ballPosition && data.ballVelocity && data.pos 
+			&& data.players && data.scores && typeof data.game_over !== 'undefined')
 		{
 			ball.position.x = parseFloat(data.ballPosition[0]);
 			ball.position.y = parseFloat(data.ballPosition[1]);
 			ballSpeed.x = parseFloat(data.ballVelocity[0]);
 			ballSpeed.y = parseFloat(data.ballVelocity[1]);
-			leftPaddle.position.y = parseFloat(data.player1Pos);
-			rightPaddle.position.y = parseFloat(data.player2Pos);
-			gameOver = parseInt(data.gameOver);
-			let player1Score = parseFloat(data.player1Score);
-			let player2Score = parseFloat(data.player2Score);
+			leftPaddle.position.y = parseFloat(data.pos[0]);
+			rightPaddle.position.y = parseFloat(data.pos[1]);
+			gameOver = parseInt(data.game_over);
+			let player1Score = parseFloat(data.scores[0]);
+			let player2Score = parseFloat(data.scores[1]);
 
 			if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
 			{

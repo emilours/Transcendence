@@ -126,7 +126,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 			self.games[self.game_id]['ballPosition'][0] += self.games[self.game_id]['ballVelocity'][0]
 			self.games[self.game_id]['ballPosition'][1] += self.games[self.game_id]['ballVelocity'][1]
 
-			# Handle collisions with walls and paddles
+			# Handle collisions with walls
 			if self.games[self.game_id]['ballPosition'][1] <= BOTTOM_WALL or self.games[self.game_id]['ballPosition'][1] >= TOP_WALL:
 				self.games[self.game_id]['ballVelocity'][1] *= -1
 
