@@ -66,7 +66,7 @@ def edit_password(request):
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
-@login_required
+# @login_required
 def games(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('games.html', request=request)

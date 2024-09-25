@@ -142,6 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const links = [
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
+			{ id: 'leaderboard-from-home', url: '/leaderboard/' },
 			{ id: 'signup-from-login', url: '/signup/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },

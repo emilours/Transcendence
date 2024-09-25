@@ -91,3 +91,13 @@ body.high-contrast {
 	color: #fff;
 	border: 2px;
 }
+
+a.card:hover {
+	background-color: var(--bs-primary);
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a.card:hover img {
+	opacity: 0.9;
+	transition: opacity 0.3s ease;
+}

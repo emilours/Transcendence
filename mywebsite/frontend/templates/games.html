@@ -1,30 +1,44 @@
 {% load static %}
-<section class="py-md-5 mt-2 font-potta">
-<div class="container mt-5 text-center">
-	<h1 class="mb-5">Choose Your Game</h1>
-	<div class="row gx-3">
-	<div class="col-12 col-md-4 mb-4">
-		<div class="bg-primary d-flex flex-column align-items-center justify-content-center rounded-3 p-4">
-		<img src="{% static 'img/pusheen_pong.png' %}" alt="Pusheen Pong Game" class="img-fluid rounded-circle mb-3" style="max-width: 80%;">
-		<h2 class="fw-bold text-center">Pong</h2>
-		<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" id="pong">Play Now</button>
+<section class="py-md-5 font-balsamiq text-secondary-emphasis">
+<div class="container-fluid mt-5">
+	<h1 class="card-title font-balsamiq text-secondary-emphasis mb-4">Games</h1>
+	<div class="row gx-3 d-flex justify-content-center">
+		<div class="col-10 col-md-4 mb-4">
+			<div class="card h-100 d-flex flex-column rounded-2 bg-primary shadow">
+				<img src="{% static 'img/pusheen-pong.gif' %}" class="card-img-top px-5" alt="gif de pusheen" width="80">
+				<div class="card-body text-secondary-emphasis d-flex flex-column">
+					<h5 class="card-title">Pong</h5>
+					<p class="card-text font-roboto" style="opacity: 0.7;">Inspired by Pong, a classic arcade game from the 1970s, where players use paddles to hit a ball in a simple yet competitive format.</p>
+					{% if user.is_authenticated %}
+					<button type="button" class="btn btn-primary mt-auto" id="pong">Play</a>
+					{% endif %}
+				</div>
+			</div>
 		</div>
-	</div>
-	<div class="col-12 col-md-4 mb-4">
-		<div class="bg-primary d-flex flex-column align-items-center justify-content-center rounded-3 p-4">
-		<img src="{% static 'img/pusheen_invaders.png' %}" alt="Pusheen Invader Game" class="img-fluid rounded-circle mb-3" style="max-width: 80%;">
-		<h2 class="fw-bold text-center">Invaders</h2>
-		<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" id="invaders">Play Now</button>
+		<div class="col-10 col-md-4 mb-4">
+			<div class="card h-100 d-flex flex-column rounded-2 bg-primary shadow">
+				<img src="{% static 'img/pusheen-invaders.gif' %}" class="card-img-top px-5" alt="gif de pusheen" width="80">
+				<div class="card-body text-secondary-emphasis d-flex flex-column">
+					<h5 class="card-title">Invaders</h5>
+					<p class="card-text font-roboto" style="opacity: 0.7;">This game is inspired by Space Invaders, a legendary arcade game from the late 1970s, where players use a moving cannon to defend against waves of alien invaders.</p>
+					{% if user.is_authenticated %}
+					<button type="button" class="btn btn-primary mt-auto" id="invaders">Play</a>
+					{% endif %}
+				</div>
+			</div>
 		</div>
-	</div>
-	<div class="col-12 col-md-4 mb-4">
-		<div class="bg-primary d-flex flex-column align-items-center justify-content-center rounded-3 p-4">
-		<img src="{% static 'img/pusheen_coming_soon.png' %}" alt="Coming Soon..." class="img-fluid rounded-circle mb-3" style="max-width: 80%;">
-		<h2 class="fw-bold text-center">Coming Soon...</h2>
-		<button type="button" class="btn btn-info mt-3 rounded-3 bg-secondary" disabled>Play Now</button>
+		<div class="col-10 col-md-4 mb-4">
+			<div class="card h-100 d-flex flex-column rounded-2 bg-primary shadow">
+				<img src="{% static 'img/pusheen-coming.gif' %}" class="card-img-top px-5" alt="gif de pusheen" width="80">
+				<div class="card-body text-secondary-emphasis d-flex flex-column">
+					<h5 class="card-title">Coming Soon...</h5>
+					<p class="card-text font-roboto" style="opacity: 0.7;">We're cooking up more games for you, so stay tuned for exciting new experiences!</p>
+					{% if user.is_authenticated %}
+						<button type="button" class="btn btn-outline-primary mt-auto text-secondary-emphasis" style="border-color: var(--bs-secondary-emphasis);" disabled>Play</button>
+					{% endif %}
+				</div>
+			</div>
 		</div>
-	</div>
 	</div>
 </div>
 </section>
-

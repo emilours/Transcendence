@@ -1,45 +1,55 @@
 {% load static %}
 <section class="py-md-5 mt-5">
-	<div class="container">
-		<div class="row g-4">
-			<div class="col-12 col-md-6 d-flex justify-content-center">
-				<img src="{% static 'img/pusheen_drink.png' %}" alt="Pusheen drinking a cola, eating an hamburger" width="75%">
+	<div class="container-fluid">
+		<div class="row g-4 d-flex justify-content-center align-items-stretch">
+			<div class="col-12 col-md-6 col-lg-6 text-secondary-emphasis d-flex flex-column">
+				<h1 class="font-balsamiq text-center">Welcome!</h1>
+				<p>Pusheen, the adorable and playful cat loved by millions, takes center stage in this project, blending her charm with the world of retro gaming. Inspired by the simplicity and nostalgia of classic arcade games like Pong and Space Invaders, we’ve reimagined these timeless experiences through the lens of Pusheen’s quirky universe.</p>
+				<p>Originally released in 1972, Pong was a groundbreaking game that helped shape the video game industry. Likewise, Space Invaders in the late 1970s captured imaginations with its alien-invasion theme. Both games became icons of early gaming.</p>
+				<p>As part of Ecole 42's ft_transcendence project, we've brought these classics to life in a fun and modern way, combining them with Pusheen’s delightful world. Get ready to experience a blend of nostalgia and cuteness as Pusheen takes on the arcade!</p>
 			</div>
-			<div class="col-12 col-md-6 mt-4 d-flex align-items-center justify-content-center">
-				<video controls class="w-100 rounded-4 border border-5 border-primary">
-					<source src="{% static 'video/pusheen_the_cat_intro.mp4' %}" type="video/mp4"/>
-					<p>
-						Votre navigateur ne prend pas en charge les vidéos HTML5. Voici
-						<a href="{% static 'video/pusheen_the_cat_intro.mp4' %}">un lien pour télécharger la vidéo</a>.
-					</p>
-				</video>
+			<div class="col-12 col-md-4 col-lg-3 d-flex align-items-center justify-content-center">
+				<img src="{% static 'img/pusheen-welcome.gif' %}" alt="Pusheen welcome" class="rounded-2 img-fluid" style="height: 100%;">
 			</div>
 		</div>
 	</div>
 </section>
-<section class="py-md-5 mt-4">
-	<div class="container">
-		<p>Pong is a table tennis–themed twitch arcade sports video game, featuring simple two-dimensional graphics, manufactured by Atari and originally released
-			on 29 November 1972. It was one of the earliest arcade video games; it was created by Allan Alcorn as a training exercise assigned to him
-			by Atari co-founder Nolan Bushnell, but Bushnell and Atari co-founder Ted Dabney were surprised by the quality of Alcorn's work and decided to manufacture the game.</p>
-		<p>Pong was the first commercially successful video game, and it helped to establish the video game industry along with the Magnavox Odyssey.
-			Soon after its release, several companies began producing games that closely mimicked its gameplay.</p>
-	</div>
-</section>
-<section class="py-md-5 mt-2 font-potta mb-5">
-	<div class="container">
-		<div class="row g-4 justify-content-evenly mx-2">
-			<div class="col-12 col-md-4 bg-secondary d-flex flex-column align-items-center justify-content-center rounded-4 p-4">
-				<h1 class="fw-bold text-center">Pusheen Arcade</h1>
-				{% if user.is_authenticated %}
-				<button type="button" class="btn mt-3 rounded-4 bg-primary" id="games">Play Now</button>
-				{% else %}
-				<button type="button" class="btn mt-3 rounded-4 bg-primary" id="login-from-home">log in to play</button>
-				{% endif %}
+<section class="font-balsamiq text-secondary-emphasis">
+	<div class="container-fluid mt-3">
+		<div class="row gx-3 justify-content-center">
+
+			<div class="col-12 col-md-6 col-lg-3 mb-4 d-flex justify-content-center">
+				<a class="card h-100 d-flex flex-column rounded-2 shadow text-center text-decoration-none" href="#" id="games">
+					<img src="{% static 'img/pusheen-games.gif' %}" class="card-img-top px-5 pt-3" alt="gif de pusheen" style="width: 80%; height: auto;">
+					<div class="card-body text-secondary-emphasis d-flex flex-column">
+						<h5 class="card-title">Games</h5>
+						<p class="font-roboto" style="opacity: 0.7;">Dive into fun with Pusheen-inspired arcade classics!</p>
+					</div>
+				</a>
 			</div>
-			<div class="col-12 col-md-4 d-flex align-items-center">
-				<img src="{% static 'img/pusheen.gif' %}" alt="pusheen playing with a racket" class="rounded-4 w-100 border border-5 border-secondary">
+
+			<div class="col-12 col-md-6 col-lg-3 mb-4 d-flex justify-content-center">
+				<a class="card h-100 d-flex flex-column rounded-2 shadow text-center text-decoration-none" href="#" id="leaderboard-from-home">
+					<img src="{% static 'img/pusheen-leaderboard.gif' %}" class="card-img-top px-5 pt-3" alt="gif de pusheen" style="width: 80%; height: auto;">
+					<div class="card-body text-secondary-emphasis d-flex flex-column">
+						<h5 class="card-title">Leaderboard</h5>
+						<p class="font-roboto" style="opacity: 0.7;">See how you stack up against other players!</p>
+					</div>
+				</a>
 			</div>
+
+			<div class="col-12 col-md-6 col-lg-3 mb-4 d-flex justify-content-center">
+				<a class="card h-100 d-flex flex-column rounded-2 shadow text-center text-decoration-none" href="#" id="login-from-home">
+					<img src="{% static 'img/pusheen-sign-up.gif' %}" class="card-img-top px-5 pt-3" alt="gif de pusheen" style="width: 80%; height: auto;">
+					<div class="card-body text-secondary-emphasis d-flex flex-column">
+						<h5 class="card-title">Login...</h5>
+						<p class="font-roboto" style="opacity: 0.7;">Join us for exclusive content and updates!</p>
+					</div>
+				</a>
+			</div>
+
 		</div>
 	</div>
 </section>
+
+

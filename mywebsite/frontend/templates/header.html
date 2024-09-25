@@ -3,7 +3,7 @@
 	<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top p-0">
 		<div class="container-fluid bg-primary">
 			<a class="navbar-brand">
-				<img src="{% static 'img/pusheen-nav.gif' %}" id="navbar-home" alt="pusheen face icon" width="80" height="80">
+				<img src="{% static 'img/pusheen-nav.gif' %}" href="#" id="navbar-home" alt="pusheen face icon" width="80" height="80">
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
 			aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -14,11 +14,9 @@
 					<li class="nav-item">
 						<a class="nav-link fs-4" aria-current="page" href="#" id="navbar-home">Home</a>
 					</li>
-					{% if user.is_authenticated %}
 					<li class="nav-item">
 						<a class="nav-link fs-4" href="#" id="navbar-games">Games</a>
 					</li>
-					{% endif %}
 					<li class="nav-item">
 						<a class="nav-link fs-4" href="#" id="navbar-leaderboard">Leaderboard</a>
 					</li>
