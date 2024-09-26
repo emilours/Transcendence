@@ -18,31 +18,32 @@
 	<div class="container-fluid mt-3">
 		<div class="row gx-3 justify-content-center mb-4">
 
-			<div class="col-12 col-md-6 col-lg-3">
-				<a class="card h-100 d-flex flex-column rounded-2 shadow ">
-					<video class="rounded-2" alt="video de pusheen" style="width: 100%; height: 100%;" autoplay muted loop playinline>
-						<source src="{% static 'video/pusheen_invaders.mp4' %}" type="video/mp4">
-					</video>
-				</a>
-			</div>
+			<div class="container-fluid">
+				<div class="row gx-3 justify-content-center mb-4">
 
-			<div class="col-12 col-md-6 col-lg-6 d-flex justify-content-center">
-				<a class="card h-100 d-flex flex-column rounded-2 shadow text-decoration-none" href="#" id="leaderboard-from-home">
-					<div class="row g-0 d-flex align-items-center">
+					<div class="rounded-2 col-md-6 col-lg-3 m-2">
+						<video class="shadow rounded-2 h-100 card d-flex flex-column" alt="video de pusheen" style="width: 100%; height: 100%;" autoplay muted loop playsinline>
+							<source src="{% static 'video/pusheen_invaders.mp4' %}" type="video/mp4">
+						</video>
+					</div>
 
-						<div class="d-flex flex-column justify-content-center text-secondary-emphasis">
-							<div class="card-body">
-								<h5 class="card-title">Leaderboard</h5>
-								<p class="font-roboto" style="opacity: 0.7;">See how you stack up against other players!</p>
-							</div>
-						</div>
-
-						<div class="d-flex justify-content-center">
-							<img src="{% static 'img/pusheen-games.gif' %}" class="img-fluid rounded-start" alt="gif de pusheen" style="width: 100%; height: auto;">
+					<div class="card rounded-2 shadow col-md-6 col-lg-3 m-2">
+						<div class="p-3 h-100 text-secondary-emphasis text-center">
+							<h5 class="card-title font-balsamiq">Our Games</h5>
+							<p class="font-roboto" style="opacity: 0.7;  text-decoration: none;">Classic arcade games meet Pusheen's charm in a fun, nostalgic adventure. Simple, cute, and endlessly entertaining!</p>
+							<button type="button" class="btn btn-primary mt-auto" id="games-from-home">Play Now</button>
 						</div>
 					</div>
-				</a>
+
+					<div class="card rounded-2 shadow col-md-6 col-lg-3 m-2">
+						<div class="p-3 h-100 d-flex align-items-center justify-content-center">
+							<img src="{% static 'img/pusheen-games.gif' %}" class="img-fluid" alt="gif de pusheen" style="width: 80%; height: auto;">
+						</div>
+					</div>
+
+				</div>
 			</div>
+
 
 		</div>
 	</div>

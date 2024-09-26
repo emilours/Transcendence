@@ -21,7 +21,7 @@
 							<tbody id="dashboard-body">
 								{% if dashboard_data %}
 									{% for entry in dashboard_data %}
-										{% if forloop.counter <= 10 %}
+										{% if forloop.counter <= 5 %}
 											<tr>
 												<td class="text-secondary-emphasis">{{ entry.score }}</td>
 												<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
@@ -51,7 +51,7 @@
 							<thead>
 								<tr class="font-balsamiq text-center">
 									<th class="text-secondary-emphasis text-center">Matches</th>
-									<th class="text-secondary-emphasis text-center">Win/Lose</th>
+									<th class="text-secondary-emphasis text-center">Won/Lost</th>
 									<th class="text-secondary-emphasis text-center">Max Score</th>
 								</tr>
 							</thead>

@@ -40,5 +40,8 @@
 			</div>
 		</div>
 	</div>
+	{% if not user.is_authenticated %}
+		<p class="text-center">You must be logged in to play the games, <a href="#" id="login-from-games">click here</a> to log in.</p>
+	{% endif %}
 </div>
 </section>
