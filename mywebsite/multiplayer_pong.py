@@ -72,8 +72,22 @@ if __name__ == "__main__":
 # if __name__ == "__main__":
 # 	main()
 
+import os
+import django
 
-import socketio, uuid, asyncio
+# Step 1: Set the Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mywebsite.settings')
+
+# Step 2: Initialize Django
+django.setup()
+
+# Step 3: Import your model
+from frontend.models import Game, Match, PlayerMatch
+from frontend.models import CustomUser
+
+import socketio, uuid, asyncio, json
+from asgiref.sync import sync_to_async
+
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -101,19 +115,20 @@ games = {}
 
 # set instrument to `True` to accept connections from the official Socket.IO
 # Admin UI hosted at https://admin.socket.io
-instrument = True
-admin_login = {
-    'username': 'admin',
-    'password': 'python',  # change this to a strong secret for production use!
-}
+# instrument = True
+# admin_login = {
+#     'username': 'admin',
+#     'password': 'python',  # change this to a strong secret for production use!
+# }
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=None if not instrument else [
-    'http://localhost:8080',
-    'https://admin.socket.io',
-])
-if instrument:
-    sio.instrument(auth=admin_login)
+# sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=None if not instrument else [
+#     'http://localhost:8080',
+#     'https://admin.socket.io',
+# ])
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=['*'])
+# if instrument:
+#     sio.instrument(auth=admin_login)
 
 # You can specify domains like ['http://localhost:8080']
 # Wrap the Socket.IO server with a WSGI app
@@ -139,10 +154,49 @@ def reset_ball(room_id):
 # I assume 1 --> index 0 and 2 --> index 1 would work:
 # ['player1'] --> ['players'][0]
 
+@sync_to_async
+def SaveMatch(room_id, game_type):
 
-async def StartGameLoop(sid, username, room_id):
+    log("SAVING MATCH TO DB")
+    # normal or tournament
+    
+    game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
+    match = Match.objects.create(game=game, status='completed', details=game_type)
+
+    # player1
+    player1 = CustomUser.objects.filter(display_name=games[room_id]['players'][0])
+    if player1.exists():
+        player1 = player1.first()
+        log(player1)
+
+    score1 = games[room_id]['scores'][0]
+    if score1 >= WINNING_SCORE :
+        is_player_winner = True
+    else:
+        is_player_winner = False
+
+    PlayerMatch.objects.create(player=player1, match=match, score=score1, is_winner=is_player_winner)
+
+    #player2
+    player2 = CustomUser.objects.filter(display_name=games[room_id]['players'][1])
+    if player2.exists():
+        player2 = player2.first()
+        log(player2)
+    score2 = games[room_id]['scores'][1]
+    if score2 >= WINNING_SCORE :
+        is_player_winner = True
+    else:
+        is_player_winner = False
+
+    PlayerMatch.objects.create(player=player2, match=match, score=score2, is_winner=is_player_winner)
+
+    log("Match properly saved!")
+
+async def StartGameLoop(sid, game_type, room_id):
     global games
-    log(f"STARTING GAME LOOP")
+    log(f"STARTING GAME LOOP by {sid}")
+    sid1 = games[room_id]['sids'][0]
+    sid2 = games[room_id]['sids'][1]
     current_task = asyncio.current_task()
     while True:
         while games[room_id]['status'] == "paused":
@@ -185,21 +239,27 @@ async def StartGameLoop(sid, username, room_id):
         games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0]
         games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1]
 
+
+        # Broadcast the updated game state to all clients
+        await sio.emit('game_update', games[room_id], room=room_id)
+
+
         # Check if game is over
         if games[room_id]['game_over'] == 1 and current_task:
-            # TODO: Save game in db
-            # save_match()
+            # SaveMatch breaks everything
+            await SaveMatch(room_id, game_type)
             current_task.cancel()
             current_task = None
             # TODO: Disconnect both client ?
-            await sio.disconnect(games[room_id]['sids'][0])
-            await sio.disconnect(games[room_id]['sids'][1])
+            # TEST 
+            log(f"calling disconnect for {sid1}")
+            await sio.disconnect(sid1)
+            log(f"calling disconnect for {sid2}")
+            await sio.disconnect(sid2)
             games[room_id] = {}
             del games[room_id]
             return
 
-        # Broadcast the updated game state to all clients
-        await sio.emit('game_update', games[room_id], room=room_id)
 
         # Control the game loop speed
         await asyncio.sleep(1 / 60)
@@ -294,10 +354,37 @@ async def DeleteRoom(room_id):
     await sio.close_room(room_id)
     log(f"Room {room_id} deleted")
 
-@sio.on('input')
-def Input(sid):
+@sio.on('pong_input')
+async def PongInput(sid, text_data):
     global games
-    log("Input()")
+    log(f"{text_data}")
+    data = json.loads(text_data)
+
+    username = data['username']
+    action = data['action']
+
+    session = await sio.get_session(sid)
+    room_id = session.get('room_id')
+    log(f"room: {room_id}")
+
+    if username == games[room_id]['players'][0]:
+        if action == 'up':
+            games[room_id]['pos'][0] += PADDLE_SPEED
+            if games[room_id]['pos'][0] + PADDLE_HEIGHT / 2 > TOP_WALL:
+                games[room_id]['pos'][0] = TOP_WALL - PADDLE_HEIGHT / 2
+        elif action == 'down':
+            games[room_id]['pos'][0] -= PADDLE_SPEED
+            if games[room_id]['pos'][0] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+                games[room_id]['pos'][0] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+    else:
+        if action == 'up':
+            games[room_id]['pos'][1] += PADDLE_SPEED
+            if games[room_id]['pos'][1] + PADDLE_HEIGHT / 2 > TOP_WALL:
+                games[room_id]['pos'][1] = TOP_WALL - PADDLE_HEIGHT / 2
+        elif action == 'down':
+            games[room_id]['pos'][1] -= PADDLE_SPEED
+            if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+                games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
 
 
@@ -308,10 +395,12 @@ async def StartGame(sid):
     log('StartGame()')
     environ = sio.get_environ(sid)
     username = environ.get('HTTP_X_USERNAME')
+    game_type = environ.get('HTTP_X_GAMETYPE')
     room_id = GetUserRoom(username)
     room_full = IsRoomFull(room_id)
     if room_full == NORMAL_GAME:
-        asyncio.create_task(StartGameLoop(sid, username, room_id))
+        await sio.emit('init_game', room=room_id)
+        asyncio.create_task(StartGameLoop(sid, game_type, room_id))
     elif room_full == TOURNAMENT_GAME:
           pass
     else:
@@ -321,7 +410,7 @@ async def StartGame(sid):
 
 @sio.event
 async def connect(sid, environ):
-    global client_count, connected_users
+    global games, client_count, connected_users
 
     client_count += 1
     await sio.emit('client_count', client_count)
@@ -351,19 +440,21 @@ async def connect(sid, environ):
     log(f"session in connect: {session}")
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
+    # first send to get the users
+    await sio.emit('game_update', games[room_id], room=room_id)
 
 @sio.event
 async def message(sid, data):
     log(f"Message from {sid}: {data}")
     await sio.send(f"Server received {data} from {sid}!")
 
-@sio.event
+@sio.on('disconnect')
 async def disconnect(sid):
     global client_count, connected_users
 
     client_count -= 1
     await sio.emit('client_count', client_count)
-    # log(f"Client disconnected: {sid}")
+    log(f"- TEST - Client disconnected: {sid}")
 
 
     try:

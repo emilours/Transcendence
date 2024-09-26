@@ -1,8 +1,9 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, SendEvent } from './pong.js';
+import { ConnectWebsocket, SendEvent, GetUsers } from './pong.js';
 
 export function initPong(userName) {
 	// let user = 'userName';
+	var lobbyMenu;
 	console.log('Pong game initialized - user:', userName);
 
 	function drawMainMenu() {
@@ -40,6 +41,8 @@ export function initPong(userName) {
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
+					// Need to change so it only joins
+					ConnectWebsocket('normal', userName);
 					drawLobbyMenu('join');
 				}),
 				createButton('BACK', () => {
@@ -52,7 +55,7 @@ export function initPong(userName) {
 	}
 
 	function drawLobbyMenu(mode) {
-		const lobbyMenu = createElement('div', { className: 'menu' },
+		lobbyMenu = createElement('div', { className: 'menu' },
 			createElement('h2', { innerText: 'ONLINE MATCH' }),
 			createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
 		);
@@ -67,6 +70,17 @@ export function initPong(userName) {
 				player2Info = drawPlayerInfo('waiting'),
 			);
 			lobbyMenu.appendChild(playerInfo);
+		}
+		if (mode === 'join') {
+			var user1, user2;
+			user1, user2 = GetUsers();
+			console.log('userName: ' + userName + ' | user1: ' + userName + ' | user2: ' + user2);
+
+			let playerInfo = createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;' },
+				player1Info = drawPlayerInfo(user1),
+				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
+				player2Info = drawPlayerInfo(userName),
+			);
 		}
 
 		const backButton = createButton('BACK', () => {
@@ -95,8 +109,9 @@ export function initPong(userName) {
 			buttonReady = createButtonGreen('READY', () => {
 				buttonReady.style.backgroundColor = '#0ccf0c';
 				buttonReady.innerText = 'OK';
-				console.log("READY button clicked")
+				console.log("READY button clicked");
 				SendEvent('start_game');
+
 			})
 		);
 		return playerInfo;

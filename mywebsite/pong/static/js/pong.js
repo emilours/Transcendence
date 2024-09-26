@@ -14,6 +14,7 @@ var pongSocket, overlayText;
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 var threadID;
 var gameType, socket;
+var userName, user1, user2;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -24,6 +25,10 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 
+export function GetUsers()
+{
+	return (user1, user2);
+}
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 // ConnectWebsocket();
@@ -41,17 +46,18 @@ export function SendEvent(event)
 export function ConnectWebsocket(type, username)
 {
 	// WEBSOCKET
-	var url;
 	gameType = type;
-	if (gameType == 'tournament')
-		url = `ws:/StartGameEvent().location.host}/ws/pong-tournament/`;
-	else
-		url = `ws:/StartGameEvent().location.host}/ws/pong-socket-server/`;
+	userName = username;
+	// var url;
+	// if (gameType == 'tournament')
+	// 	url = `ws://${window.location.host}/ws/pong-tournament/`;
+	// else
+	// 	url = `ws://${window.location.host}/ws/pong-socket-server/`;
 
 	console.log("username: " + username);
-	console.log("gametype: " + gameType + " | ws url: " + url);
+	console.log("gametype: " + gameType);
 
-	pongSocket = new WebSocket(url);
+	// pongSocket = new WebSocket(url);
 	socket = io("http://localhost:6789", {
 		transportOptions: {
 			polling: {
@@ -84,10 +90,20 @@ export function ConnectWebsocket(type, username)
 	socket.on('connect_error', (error) => {
 		console.error('Connection error:', error.message);  // Display the reason for the rejection
 	});
+	socket.on("init_game", function() {
+		console.log("init_game event called!");
+		StartGame();
+	})
 	socket.on('game_update', function(data) {
+		// console.log('')
+		if (data.players && data.players[0] !== 'undefined')
+			user1 = parseFloat(data.players[0]);
+		if (data.players && data.players[1] !== 'undefined')
+			user2 = parseFloat(data.players[1]);
 		console.log(data);
-	});
 
+	});
+	/*
 	pongSocket.onmessage = function(e){
 		//TEST
 		// let data = JSON.parse(e.data);
@@ -107,27 +123,21 @@ export function ConnectWebsocket(type, username)
 	pongSocket.onclose = function(e){
 		console.log('CLIENT Disconnect!');
 	}
+	*/
 }
 
 export function CloseWebsocket() {
+	/*
 	if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
 		pongSocket.close(1000, "Closing normally");
 		console.log("WebSocket closed");
 	}
-
+	*/
 	if (socket && socket.connected) {
 		socket.disconnect();
 		console.log("Socket.IO connection closed");
 	}
 }
-
-
-// function abs(num)
-// {
-// 	if (num < 0)
-// 		return (-num);
-// 	return (num);
-// }
 
 function onWindowResize()
 {
@@ -148,6 +158,7 @@ function StartGame()
 // TODO: I think i should load everything (all font, textures...) before initializing the rest
 	Load();
 	Init();
+	/*
 	pongSocket.onmessage = function(e){
 		let data = JSON.parse(e.data);
 		console.log('Data:', data);
@@ -174,6 +185,35 @@ function StartGame()
 		}
 		overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
 	};
+	*/
+	socket.on('game_update', function(data) {
+		console.log(data);
+		// let data = JSON.parse(e.data);
+		// console.log('Data:', data);
+
+		if (data.ballPosition && data.ballVelocity && data.pos
+			&& data.players && data.scores && typeof data.game_over !== 'undefined')
+		{
+			ball.position.x = parseFloat(data.ballPosition[0]);
+			ball.position.y = parseFloat(data.ballPosition[1]);
+			ballSpeed.x = parseFloat(data.ballVelocity[0]);
+			ballSpeed.y = parseFloat(data.ballVelocity[1]);
+			leftPaddle.position.y = parseFloat(data.pos[0]);
+			rightPaddle.position.y = parseFloat(data.pos[1]);
+			gameOver = parseInt(data.game_over);
+			let player1Score = parseFloat(data.scores[0]);
+			let player2Score = parseFloat(data.scores[1]);
+
+			if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
+			{
+				leftPlayerScore = player1Score;
+				rightPlayerScore = player2Score;
+				createScoreText();
+			}
+		}
+		// overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
+
+	});
 	Loop();
 	//Cleanup();
 }
@@ -441,6 +481,7 @@ function Loop()
 
 function Inputs()
 {
+	const inputEvent = 'pong_input'
 	// Info
 	if (keys.i)
 	{
@@ -453,32 +494,51 @@ function Inputs()
 	//CLIENT SIDE PADDLE INPUTS
 	if (keys.w)
 	{
-		pongSocket.send(JSON.stringify({
-			// 'player_id':'1',
+		// pongSocket.send(JSON.stringify({
+		// 	// 'player_id':'1',
+		// 	'action':'up'
+		// }))
+
+		socket.emit(inputEvent, JSON.stringify({
+			'username': userName,
 			'action':'up'
 		}))
 	}
 
 	if (keys.s)
 	{
-		pongSocket.send(JSON.stringify({
-			// 'player_id':'1',
+		// pongSocket.send(JSON.stringify({
+		// 	// 'player_id':'1',
+		// 	'action':'down'
+		// }))
+		socket.emit(inputEvent, JSON.stringify({
+			'username': userName,
 			'action':'down'
 		}))
 	}
 
 	if (keys.arrowup)
 	{
-		pongSocket.send(JSON.stringify({
-			// 'player_id':'2',
+		// pongSocket.send(JSON.stringify({
+		// 	// 'player_id':'2',
+		// 	'action':'up'
+		// }))
+		// socket.emit(inputEvent, 'up');
+		socket.emit(inputEvent, JSON.stringify({
+			'username': userName,
 			'action':'up'
 		}))
 	}
 
 	if (keys.arrowdown)
 	{
-		pongSocket.send(JSON.stringify({
-			// 'player_id':'2',
+		// pongSocket.send(JSON.stringify({
+		// 	// 'player_id':'2',
+		// 	'action':'down'
+		// }))
+		// socket.emit(inputEvent, 'down');
+		socket.emit(inputEvent, JSON.stringify({
+			'username': userName,
 			'action':'down'
 		}))
 	}

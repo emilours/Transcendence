@@ -24,9 +24,6 @@ RUN chmod +x /entrypoint.sh
 
 COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# RUN mkdir -p /daphne/ && chmod 777 /daphne/
-# RUN rm -rf daphne/daphne.sock.lock && rm -rf daphne/daphne.sock
-
 CMD ["/usr/bin/supervisord"]
 
 ENTRYPOINT [ "/entrypoint.sh" ]
