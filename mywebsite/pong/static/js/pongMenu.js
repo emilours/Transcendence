@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, SendEvent, GetUsers } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, GetUsers } from './pong.js';
 
 export function initPong(userName) {
 	// let user = 'userName';
@@ -35,6 +35,7 @@ export function initPong(userName) {
 					onlineMenu.remove();
 					// FOR DEVELOPMENT
 					console.log("CREATE LOBBY button clicked")
+					// CloseWebsocket();
 					ConnectWebsocket('normal', userName);
 					//
 					drawLobbyMenu('create');
@@ -42,6 +43,7 @@ export function initPong(userName) {
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
 					// Need to change so it only joins
+					// CloseWebsocket();
 					ConnectWebsocket('normal', userName);
 					drawLobbyMenu('join');
 				}),
@@ -72,15 +74,15 @@ export function initPong(userName) {
 			lobbyMenu.appendChild(playerInfo);
 		}
 		if (mode === 'join') {
-			var user1, user2;
-			user1, user2 = GetUsers();
-			console.log('userName: ' + userName + ' | user1: ' + userName + ' | user2: ' + user2);
+			var [user1, user2 ] = GetUsers();
+			console.log('userName: ' + userName + ' | user1: ' + user1 + ' | user2: ' + user2);
 
 			let playerInfo = createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;' },
 				player1Info = drawPlayerInfo(user1),
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo(userName),
 			);
+			lobbyMenu.appendChild(playerInfo);
 		}
 
 		const backButton = createButton('BACK', () => {

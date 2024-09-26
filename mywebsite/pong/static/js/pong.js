@@ -8,11 +8,11 @@ import { FontLoader } from './FontLoader.js';
 var scene, camera, renderer, controls, loader;
 
 // custom global variables
-var cube, line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
-var pongSocket, overlayText;
+var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+var overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
-var threadID;
+// var threadID;
 var gameType, socket;
 var userName, user1, user2;
 var scoreGeometry, scoreFont, gameOver;
@@ -24,40 +24,43 @@ const MIN_HEIGHT = -4.5;
 var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
+var running = true;
 
 export function GetUsers()
 {
-	return (user1, user2);
+	const user_1 = { name: user1 };
+	const user_2 = { name: user2 };
+	return [user1, user2];
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-// ConnectWebsocket();
 export function SendEvent(event)
 {
-	console.log("SendEvent()")
+	console.log("SendEvent()");
 	if (!socket || !socket.connected)
 	{
-		console.log("Socket.io connection not open")
-		return
+		console.log("Socket.io connection not open");
+		return false;
 	}
 	socket.emit(event);
+	return true;
 }
 
 export function ConnectWebsocket(type, username)
 {
 	// WEBSOCKET
+	running = true;
 	gameType = type;
 	userName = username;
-	// var url;
-	// if (gameType == 'tournament')
-	// 	url = `ws://${window.location.host}/ws/pong-tournament/`;
-	// else
-	// 	url = `ws://${window.location.host}/ws/pong-socket-server/`;
-
+	console.log("socket type: " + typeof(socket));
 	console.log("username: " + username);
 	console.log("gametype: " + gameType);
 
-	// pongSocket = new WebSocket(url);
+	if (socket && socket.connected) {
+        socket.disconnect();  // Disconnect the existing socket
+        console.log('Existing socket disconnected');
+    }
+	
 	socket = io("http://localhost:6789", {
 		transportOptions: {
 			polling: {
@@ -69,12 +72,36 @@ export function ConnectWebsocket(type, username)
 		}
 	});
 
+
 	socket.on("connect", function() {
 		console.log("Connected to the server");
 	});
 	socket.on("message", function(message) {
 		console.log("Message from server: ", message);
 	});
+
+	// DISCONNECT/ERROR EVENTS
+	socket.on("disconnect", function(reason) {
+		console.log("Disconnected from the server due to: " + reason);
+		running = false;
+	});
+	// Handle connection errors
+    socket.on('connect_error', (error) => {
+        console.error('Connection failed:', error);
+    });
+    // Handle other socket errors
+    socket.on('error', (error) => {
+        console.error('Socket error:', error);
+    });
+    // Monitor reconnection attempts and failures
+    socket.on('reconnect_attempt', () => {
+        console.log('Attempting to reconnect...');
+    });
+    socket.on('reconnect_failed', () => {
+        console.error('Reconnection failed after multiple attempts.');
+    });
+
+	// CUSTOM EVENTS
 	socket.on("client_count", function(count) {
 		console.log("There is " + count + " client connected");
 	});
@@ -84,55 +111,18 @@ export function ConnectWebsocket(type, username)
 	socket.on("user_left", function(user) {
 		console.log("User " + user + " has left.");
 	});
-	socket.on("disconnect", function() {
-		console.log("Disconnected from the server");
-	});
-	socket.on('connect_error', (error) => {
-		console.error('Connection error:', error.message);  // Display the reason for the rejection
-	});
 	socket.on("init_game", function() {
 		console.log("init_game event called!");
 		StartGame();
 	})
-	socket.on('game_update', function(data) {
-		// console.log('')
-		if (data.players && data.players[0] !== 'undefined')
-			user1 = parseFloat(data.players[0]);
-		if (data.players && data.players[1] !== 'undefined')
-			user2 = parseFloat(data.players[1]);
-		console.log(data);
-
+	socket.on('send_users', function(data) {
+		user1 = data[0];
+		user2 = data[1];
 	});
-	/*
-	pongSocket.onmessage = function(e){
-		//TEST
-		// let data = JSON.parse(e.data);
-		// console.log('Data:', data);
-		//
-		console.log('Data:', e);
-	};
-
-	pongSocket.onopen = function(e){
-		console.log('CLIENT Connected!');
-		// TEST
-		// pongSocket.send("Hello from javascript!");
-		//
-		// StartGame();
-	}
-
-	pongSocket.onclose = function(e){
-		console.log('CLIENT Disconnect!');
-	}
-	*/
+	console.log("HERE?");
 }
 
 export function CloseWebsocket() {
-	/*
-	if (pongSocket && pongSocket.readyState === WebSocket.OPEN) {
-		pongSocket.close(1000, "Closing normally");
-		console.log("WebSocket closed");
-	}
-	*/
 	if (socket && socket.connected) {
 		socket.disconnect();
 		console.log("Socket.IO connection closed");
@@ -158,34 +148,6 @@ function StartGame()
 // TODO: I think i should load everything (all font, textures...) before initializing the rest
 	Load();
 	Init();
-	/*
-	pongSocket.onmessage = function(e){
-		let data = JSON.parse(e.data);
-		console.log('Data:', data);
-
-		if (data.ballPosition && data.ballVelocity && data.pos
-			&& data.players && data.scores && typeof data.game_over !== 'undefined')
-		{
-			ball.position.x = parseFloat(data.ballPosition[0]);
-			ball.position.y = parseFloat(data.ballPosition[1]);
-			ballSpeed.x = parseFloat(data.ballVelocity[0]);
-			ballSpeed.y = parseFloat(data.ballVelocity[1]);
-			leftPaddle.position.y = parseFloat(data.pos[0]);
-			rightPaddle.position.y = parseFloat(data.pos[1]);
-			gameOver = parseInt(data.game_over);
-			let player1Score = parseFloat(data.scores[0]);
-			let player2Score = parseFloat(data.scores[1]);
-
-			if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
-			{
-				leftPlayerScore = player1Score;
-				rightPlayerScore = player2Score;
-				createScoreText();
-			}
-		}
-		overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
-	};
-	*/
 	socket.on('game_update', function(data) {
 		console.log(data);
 		// let data = JSON.parse(e.data);
@@ -473,6 +435,11 @@ function Init()
 
 function Loop()
 {
+	if (running == false)
+	{
+		console.log("Not running anymore!");
+		return;
+	}
 	requestAnimationFrame(Loop);
 	Inputs();
 	Update();
@@ -553,8 +520,6 @@ function Update()
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
-
-	// controls.update();
 }
 
 function Render()
