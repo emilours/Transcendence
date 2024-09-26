@@ -267,10 +267,13 @@ async def StartGameLoop(sid, game_type, room_id):
 async def UserAlreadyConnected(username):
     global connected_users
     for sid in connected_users.keys():
-        session = await sio.get_session(sid)
-        if username == session.get('username'):
-            log(f"User {username} is already connected to a socket at {sid}")
-            return True
+        try:
+            session = await sio.get_session(sid)
+            if username == session.get('username'):
+                log(f"User {username} is already connected to a socket at {sid}")
+                return True
+        except KeyError:
+            log(f"KeyError in UserAlreadyConnected()")
     return False
 
 def GetUserRoom(username):
@@ -353,6 +356,15 @@ async def LeaveRoom(sid, room_id):
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
     log(f"Room {room_id} deleted")
+
+@sio.on('get_users')
+async def SendUsers(sid):
+    global games
+
+    session = await sio.get_session(sid)
+
+    room_id = session.get('room_id')
+    await sio.emit('send_users', games[room_id]['players'], to=sid)
 
 @sio.on('pong_input')
 async def PongInput(sid, text_data):
@@ -440,8 +452,8 @@ async def connect(sid, environ):
     log(f"session in connect: {session}")
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
-    # first send to get the users
-    await sio.emit('game_update', games[room_id], room=room_id)
+    # send the users
+    await SendUsers(sid)
 
 @sio.event
 async def message(sid, data):
@@ -454,8 +466,6 @@ async def disconnect(sid):
 
     client_count -= 1
     await sio.emit('client_count', client_count)
-    log(f"- TEST - Client disconnected: {sid}")
-
 
     try:
         session = await sio.get_session(sid)
