@@ -40,7 +40,7 @@
 						<form id="add-friend-form" method="POST" action="{% url 'profile' %}">
 							{% csrf_token %}
 							<div class="input-group mb-3">
-								<input id="receiver_email" type="email" name="receiver_email" class="form-control rounded-start-2" placeholder="Enter friend's email" required>
+								<input id="receiver_display_name" type="text" name="receiver_display_name" class="form-control rounded-start-2" placeholder="Enter friend's username" required>
 								<button type="submit" class="btn btn-primary rounded-start-0">Add Friend</button>
 							</div>
 						</form>

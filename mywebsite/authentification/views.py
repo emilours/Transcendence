@@ -1,19 +1,21 @@
-from django.contrib import messages
+# from django.contrib import messages
+# from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch, Game, Match
+from datetime import timedelta
+# from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from datetime import timedelta
 from django.utils import timezone
-from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch, Game, Match
+from frontend.models import FriendRequest, FriendList, CustomUser, validate_no_special_characters
 from django.db import IntegrityError
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import update_session_auth_hash, authenticate, login, logout, get_user_model
 from django.utils.timezone import localtime
-from django.db.models import Max
 from django.db import transaction
-from django.utils.crypto import get_random_string
+from django.contrib.auth.hashers import check_password
+from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 import os
 
@@ -30,6 +32,9 @@ def signin(request):
 
     if not email or not password:
         return JsonResponse({"error": "Email and password are required."}, status=400)
+
+    if not User.objects.filter(email=email).exists():
+        return JsonResponse({"error": "Please sign up first."}, status=404)
 
     user = authenticate(request, email=email, password=password)
     if user is not None:
@@ -52,6 +57,12 @@ def signup(request):
 
     if not firstname or not lastname or not email or not password1 or not password2 or not display_name:
         return JsonResponse({"error": "All fields are required."}, status=400)
+    
+    try:
+        validate_no_special_characters(firstname)
+        validate_no_special_characters(lastname)
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
     if password1 != password2:
         return JsonResponse({"error": "Passwords do not match."}, status=400)
@@ -99,6 +110,7 @@ def signout(request):
         request.user.is_online = False
         request.user.save(update_fields=['is_online'])
         logout(request)
+        # request.session.flush()
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -118,7 +130,7 @@ def contact(request):
         friends_count = friend_list.friend_count() if friend_list else 0
 
         last_login_local = localtime(user.last_login) if user.last_login else None
-        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M')[:-3] if last_login_local else ''
+        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M') if last_login_local else ''
 
         user_data = {
             'id': user.id,
@@ -151,12 +163,15 @@ def contact(request):
 @transaction.atomic
 def send_friend_request(request):
     try:
-        receiver_email = request.POST.get('receiver_email')
+        receiver_display_name = request.POST.get('receiver_display_name')
 
-        if not receiver_email:
-            return JsonResponse({"error": "Receiver email is required."}, status=400)
+        if not receiver_display_name:
+            return JsonResponse({"error": "A username is required."}, status=400)
 
-        receiver = CustomUser.objects.get(email=receiver_email.lower())
+        receiver = CustomUser.objects.filter(display_name=receiver_display_name).first()
+
+        if not receiver:
+            return JsonResponse({"error": "User not found."}, status=404)
 
         if receiver == request.user:
             return JsonResponse({"error": "Cannot send friend request to yourself."}, status=400)
@@ -179,10 +194,9 @@ def send_friend_request(request):
         else:
             return JsonResponse({"error": "Friend request already exists."}, status=400)
 
-    except CustomUser.DoesNotExist:
-        return JsonResponse({"error": "Receiver not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 @login_required
 @require_POST
@@ -225,6 +239,7 @@ def cancel_friend_request(request, friend_request_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def remove_friend(request, friend_id):
     try:
         friend_list = FriendList.objects.get(user=request.user)
@@ -246,12 +261,24 @@ def remove_friend(request, friend_id):
 def update_profile(request):
     if request.method == 'POST':
         user = request.user
+
         email = request.POST.get('email', user.email).strip()
         first_name = request.POST.get('first_name', user.first_name).strip()
         last_name = request.POST.get('last_name', user.last_name).strip()
         display_name = request.POST.get('display_name', user.display_name).strip()
         avatar = request.FILES.get('avatar', None)
         avatar_choice = request.POST.get('avatar_choice', None)
+
+        try:
+            validate_no_special_characters(first_name)
+            validate_no_special_characters(last_name)
+        except ValidationError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        if user.is_api_authenticated and email != user.email:
+            return JsonResponse({
+                'error': 'For security reasons, please update your email directly through the 42 intranet platform.'
+            }, status=403)
 
         if email == '':
             email = user.email
@@ -345,11 +372,13 @@ def update_profile(request):
 # # ================================================================================================================================================================
 
 @login_required
+@require_POST
 def delete_profile(request):
     if request.method == 'POST':
         user = request.user
 
         try:
+            Token.objects.filter(user=user).delete()
             user.delete()
             return JsonResponse({
                 'message': 'Profile and all associated data successfully deleted.'
@@ -377,11 +406,24 @@ def delete_profile(request):
 def update_password(request):
     if request.method == 'POST':
         user = request.user
+
+        if user.is_api_authenticated:
+            return JsonResponse({
+                'error': 'For security reasons, please update your password directly through the 42 intranet platform.'
+            }, status=403)
+
         form = PasswordChangeForm(user, request.POST)
 
         if form.is_valid():
+            new_password = form.cleaned_data.get('new_password1')
+
+            if check_password(new_password, user.password):
+                return JsonResponse({
+                    'error': 'New password cannot be the same as the current password.'
+                }, status=400)
+
             user = form.save()
-            update_session_auth_hash(request, user)  # pour éviter la déconnexion
+            update_session_auth_hash(request, user)  # Pour éviter la déconnexion
             return JsonResponse({
                 'message': 'Password successfully updated'
             }, status=200)
@@ -395,185 +437,6 @@ def update_password(request):
     return JsonResponse({
         'error': 'Invalid request method.'
     }, status=405)
-
-# # ================================================================================================================================================================
-# # ===                                                      MATCH HISTORY                                                                                     ===
-# # ================================================================================================================================================================
-
-# @login_required
-# def user_match_history(request, display_name):
-
-#     try:
-#         user = CustomUser.objects.get(display_name=display_name)
-#     except CustomUser.DoesNotExist:
-#         return JsonResponse({'error': 'User not found'}, status=404)
-
-#     user = get_object_or_404(CustomUser, display_name=display_name)
-
-#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
-
-#     game_data = {}
-
-#     for game in games:
-#         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
-
-#         total_matches = player_matches.count()
-#         best_score = player_matches.aggregate(Max('score'))['score__max']
-
-#         if game.name != 'Invaders':
-#             wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
-#             win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
-#         else:
-#             wins = None
-#             win_ratio = None
-
-#         matches_list = [
-#             {
-#                 'game': match.match.game.name,
-#                 'score': match.score,
-#                 'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
-#                 # 'is_winner': match.is_winner if 'is_winner' in match.__class__._meta.get_fields() else None,
-#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-#                 'participants': [player.display_name for player in match.match.players.all()]
-#             }
-#             for match in player_matches
-#         ]
-
-#         game_data[game.name] = {
-#             'user_profile': {
-#                 'display_name': user.display_name,
-#                 'total_matches': total_matches,
-#                 # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
-#                 **({
-#                     'wins': wins,
-#                     'win_ratio': win_ratio
-#                 } if game.name != 'Invaders' else {}),
-#                 'best_score': best_score
-#             },
-#             'match_history': matches_list
-#         }
-
-#     return JsonResponse(game_data)
-
-from django.utils.timezone import localtime
-
-@login_required
-def user_match_history(request, display_name):
-
-    try:
-        user = CustomUser.objects.get(display_name=display_name)
-    except CustomUser.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-
-    user = get_object_or_404(CustomUser, display_name=display_name)
-
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
-
-    game_data = {}
-
-    for game in games:
-        player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
-
-        total_matches = player_matches.count()
-        wins = player_matches.filter(is_winner=True).count() if 'is_winner' in player_matches.model._meta.get_fields() else 0
-
-        best_score = player_matches.aggregate(Max('score'))['score__max']
-
-        win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
-
-        matches_list = [
-            {
-                'game': match.match.game.name,
-                'score': match.score,
-                'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
-                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-                'participants': [player.display_name for player in match.match.players.all()]
-            }
-            for match in player_matches
-        ]
-
-        game_data[game.name] = {
-            'user_profile': {
-                'display_name': user.display_name,
-                'total_matches': total_matches,
-                # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
-                **({
-                    'wins': wins,
-                    'win_ratio': win_ratio
-                } if game.name != 'Invaders' else {}),
-                'best_score': best_score,
-                'best_score_date': best_score_date  # Ajout de la date du meilleur score
-            },
-            # 'match_history': matches_list (--> afficher les derniers match ici ?)
-        }
-
-    return JsonResponse(game_data)
-
-@login_required
-def recent_matches(request, display_name):
-    user = get_object_or_404(CustomUser, display_name=display_name)
-
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
-
-    game_data = {}
-
-    for game in games:
-        recent_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')[:3]
-
-        matches_list = [
-            {
-                'game': match.match.game.name,
-                'score': match.score,
-                'is_winner': match.is_winner,
-                'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-                'participants': [player.display_name for player in match.match.players.all()]
-            }
-            for match in recent_matches
-        ]
-
-        game_data[game.name] = {
-            'user_profile': {
-                'display_name': user.display_name,
-            },
-            'recent_matches': matches_list
-        }
-
-    return JsonResponse(game_data)
-
-@login_required
-def best_matches(request, display_name):
-    try:
-        user = CustomUser.objects.get(display_name=display_name)
-    except CustomUser.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-
-    user = get_object_or_404(CustomUser, display_name=display_name)
-
-    games = Game.objects.filter(name__in=['Pusheen Invaders', 'Pusheen Pong'])
-
-    game_data = {}
-
-    for game in games:
-        best_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-score')[:3]
-
-        matches_list = [
-            {
-                'game': match.match.game.name,
-                'score': match.score,
-                'date': match.match.date,
-                'participants': [player.display_name for player in match.match.players.all()]
-            }
-            for match in best_matches
-        ]
-
-        game_data[game.name] = {
-            'user_profile': {
-                'display_name': user.display_name,
-            },
-            'best_matches': matches_list
-        }
-
-    return JsonResponse(game_data)
 
 # # ================================================================================================================================================================
 # # ===                                                      ANONYMIZATION                                                                                       ===
@@ -597,3 +460,137 @@ def request_anonymization(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+# # ================================================================================================================================================================
+# # ===                                                      MATCH HISTORY                                                                                     ===
+# # ================================================================================================================================================================
+
+# @login_required
+# def user_match_history(request, display_name):
+
+#     try:
+#         user = CustomUser.objects.get(display_name=display_name)
+#     except CustomUser.DoesNotExist:
+#         return JsonResponse({'error': 'User not found'}, status=404)
+
+#     user = get_object_or_404(CustomUser, display_name=display_name)
+
+#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+
+#     game_data = {}
+
+#     for game in games:
+#         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
+
+#         total_matches = player_matches.count()
+
+#         # Trouver le meilleur score et la date associée
+#         best_score_match = player_matches.order_by('-score').first()  # Récupère le match avec le meilleur score
+#         best_score = best_score_match.score if best_score_match else None
+#         best_score_date = localtime(best_score_match.match.date).strftime('%Y-%m-%d %H:%M') if best_score_match else None
+
+#         if game.name != 'Invaders':
+#             wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
+#             win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
+#         else:
+#             wins = None
+#             win_ratio = None
+
+#         matches_list = [
+#             {
+#                 'game': match.match.game.name,
+#                 'score': match.score,
+#                 'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
+#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
+#                 'participants': [player.display_name for player in match.match.players.all()]
+#             }
+#             for match in player_matches
+#         ]
+
+#         game_data[game.name] = {
+#             'user_profile': {
+#                 'display_name': user.display_name,
+#                 'total_matches': total_matches,
+#                 # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
+#                 **({
+#                     'wins': wins,
+#                     'win_ratio': win_ratio
+#                 } if game.name != 'Invaders' else {}),
+#                 'best_score': best_score,
+#                 'best_score_date': best_score_date  # Ajout de la date du meilleur score
+#             },
+#             # 'match_history': matches_list (--> afficher les derniers match ici ?)
+#         }
+
+#     return JsonResponse(game_data)
+
+
+# @login_required
+# def recent_matches(request, display_name):
+#     try:
+#         user = CustomUser.objects.get(display_name=display_name)
+#     except CustomUser.DoesNotExist:
+#         return JsonResponse({'error': 'User not found'}, status=404)
+
+#     user = get_object_or_404(CustomUser, display_name=display_name)
+
+#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+
+#     game_data = {}
+
+#     for game in games:
+#         recent_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')[:3]
+
+#         matches_list = [
+#             {
+#                 'game': match.match.game.name,
+#                 'score': match.score,
+#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
+#                 'participants': [player.display_name for player in match.match.players.all()]
+#             }
+#             for match in recent_matches
+#         ]
+
+#         game_data[game.name] = {
+#             'user_profile': {
+#                 'display_name': user.display_name,
+#             },
+#             'recent_matches': matches_list
+#         }
+
+#     return JsonResponse(game_data)
+
+# @login_required
+# def best_matches(request, display_name):
+#     try:
+#         user = CustomUser.objects.get(display_name=display_name)
+#     except CustomUser.DoesNotExist:
+#         return JsonResponse({'error': 'User not found'}, status=404)
+
+#     user = get_object_or_404(CustomUser, display_name=display_name)
+
+#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
+
+#     game_data = {}
+
+#     for game in games:
+#         best_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-score')[:3]
+
+#         matches_list = [
+#             {
+#                 'game': match.match.game.name,
+#                 'score': match.score,
+#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
+#                 'participants': [player.display_name for player in match.match.players.all()]
+#             }
+#             for match in best_matches
+#         ]
+
+#         game_data[game.name] = {
+#             'user_profile': {
+#                 'display_name': user.display_name,
+#             },
+#             'best_matches': matches_list
+#         }
+
+#     return JsonResponse(game_data)

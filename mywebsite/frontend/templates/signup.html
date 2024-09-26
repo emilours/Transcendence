@@ -2,12 +2,12 @@
 <section class="d-flex align-items-center justify-content-center mt-5">
 	<div class="container">
 		<div class="row justify-content-center">
-			<div class="ol-12 col-md-5 col-lg-4 d-flex flex-column align-items-center mb-md-0">
-				<div class="card shadow rounded-2">
+			<div class="col-12 col-md-8 d-flex flex-column align-items-center mb-md-0">
+				<div class="card shadow rounded-2 w-100">
 					<div class="card-body p-5 text-secondary-emphasis">
-						<div class="d-flex justify-content-between align-items-center">
-							<h1 class="card-title text-center font-balsamiq ">Sing up</h1>
-							<img src="{% static 'img/pusheen-sign-up.gif' %}" alt="gif de pusheen" width="100" height="100">
+						<div class="d-flex justify-content-center align-items-center">
+							<h1 class="card-title text-center font-balsamiq mb-4 mb-md-0">Sign up</h1>
+							<img src="{% static 'img/pusheen-sign-up.gif' %}" alt="gif de pusheen" class="img-fluid" style="max-width: 100px;">
 						</div>
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
 							{% csrf_token %}
@@ -57,13 +57,14 @@
 			</div>
 		</div>
 	</div>
+
 	<!-- Privacy Policy Modal -->
 	<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered" style="max-width: 80%;">
 			<div class="modal-content rounded-2">
 				<div class="modal-header">
 					<h5 class="modal-title" id="privacyPolicyModalLabel">Privacy Policy</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="display: none;"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<p>
@@ -110,9 +111,9 @@
 						Access: You can request access to your personal data.
 						Rectification: You can request the correction of inaccurate data.
 						Erasure: You can request the deletion of your data if it is no longer necessary for the purposes it was collected for.
-						Portability: You can request to receive your data in a structured, commonly used, and machine-readable format. //NOOOO
+						Portability: You can request to receive your data in a structured, commonly used, and machine-readable format.
 						Objection: You have the right to object to certain types of processing, including for direct marketing purposes.
-						To exercise your rights, please contact us at [your contact email].
+						To exercise your rights, please contact us at contact_pusheen@42.fr.
 					</p>
 					<p>
 						7. Data Security
@@ -125,6 +126,10 @@
 					<p>
 						9. Changes to the Privacy Policy
 						We reserve the right to modify this Privacy Policy at any time. Any changes will be posted on this page and will take effect immediately. We encourage you to regularly review this page to stay informed of any updates.
+					</p>
+					<p>
+						10. Feedback
+						If you have read and understood this Privacy Policy, we would greatly appreciate it if you could rate us with a full score on ft_transcendence project.
 					</p>
 					<p>
 						Last updated: 19/09/2024
@@ -143,6 +148,4 @@
 			</div>
 		</div>
 	</div>
-
 </section>
-
