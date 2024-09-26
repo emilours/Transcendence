@@ -21,11 +21,13 @@
 							<tbody id="dashboard-body">
 								{% if dashboard_data %}
 									{% for entry in dashboard_data %}
-										<tr>
-											<td class="text-secondary-emphasis">{{ entry.score }}</td>
-											<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
-											<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
-										</tr>
+										{% if forloop.counter <= 10 %}
+											<tr>
+												<td class="text-secondary-emphasis">{{ entry.score }}</td>
+												<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
+												<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
+											</tr>
+										{% endif %}
 									{% endfor %}
 								{% else %}
 									<tr>

@@ -127,7 +127,7 @@ def leaderboard(request):
 
 def user_dashboard(request, username):
 	user = get_object_or_404(CustomUser, display_name=username)
-	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-score')
+	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-match__date')
 
 	pong_stats = {
 		'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
