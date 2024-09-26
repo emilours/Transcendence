@@ -146,6 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'signup-from-login', url: '/signup/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },
+			{ id: 'dashboard', url: '/dashboard/' },
+			{ id: 'dashboard-from-home', url: '/dashboard/' },
 			{ id: 'games', url: '/games/' },
 			{ id: 'invaders', url: '/invaders/' },
 			{ id: 'pong', url: '/pong/' },

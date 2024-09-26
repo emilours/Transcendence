@@ -28,7 +28,7 @@
 									<td class="text-secondary-emphasis">{{ rank }}</td>
 									<td class="text-secondary-emphasis">{{ entry.score }}</td>
 									<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
-									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
 									<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
 								</tr>
 							{% endfor %}
@@ -37,8 +37,7 @@
 								<td colspan="5" class="text-center text-secondary-emphasis">No games</td>
 							</tr>
 						{% endif %}
-					</tbody>
-					</tbody>
+					</tbody> </tbody>
 				</table>
 			</div>
 		</div>
@@ -66,7 +65,7 @@
 									<td class="text-secondary-emphasis">{{ rank }}</td>
 									<td class="text-secondary-emphasis">{{ entry.score }}</td>
 									<td class="text-secondary-emphasis">{{ entry.player.display_name }}</td>
-									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d H:i" }}</td>
+									<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
 									<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
 								</tr>
 							{% endfor %}
