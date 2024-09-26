@@ -143,10 +143,6 @@ def reset_ball(room_id):
 async def StartGameLoop(sid, username, room_id):
     global games
     log(f"STARTING GAME LOOP")
-    namespace = sio.namespaces()
-    log(f"Namespaces: {namespace}")
-    sids = sio.manager.get_participants('/', room_id)
-    log(f"Clients in room {room_id}: {sids}")
     current_task = asyncio.current_task()
     while True:
         while games[room_id]['status'] == "paused":
@@ -154,7 +150,7 @@ async def StartGameLoop(sid, username, room_id):
             log("GAME IS PAUSE, SLEEPING!")
 
         # Handle collisions with walls
-    
+
         if games[room_id]['ballPosition'][1] <= BOTTOM_WALL or games[room_id]['ballPosition'][1] >= TOP_WALL:
             games[room_id]['ballVelocity'][1] *= -1
 
@@ -165,12 +161,12 @@ async def StartGameLoop(sid, username, room_id):
         if (abs(games[room_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
             abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][1]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
             games[room_id]['ballVelocity'][0] *= -1
-        
+
         # Handle scoring
         if games[room_id]['ballPosition'][0] >= RIGHT_WALL:
             games[room_id]['scores'][0] += 1 #
             reset_ball(room_id)
-        elif games[room_id]['ballPosition'][0] <= LEFT_WALL: 
+        elif games[room_id]['ballPosition'][0] <= LEFT_WALL:
             games[room_id]['scores'][1] += 1 #
             reset_ball(room_id)
 
@@ -181,10 +177,10 @@ async def StartGameLoop(sid, username, room_id):
         elif games[room_id]['scores'][1] >= WINNING_SCORE: #
             # log(f"Player 2 {games[room_id]['player2']} Won!") #
             log(f"player 2 {games[room_id]['players'][1]} won the game")
-            games[room_id]['game_over'] = 1 
+            games[room_id]['game_over'] = 1
 
 
-        
+
         # Update the ball position
         games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0]
         games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1]
@@ -196,6 +192,8 @@ async def StartGameLoop(sid, username, room_id):
             current_task.cancel()
             current_task = None
             # TODO: Disconnect both client ?
+            await sio.disconnect(games[room_id]['sids'][0])
+            await sio.disconnect(games[room_id]['sids'][1])
             games[room_id] = {}
             del games[room_id]
             return
@@ -243,6 +241,7 @@ def CreateRoom(game_type):
         'game_type': game_type,
         'player_count': 0,
         'players': [],
+        'sids': [],
         'scores': [],
         'pos': [],
         'ballPosition': [0, 0],
@@ -261,6 +260,7 @@ async def JoinRoom(sid, username, room_id):
         return
     index = games[room_id]['player_count']
     games[room_id]['players'].insert(index, username)
+    games[room_id]['sids'].insert(index, sid)
     games[room_id]['scores'].insert(index, 0)
     games[room_id]['pos'].insert(index, 0)
     games[room_id]['player_count'] += 1

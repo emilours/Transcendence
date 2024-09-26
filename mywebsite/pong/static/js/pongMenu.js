@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, StartGameEvent } from './pong.js';
+import { ConnectWebsocket, SendEvent } from './pong.js';
 
 export function initPong(userName) {
 	// let user = 'userName';
@@ -35,7 +35,7 @@ export function initPong(userName) {
 					// FOR DEVELOPMENT
 					console.log("CREATE LOBBY button clicked")
 					ConnectWebsocket('normal', userName);
-					// 
+					//
 					drawLobbyMenu('create');
 				}),
 				createButton('JOIN LOBBY', () => {
@@ -96,7 +96,7 @@ export function initPong(userName) {
 				buttonReady.style.backgroundColor = '#0ccf0c';
 				buttonReady.innerText = 'OK';
 				console.log("READY button clicked")
-				StartGameEvent();
+				SendEvent('start_game');
 			})
 		);
 		return playerInfo;

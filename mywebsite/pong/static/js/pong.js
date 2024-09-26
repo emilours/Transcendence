@@ -27,15 +27,15 @@ var rightPlayerScore = 0; // player 2
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 // ConnectWebsocket();
-export function StartGameEvent()
+export function SendEvent(event)
 {
-	console.log("StartGameEvent()")
+	console.log("SendEvent()")
 	if (!socket || !socket.connected)
 	{
 		console.log("Socket.io connection not open")
 		return
 	}
-	socket.emit('start_game');
+	socket.emit(event);
 }
 
 export function ConnectWebsocket(type, username)
@@ -152,7 +152,7 @@ function StartGame()
 		let data = JSON.parse(e.data);
 		console.log('Data:', data);
 
-		if (data.ballPosition && data.ballVelocity && data.pos 
+		if (data.ballPosition && data.ballVelocity && data.pos
 			&& data.players && data.scores && typeof data.game_over !== 'undefined')
 		{
 			ball.position.x = parseFloat(data.ballPosition[0]);
