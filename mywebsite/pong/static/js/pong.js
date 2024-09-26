@@ -25,6 +25,7 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+var menu;
 
 export function GetUsers()
 {
@@ -34,9 +35,12 @@ export function GetUsers()
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event)
+export function SendEvent(event, lobbyMenu)
 {
 	console.log("SendEvent()");
+	menu = lobbyMenu;
+	console.log("menu: ", menu);
+
 	if (!socket || !socket.connected)
 	{
 		console.log("Socket.io connection not open");
@@ -52,9 +56,7 @@ export function ConnectWebsocket(type, username)
 	running = true;
 	gameType = type;
 	userName = username;
-	console.log("socket type: " + typeof(socket));
-	console.log("username: " + username);
-	console.log("gametype: " + gameType);
+	console.log("Connecting to game: " + gameType + " for user: " + username);
 
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
@@ -102,24 +104,31 @@ export function ConnectWebsocket(type, username)
     });
 
 	// CUSTOM EVENTS
-	socket.on("client_count", function(count) {
+	socket.on('client_count', function(count) {
 		console.log("There is " + count + " client connected");
 	});
-	socket.on("user_joined", function(user) {
+	socket.on('user_joined', function(user) {
 		console.log("User " + user + " has joined.");
 	});
-	socket.on("user_left", function(user) {
+	socket.on('user_left', function(user) {
 		console.log("User " + user + " has left.");
 	});
-	socket.on("init_game", function() {
-		console.log("init_game event called!");
+	socket.on('game_ready', function() {
+		console.log("BOTH PLAYER READY");
+		menu.remove();
 		StartGame();
-	})
+		SendEvent('start_game', menu);
+	});
+	// might not be needed anymore
+	// socket.on('init_game', function() {
+	// 	console.log("init_game event called!");
+	// 	menu.remove();
+	// 	StartGame();
+	// });
 	socket.on('send_users', function(data) {
 		user1 = data[0];
 		user2 = data[1];
 	});
-	console.log("HERE?");
 }
 
 export function CloseWebsocket() {

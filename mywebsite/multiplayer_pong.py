@@ -305,6 +305,7 @@ def CreateRoom(game_type):
         'player_count': 0,
         'players': [],
         'sids': [],
+        'ready': [],
         'scores': [],
         'pos': [],
         'ballPosition': [0, 0],
@@ -326,6 +327,7 @@ async def JoinRoom(sid, username, room_id):
     games[room_id]['sids'].insert(index, sid)
     games[room_id]['scores'].insert(index, 0)
     games[room_id]['pos'].insert(index, 0)
+    games[room_id]['ready'].insert(index, 0)
     games[room_id]['player_count'] += 1
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
@@ -356,6 +358,28 @@ async def LeaveRoom(sid, room_id):
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
     log(f"Room {room_id} deleted")
+
+@sio.on('player_ready')
+async def PlayerReady(sid):
+    global games
+
+    session = await sio.get_session(sid)
+    room_id = session.get('room_id')
+    index = games[room_id]['sids'].index(sid)
+    log(f"Index: {index}")
+    if games[room_id]['ready'][index] == 0:
+        games[room_id]['ready'][index] = 1
+    else:
+        games[room_id]['ready'][index] = 0
+
+    log(f"CHECK: {games[room_id]}")
+    start = True
+    for ready in games[room_id]['ready']:
+        log(f"ready: {ready}")
+        if ready == 0:
+            start = False
+    if start:
+        await sio.emit('game_ready', room=room_id)
 
 @sio.on('get_users')
 async def SendUsers(sid):
@@ -411,7 +435,7 @@ async def StartGame(sid):
     room_id = GetUserRoom(username)
     room_full = IsRoomFull(room_id)
     if room_full == NORMAL_GAME:
-        await sio.emit('init_game', room=room_id)
+        # await sio.emit('init_game', room=room_id)
         asyncio.create_task(StartGameLoop(sid, game_type, room_id))
     elif room_full == TOURNAMENT_GAME:
           pass
@@ -462,7 +486,7 @@ async def message(sid, data):
 
 @sio.on('disconnect')
 async def disconnect(sid):
-    global client_count, connected_users
+    global games, client_count, connected_users
 
     client_count -= 1
     await sio.emit('client_count', client_count)
@@ -478,10 +502,14 @@ async def disconnect(sid):
         username = session.get('username')
         if sid in connected_users:
             del connected_users[sid]
+        if games[room_id]['player_count'] == 0:
+            games[room_id] = {}
+            del games[room_id]
         await sio.emit('user_left', username)
         log(f"User {username} disconnected ({sid})")
     except KeyError:
         log(f"No session found for {sid}")
+    
 
 
 
