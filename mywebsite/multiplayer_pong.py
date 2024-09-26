@@ -126,7 +126,7 @@ games = {}
 #     'http://localhost:8080',
 #     'https://admin.socket.io',
 # ])
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=['*'])
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
 # if instrument:
 #     sio.instrument(auth=admin_login)
 
