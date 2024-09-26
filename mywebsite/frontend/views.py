@@ -104,14 +104,14 @@ def leaderboard(request):
 		if entry.match.game.name == "Pong":
 			pong_leaderboard.append((pong_rank, entry))
 			pong_rank += 1
-		if pong_rank > 10:
+		if pong_rank > 5:
 			break
 
 	for entry in leaderboard_data:
 		if entry.match.game.name == "Invaders":
 			invaders_leaderboard.append((invaders_rank, entry))
 			invaders_rank += 1
-		if invaders_rank > 10:
+		if invaders_rank > 5:
 			break
 
 	context = {
