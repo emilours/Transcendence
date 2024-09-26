@@ -1,7 +1,4 @@
-# from django.contrib import messages
-# from frontend.models import FriendRequest, FriendList, CustomUser, PlayerMatch, Game, Match
 from datetime import timedelta
-# from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -17,6 +14,8 @@ from django.db import transaction
 from django.contrib.auth.hashers import check_password
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
+from django.http import StreamingHttpResponse
+from django.db.models import Q
 import os
 
 User = get_user_model()
@@ -422,7 +421,7 @@ def update_password(request):
                 }, status=400)
 
             user = form.save()
-            update_session_auth_hash(request, user)  # Pour éviter la déconnexion
+            update_session_auth_hash(request, user)
             return JsonResponse({
                 'message': 'Password successfully updated'
             }, status=200)
@@ -464,199 +463,34 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-# from django.views.decorators.http import require_http_methods
-# from channels.layers import get_channel_layer
-# from asgiref.sync import async_to_sync
-# from django.http import StreamingHttpResponse
-# import asyncio
+def check_friend_request_status(request):
+    user = request.user
+    pending_requests = FriendRequest.objects.filter(
+        Q(sender=user) | Q(receiver=user),
+        status__in=['accepted', 'declined']
+    )
 
-from django.views import View
-from django.http import HttpResponse
-from django_eventstream import send_event
+    if pending_requests.exists():
+        return [
+            {
+                "id": friend_request.id,
+                "sender": friend_request.sender.display_name,
+                "receiver": friend_request.receiver.display_name,
+                "status": friend_request.status
+            }
+            for friend_request in pending_requests
+        ]
+    # return tableau vide, reponse json valide
+    return []
 
-class SSEView(View):
-    def get(self, request):
-        friend_requests = FriendRequest.objects.all()
-        state = {request.id: request.to_dict() for request in friend_requests}
-        
-        send_event("friend_requests", "update", {
-            "initial": state,
-            "last_seen_id": None
-        })
-        
-        return HttpResponse(state)
+def sse(request):
+    def event_stream():
+        last_status = None
+        while True:
+            status_update = check_friend_request_status(request.user)
+            if status_update != last_status:
+                last_status = status_update
+                yield f"data: {json.dumps(status_update)}\n\n"
+            time.sleep(5)
 
-class UpdateFriendRequestsView(View):
-    def post(self, request):
-        # Traitez la requête POST pour mettre à jour un ami
-        # Par exemple, si vous acceptez une demande d'amis
-        friend_request_id = request.POST.get('friend_request_id')
-        action = request.POST.get('action')
-        
-        if action == 'accept':
-            FriendRequest.objects.filter(id=friend_request_id).update(status='accepted')
-        elif action == 'decline':
-            FriendRequest.objects.filter(id=friend_request_id).update(status='declined')
-        
-        # Envoie une mise à jour pour l'événement spécifique
-        send_event("friend_requests", "update", {
-            "request_id": friend_request_id,
-            "action": action
-        })
-        
-        return HttpResponse({"message": f"Friend request {action}ed"})
-
-# async def event_stream():
-#     last_known_states = {}
-#     while True:
-#         start_time = time.time()
-        
-#         # Récupère toutes les demandes d'amis et les convertit en dictionnaire
-#         requests = await database_sync_to_async(FriendRequest.objects.all)()
-#         state = {request.id: request.to_dict() for request in requests}
-
-#         # Compare les états actuels avec les derniers connus et envoie uniquement les mises à jour
-#         updates = {id: state[id] for id in state if id not in last_known_states or last_known_states[id] != state[id]}
-#         if updates:
-#             yield f'data: {json.dumps(updates)}\n\n'
-
-#         last_known_states = state
-        
-#         elapsed_time = time.time() - start_time
-#         if elapsed_time < 5:
-#             await asyncio.sleep(5 - elapsed_time)
-
-
-# # ================================================================================================================================================================
-# # ===                                                      MATCH HISTORY                                                                                     ===
-# # ================================================================================================================================================================
-
-# @login_required
-# def user_match_history(request, display_name):
-
-#     try:
-#         user = CustomUser.objects.get(display_name=display_name)
-#     except CustomUser.DoesNotExist:
-#         return JsonResponse({'error': 'User not found'}, status=404)
-
-#     user = get_object_or_404(CustomUser, display_name=display_name)
-
-#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
-
-#     game_data = {}
-
-#     for game in games:
-#         player_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')
-
-#         total_matches = player_matches.count()
-
-#         # Trouver le meilleur score et la date associée
-#         best_score_match = player_matches.order_by('-score').first()  # Récupère le match avec le meilleur score
-#         best_score = best_score_match.score if best_score_match else None
-#         best_score_date = localtime(best_score_match.match.date).strftime('%Y-%m-%d %H:%M') if best_score_match else None
-
-#         if game.name != 'Invaders':
-#             wins = player_matches.filter(is_winner=True).count() if hasattr(player_matches.model, 'is_winner') else 0
-#             win_ratio = (wins / total_matches) * 100 if total_matches > 0 else 0
-#         else:
-#             wins = None
-#             win_ratio = None
-
-#         matches_list = [
-#             {
-#                 'game': match.match.game.name,
-#                 'score': match.score,
-#                 'is_winner': True if game.name == 'Invaders' else (match.is_winner if hasattr(match, 'is_winner') else None),
-#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-#                 'participants': [player.display_name for player in match.match.players.all()]
-#             }
-#             for match in player_matches
-#         ]
-
-#         game_data[game.name] = {
-#             'user_profile': {
-#                 'display_name': user.display_name,
-#                 'total_matches': total_matches,
-#                 # 'wins' et 'win_ratio' sont inclus uniquement pour Pong
-#                 **({
-#                     'wins': wins,
-#                     'win_ratio': win_ratio
-#                 } if game.name != 'Invaders' else {}),
-#                 'best_score': best_score,
-#                 'best_score_date': best_score_date  # Ajout de la date du meilleur score
-#             },
-#             # 'match_history': matches_list (--> afficher les derniers match ici ?)
-#         }
-
-#     return JsonResponse(game_data)
-
-
-# @login_required
-# def recent_matches(request, display_name):
-#     try:
-#         user = CustomUser.objects.get(display_name=display_name)
-#     except CustomUser.DoesNotExist:
-#         return JsonResponse({'error': 'User not found'}, status=404)
-
-#     user = get_object_or_404(CustomUser, display_name=display_name)
-
-#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
-
-#     game_data = {}
-
-#     for game in games:
-#         recent_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-match__date')[:3]
-
-#         matches_list = [
-#             {
-#                 'game': match.match.game.name,
-#                 'score': match.score,
-#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-#                 'participants': [player.display_name for player in match.match.players.all()]
-#             }
-#             for match in recent_matches
-#         ]
-
-#         game_data[game.name] = {
-#             'user_profile': {
-#                 'display_name': user.display_name,
-#             },
-#             'recent_matches': matches_list
-#         }
-
-#     return JsonResponse(game_data)
-
-# @login_required
-# def best_matches(request, display_name):
-#     try:
-#         user = CustomUser.objects.get(display_name=display_name)
-#     except CustomUser.DoesNotExist:
-#         return JsonResponse({'error': 'User not found'}, status=404)
-
-#     user = get_object_or_404(CustomUser, display_name=display_name)
-
-#     games = Game.objects.filter(name__in=['Invaders', 'Pong'])
-
-#     game_data = {}
-
-#     for game in games:
-#         best_matches = PlayerMatch.objects.filter(player=user, match__game=game).select_related('match').order_by('-score')[:3]
-
-#         matches_list = [
-#             {
-#                 'game': match.match.game.name,
-#                 'score': match.score,
-#                 'date': localtime(match.match.date).strftime('%Y-%m-%d %H:%M'),
-#                 'participants': [player.display_name for player in match.match.players.all()]
-#             }
-#             for match in best_matches
-#         ]
-
-#         game_data[game.name] = {
-#             'user_profile': {
-#                 'display_name': user.display_name,
-#             },
-#             'best_matches': matches_list
-#         }
-
-#     return JsonResponse(game_data)
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
