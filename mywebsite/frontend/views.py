@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Max, Avg
-from .models import PlayerMatch
+from .models import PlayerMatch, CustomUser
 
 def index(request):
 	redirect('home')
@@ -121,35 +121,35 @@ def leaderboard(request):
 
 	return render(request, 'base.html', context)
 
-@login_required
-def dashboard(request):
-	user = request.user
-	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-score')
+def user_dashboard(request, username):
+    user = get_object_or_404(CustomUser, display_name=username)
+    dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-score')
 
-	pong_stats = {
-		'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
-		'victories': dashboard_data.filter(match__game__name="Pong", is_winner=True).count(),
-		'defeats': dashboard_data.filter(match__game__name="Pong", is_winner=False).count(),
-		'max_score': dashboard_data.filter(match__game__name="Pong").aggregate(Max('score'))['score__max']
-	}
+    pong_stats = {
+        'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
+        'victories': dashboard_data.filter(match__game__name="Pong", is_winner=True).count(),
+        'defeats': dashboard_data.filter(match__game__name="Pong", is_winner=False).count(),
+        'max_score': dashboard_data.filter(match__game__name="Pong").aggregate(Max('score'))['score__max']
+    }
 
-	invaders_stats = {
-		'total_matches': dashboard_data.filter(match__game__name="Invaders").count(),
-		'average': dashboard_data.filter(match__game__name="Invaders").aggregate(Avg('score'))['score__avg'],
-		'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max']
-	}
+    invaders_stats = {
+        'total_matches': dashboard_data.filter(match__game__name="Invaders").count(),
+        'average': dashboard_data.filter(match__game__name="Invaders").aggregate(Avg('score'))['score__avg'],
+        'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max']
+    }
 
-	context = {
-		'pong_stats': pong_stats,
-		'invaders_stats': invaders_stats,
-		'dashboard_data': dashboard_data,
-	}
+    context = {
+        'user_profile': user,
+        'pong_stats': pong_stats,
+        'invaders_stats': invaders_stats,
+        'dashboard_data': dashboard_data,
+    }
 
-	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-		html = render_to_string('dashboard.html', context, request=request)
-		return JsonResponse({'html': html})
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('dashboard.html', context, request=request)
+        return JsonResponse({'html': html})
 
-	return render(request, 'base.html', context)
+    return render(request, 'base.html', context)
 
 def load_header(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
