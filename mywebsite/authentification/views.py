@@ -461,6 +461,73 @@ def request_anonymization(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 # # ================================================================================================================================================================
+# # ===                                                      SSE                                                                                                 ===
+# # ================================================================================================================================================================
+
+# from django.views.decorators.http import require_http_methods
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
+# from django.http import StreamingHttpResponse
+# import asyncio
+
+from django.views import View
+from django.http import HttpResponse
+from django_eventstream import send_event
+
+class SSEView(View):
+    def get(self, request):
+        friend_requests = FriendRequest.objects.all()
+        state = {request.id: request.to_dict() for request in friend_requests}
+        
+        send_event("friend_requests", "update", {
+            "initial": state,
+            "last_seen_id": None
+        })
+        
+        return HttpResponse(state)
+
+class UpdateFriendRequestsView(View):
+    def post(self, request):
+        # Traitez la requête POST pour mettre à jour un ami
+        # Par exemple, si vous acceptez une demande d'amis
+        friend_request_id = request.POST.get('friend_request_id')
+        action = request.POST.get('action')
+        
+        if action == 'accept':
+            FriendRequest.objects.filter(id=friend_request_id).update(status='accepted')
+        elif action == 'decline':
+            FriendRequest.objects.filter(id=friend_request_id).update(status='declined')
+        
+        # Envoie une mise à jour pour l'événement spécifique
+        send_event("friend_requests", "update", {
+            "request_id": friend_request_id,
+            "action": action
+        })
+        
+        return HttpResponse({"message": f"Friend request {action}ed"})
+
+# async def event_stream():
+#     last_known_states = {}
+#     while True:
+#         start_time = time.time()
+        
+#         # Récupère toutes les demandes d'amis et les convertit en dictionnaire
+#         requests = await database_sync_to_async(FriendRequest.objects.all)()
+#         state = {request.id: request.to_dict() for request in requests}
+
+#         # Compare les états actuels avec les derniers connus et envoie uniquement les mises à jour
+#         updates = {id: state[id] for id in state if id not in last_known_states or last_known_states[id] != state[id]}
+#         if updates:
+#             yield f'data: {json.dumps(updates)}\n\n'
+
+#         last_known_states = state
+        
+#         elapsed_time = time.time() - start_time
+#         if elapsed_time < 5:
+#             await asyncio.sleep(5 - elapsed_time)
+
+
+# # ================================================================================================================================================================
 # # ===                                                      MATCH HISTORY                                                                                     ===
 # # ================================================================================================================================================================
 

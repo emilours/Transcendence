@@ -223,6 +223,16 @@ class FriendRequest(models.Model):
 			self.sender.save()
 			self.receiver.save()
 		super(FriendRequest, self).delete(*args, **kwargs)
+	
+	@transaction.atomic
+	def to_dict(self):
+		return {
+			'id': self.id,
+			'sender': self.sender.username,
+			'receiver': self.receiver.username,
+			'status': self.status,
+			'created_at': self.created_at.isoformat()
+		}
 
 	@staticmethod
 	def count_declined_requests(user):

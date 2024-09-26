@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+import django_eventstream
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +25,5 @@ urlpatterns = [
     path('invaders/', include('invaders.urls')),
     # path('auth/', include('authentification.urls')),
 	path('auth/', include(('authentification.urls', 'authentification'), namespace='authentification')),
+    path("events/", include(django_eventstream.urls)),
 ]
