@@ -15,31 +15,24 @@ header {
 }
 
 /* High contrast */
-body.high-contrast {
+body.high-contrast, header.high-contrast, footer.high-contrast {
 	background-color: #000;
 	color: #fff;
 }
 
-/* Navbar and buttons in high contrast */
-.high-contrast .navbar, .high-contrast .btn, .high-contrast span {
+/* buttons in high contrast */
+.high-contrast .btn {
 	background-color: #222;
 	color: #fff;
 	border: 1px solid #fff;
 }
 
-/* Focus outline for better navigation visibility */
-.high-contrast button:focus, .high-contrast a:focus {
-	outline: 2px solid #000;
+.high-contrast input[type="checkbox"]:checked {
+	background-color: #fff;
+	border-color: #000;
+	color: #000;
 }
 
-/* Links and text adjustments */
-/* .high-contrast a {
-	text-decoration: underline;
-} */
-
-.high-contrast p {
-	color: #fff;
-}
 
 
 .high-contrast .darky-color {
@@ -69,27 +62,29 @@ body.high-contrast {
 	content: url("../img/42_Logo_white.png");
 }
 
+/* Focus outline for better navigation visibility */
 .high-contrast .btn:hover {
 	background-color: #fff;
 	color: #000;
 	border-color: #000;
-	border: 2px;
+	border: 2px solid black;
+	outline: 2px solid black;
 }
-
 
 .high-contrast .btn:active {
 	background-color: #ccc;
 	color: #000;
 	border-color: #000;
-	border: 2px;
+	border: 2px solid black;
+	outline: 2px solid black;
 }
-
 
 .high-contrast .btn:focus {
 	outline: 2px solid #fff;
 	background-color: #444;
-	color: #fff;
-	border: 2px;
+	border-color: #000;
+	border: 2px solid black;
+	outline: 2px solid black;
 }
 
 a.card:hover {
