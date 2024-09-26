@@ -104,11 +104,15 @@ def leaderboard(request):
 		if entry.match.game.name == "Pong":
 			pong_leaderboard.append((pong_rank, entry))
 			pong_rank += 1
+		if pong_rank > 10:
+			break
 
 	for entry in leaderboard_data:
 		if entry.match.game.name == "Invaders":
 			invaders_leaderboard.append((invaders_rank, entry))
 			invaders_rank += 1
+		if invaders_rank > 10:
+			break
 
 	context = {
 		'pong_leaderboard': pong_leaderboard,
@@ -122,34 +126,34 @@ def leaderboard(request):
 	return render(request, 'base.html', context)
 
 def user_dashboard(request, username):
-    user = get_object_or_404(CustomUser, display_name=username)
-    dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-score')
+	user = get_object_or_404(CustomUser, display_name=username)
+	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-score')
 
-    pong_stats = {
-        'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
-        'victories': dashboard_data.filter(match__game__name="Pong", is_winner=True).count(),
-        'defeats': dashboard_data.filter(match__game__name="Pong", is_winner=False).count(),
-        'max_score': dashboard_data.filter(match__game__name="Pong").aggregate(Max('score'))['score__max']
-    }
+	pong_stats = {
+		'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
+		'victories': dashboard_data.filter(match__game__name="Pong", is_winner=True).count(),
+		'defeats': dashboard_data.filter(match__game__name="Pong", is_winner=False).count(),
+		'max_score': dashboard_data.filter(match__game__name="Pong").aggregate(Max('score'))['score__max']
+	}
 
-    invaders_stats = {
-        'total_matches': dashboard_data.filter(match__game__name="Invaders").count(),
-        'average': dashboard_data.filter(match__game__name="Invaders").aggregate(Avg('score'))['score__avg'],
-        'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max']
-    }
+	invaders_stats = {
+		'total_matches': dashboard_data.filter(match__game__name="Invaders").count(),
+		'average': dashboard_data.filter(match__game__name="Invaders").aggregate(Avg('score'))['score__avg'],
+		'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max']
+	}
 
-    context = {
-        'user_profile': user,
-        'pong_stats': pong_stats,
-        'invaders_stats': invaders_stats,
-        'dashboard_data': dashboard_data,
-    }
+	context = {
+		'user_profile': user,
+		'pong_stats': pong_stats,
+		'invaders_stats': invaders_stats,
+		'dashboard_data': dashboard_data,
+	}
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        html = render_to_string('dashboard.html', context, request=request)
-        return JsonResponse({'html': html})
+	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+		html = render_to_string('dashboard.html', context, request=request)
+		return JsonResponse({'html': html})
 
-    return render(request, 'base.html', context)
+	return render(request, 'base.html', context)
 
 def load_header(request):
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
