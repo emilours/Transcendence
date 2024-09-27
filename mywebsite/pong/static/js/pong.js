@@ -25,7 +25,18 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var menu;
+var menu, player1Info, player2Info;
+
+export function UpdateWaitingPlayer(player1, player2)
+{
+	// /!\ Those 2 lines are very different:
+	// console.log("player1: ", player1);
+	// console.log("player1: " + player1);
+	// /!\
+	player1Info = player1;
+	player2Info = player2;
+	// modify user
+}
 
 export function GetUsers()
 {
@@ -126,8 +137,41 @@ export function ConnectWebsocket(type, username)
 	// 	StartGame();
 	// });
 	socket.on('send_users', function(data) {
+		console.log("Users received: user1 - " + data[0] + " | user2 - " + data[1]);
 		user1 = data[0];
 		user2 = data[1];
+
+		if (player1Info)
+		{
+			console.log("updating player1info");
+			const playerUsername = player1Info.querySelector('h4');
+			if (playerUsername) {
+				playerUsername.innerText = user1;
+			}
+			const playerImage = player1Info.querySelector('img');
+			if (playerImage) {
+				playerImage.src = '/static/img/avatarDefault.gif';
+				playerImage.width = 200;
+				playerImage.height = 200;
+				playerImage.removeAttribute('style');
+			}
+		}
+
+		if (player2Info)
+		{
+			console.log("updating player2info");
+			const playerUsername = player2Info.querySelector('h4');
+			if (playerUsername) {
+				playerUsername.innerText = user2;
+			}
+			const playerImage = player2Info.querySelector('img');
+			if (playerImage) {
+				playerImage.src = '/static/img/avatarDefault.gif';
+				playerImage.width = 200;
+				playerImage.height = 200;
+				playerImage.removeAttribute('style');
+			}
+		}
 	});
 }
 
@@ -299,32 +343,9 @@ function Init()
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	renderer.outputEncoding = THREE.sRGBEncoding;
-	// renderer.setClearColor(0x1c1c1c, 1); // same as scene.background
 	const container = document.getElementById('pong-container-id');
 	container.appendChild(renderer.domElement);
-	// renderer.setAnimationLoop(animate);
 
-	// CONTROLS
-
-	// controls = new OrbitControls( camera, renderer.domElement);
-	// controls.update();
-
-	// TEXT TEXTURE
-	// const textCanvas = document.createElement('canvas');
-	// const textContext = textCanvas.getContext('2d');
-	// textCanvas.width  = 512;
-	// textCanvas.height = 512;
-	// textContext.fillStyle = 'black';
-	// textContext.fillRect(0, 0, textCanvas.width, textCanvas.height);
-	// textContext.fillStyle = 'white';
-	// textContext.font = 'Bold 40px Arial';
-	// textContext.fillText('Game Starting', 50, 200);
-
-	// const textTexture = new THREE.CanvasTexture(textCanvas);
-	// const textGeometry = new THREE.PlaneGeometry(5, 5);
-	// const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture });
-	// const textPlane = new THREE.Mesh(textGeometry, textMaterial);
-	// scene.add(textPlane);
 
 	// OVERLAY TEXT
 	overlayText = document.getElementById('overlay-text');
@@ -393,14 +414,9 @@ function Init()
 	arenaLeftSide.position.x -= 8.25;
 
 	// Ball
-	// const cubeGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-	// cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
 	ball = new THREE.Mesh(ballGeometry, ballMaterial);
-	// scene.add(cube);
 	scene.add(ball);
-
-	// ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
 
 
 	// Paddles
@@ -452,7 +468,7 @@ function Loop()
 	requestAnimationFrame(Loop);
 	Inputs();
 	Update();
-	Render();
+	renderer.render(scene, camera);
 }
 
 function Inputs()
@@ -470,11 +486,6 @@ function Inputs()
 	//CLIENT SIDE PADDLE INPUTS
 	if (keys.w)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'1',
-		// 	'action':'up'
-		// }))
-
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
@@ -483,10 +494,6 @@ function Inputs()
 
 	if (keys.s)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'1',
-		// 	'action':'down'
-		// }))
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'down'
@@ -495,11 +502,6 @@ function Inputs()
 
 	if (keys.arrowup)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'2',
-		// 	'action':'up'
-		// }))
-		// socket.emit(inputEvent, 'up');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
@@ -508,11 +510,6 @@ function Inputs()
 
 	if (keys.arrowdown)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'2',
-		// 	'action':'down'
-		// }))
-		// socket.emit(inputEvent, 'down');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'down'
@@ -522,17 +519,7 @@ function Inputs()
 
 function Update()
 {
-	// Wireframe Cube
-	// cube.position.x = ball.position.x;
-	// cube.position.y = ball.position.y;
-
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
 }
-
-function Render()
-{
-	renderer.render(scene, camera);
-}
-

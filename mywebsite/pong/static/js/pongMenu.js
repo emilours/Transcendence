@@ -1,9 +1,10 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent, GetUsers } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, GetUsers, UpdateWaitingPlayer } from './pong.js';
+import { StartLocalGame } from './pongLocal.js'
 
 export function initPong(userName) {
 	// let user = 'userName';
-	var lobbyMenu;
+	let lobbyMenu;
 	console.log('Pong game initialized - user:', userName);
 
 	function drawMainMenu() {
@@ -17,6 +18,7 @@ export function initPong(userName) {
 				}),
 				createButton('LOCAL MATCH', () => {
 					mainMenu.remove();
+					StartLocalGame();
 				}),
 				createButton('TOURNAMENT', () => {
 					mainMenu.remove();
@@ -52,6 +54,7 @@ export function initPong(userName) {
 		document.querySelector('.pong-container').appendChild(onlineMenu);
 	}
 
+	
 	function drawLobbyMenu(mode) {
 		lobbyMenu = createElement('div', { className: 'menu' },
 			createElement('h2', { innerText: 'ONLINE MATCH' }),
@@ -67,17 +70,18 @@ export function initPong(userName) {
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo('waiting'),
 			);
+			UpdateWaitingPlayer(player1Info, player2Info);
+
 			lobbyMenu.appendChild(playerInfo);
 		}
 		if (mode === 'join') {
-			var [user1, user2 ] = GetUsers();
-			console.log('userName: ' + userName + ' | user1: ' + user1 + ' | user2: ' + user2);
 
 			let playerInfo = createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;' },
-				player1Info = drawPlayerInfo(user1),
+				player1Info = drawPlayerInfo('waiting'),
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo(userName),
 			);
+			UpdateWaitingPlayer(player1Info, player2Info);
 			lobbyMenu.appendChild(playerInfo);
 		}
 
@@ -109,8 +113,6 @@ export function initPong(userName) {
 				buttonReady.innerText = 'OK';
 				console.log("lobby: ", lobbyMenu);
 				SendEvent('player_ready', lobbyMenu);
-				// SendEvent('start_game', lobbyMenu);
-
 			})
 		);
 		return playerInfo;

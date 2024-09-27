@@ -1,77 +1,3 @@
-# import json, time, threading
-# import asyncio
-# import websockets
-
-# async def websocket_handler(websocket, path):
-#     print("Client connected!")
-#     try:
-
-#         async for message in websocket:
-#             print(f"Received message from client: {message}")
-#             await websocket.send(f"Server received: {message}")
-#     except websockets.ConnectionClosed:
-#         print("Client disconnected!")
-
-# # TODO: Needs to be async so it doesn't interupt the whole server
-# async def start_game():
-#     thread_id = threading.get_ident()
-#     print(f"[ID: {thread_id}] in start_game()")
-#     server = await websockets.serve(websocket_handler, "0.0.0.0", 6789)
-#     print("WebSocket server started at ws://127.0.0.1:6789")
-#     await server.wait_closed()
-
-# if __name__ == "__main__":
-#     asyncio.get_event_loop().run_until_complete(start_game())
-
-
-""" # SOCKETS can't connect to websocket
-import socket
-# from _thread import *
-import sys
-
-def main():
-	server = "0.0.0.0"
-	port = 6789
-
-	pongSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-	try:
-		pongSocket.bind((server, port))
-	except socket.error as e:
-		str(e)
-
-	# number of maximum connections: 2
-	# do this in loop so a new lobby is created if the previous one is full
-	pongSocket.listen(2)
-	print("Server started at 127.0.0.1:6789")
-
-	# currentPlayer = 0
-
-	while True:
-		conn, addr = pongSocket.accept()
-		# currentPlayer += 1
-		print("Connected to: ", addr)
-
-		# conn.send("Connection established!")
-		# conn.sendall(f"There is {currentPlayer} connected")
-
-		# Start thread when 2 are connected
-
-if __name__ == "__main__":
-	main() """
-
-
-# import websocket
-
-# def main():
-# 	server = "0.0.0.0"
-# 	port = 6789
-
-# 	socket = websocket
-
-# if __name__ == "__main__":
-# 	main()
-
 import os
 import django
 
@@ -160,7 +86,7 @@ def SaveMatch(room_id, game_type):
     log("SAVING MATCH TO DB")
     # normal or tournament
     
-    game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
+    game, _ = Game.objects.get_or_create(name='pong', description=game_type)
     match = Match.objects.create(game=game, status='completed', details=game_type)
 
     # player1
@@ -385,10 +311,12 @@ async def PlayerReady(sid):
 async def SendUsers(sid):
     global games
 
+    log(f"SendUsers({sid})")
+
     session = await sio.get_session(sid)
 
     room_id = session.get('room_id')
-    await sio.emit('send_users', games[room_id]['players'], to=sid)
+    await sio.emit('send_users', games[room_id]['players'], room=room_id)
 
 @sio.on('pong_input')
 async def PongInput(sid, text_data):
@@ -522,3 +450,80 @@ if __name__ == "__main__":
     # eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 6789)), app)
     log("STARTING SOCKET SERVER")
     uvicorn.run(app, host='0.0.0.0', port=6789)
+
+
+# OTHER METHOD
+
+# import json, time, threading
+# import asyncio
+# import websockets
+
+# async def websocket_handler(websocket, path):
+#     print("Client connected!")
+#     try:
+
+#         async for message in websocket:
+#             print(f"Received message from client: {message}")
+#             await websocket.send(f"Server received: {message}")
+#     except websockets.ConnectionClosed:
+#         print("Client disconnected!")
+
+# # TODO: Needs to be async so it doesn't interupt the whole server
+# async def start_game():
+#     thread_id = threading.get_ident()
+#     print(f"[ID: {thread_id}] in start_game()")
+#     server = await websockets.serve(websocket_handler, "0.0.0.0", 6789)
+#     print("WebSocket server started at ws://127.0.0.1:6789")
+#     await server.wait_closed()
+
+# if __name__ == "__main__":
+#     asyncio.get_event_loop().run_until_complete(start_game())
+
+
+""" # SOCKETS can't connect to websocket
+import socket
+# from _thread import *
+import sys
+
+def main():
+	server = "0.0.0.0"
+	port = 6789
+
+	pongSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+	try:
+		pongSocket.bind((server, port))
+	except socket.error as e:
+		str(e)
+
+	# number of maximum connections: 2
+	# do this in loop so a new lobby is created if the previous one is full
+	pongSocket.listen(2)
+	print("Server started at 127.0.0.1:6789")
+
+	# currentPlayer = 0
+
+	while True:
+		conn, addr = pongSocket.accept()
+		# currentPlayer += 1
+		print("Connected to: ", addr)
+
+		# conn.send("Connection established!")
+		# conn.sendall(f"There is {currentPlayer} connected")
+
+		# Start thread when 2 are connected
+
+if __name__ == "__main__":
+	main() """
+
+
+# import websocket
+
+# def main():
+# 	server = "0.0.0.0"
+# 	port = 6789
+
+# 	socket = websocket
+
+# if __name__ == "__main__":
+# 	main()
