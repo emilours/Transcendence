@@ -465,31 +465,38 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-def check_friend_request_status(user):
-    pending_requests = FriendRequest.objects.filter(
-        Q(sender=user) | Q(receiver=user),
-        status__in=['accepted', 'declined']
-    )
-    if pending_requests.exists():
-        return [
-            {
-                "id": friend_request.id,
-                "sender": friend_request.sender.display_name,
-                "receiver": friend_request.receiver.display_name,
-                "status": friend_request.status
-            }
-            for friend_request in pending_requests
-        ]
-    return []
+# def check_friend_request_status(user):
+#     pending_requests = FriendRequest.objects.filter(
+#         Q(sender=user) | Q(receiver=user),
+#         status__in=['accepted', 'declined']
+#     )
+#     if pending_requests.exists():
+#         return [
+#             {
+#                 "id": friend_request.id,
+#                 "sender": friend_request.sender.display_name,
+#                 "receiver": friend_request.receiver.display_name,
+#                 "status": friend_request.status
+#             }
+#             for friend_request in pending_requests
+#         ]
+#     return []
 
-def sse(request):
-    def event_stream():
-        last_status = None
-        while True:
-            status_update = check_friend_request_status(request.user)
-            if status_update != last_status:
-                last_status = status_update
-                yield f"data: {json.dumps(status_update)}\n\n"
-            time.sleep(5)
+# def sse(request):
+#     if not request.user.is_authenticated:
+#         return StreamingHttpResponse("data: Unauthorized\n\n", status=401, content_type='text/event-stream')
 
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+#     def event_stream():
+#         last_status = None
+#         while True:
+#             try:
+#                 status_update = check_friend_request_status(request.user)
+#                 if status_update != last_status:
+#                     last_status = status_update
+#                     yield f"data: {json.dumps(status_update)}\n\n"
+#                 time.sleep(5)
+#             except Exception as e:
+#                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
+#                 break
+#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
