@@ -19,7 +19,7 @@
 							<div class="mb-3">
 								<label for="password" class="form-label">Password</label>
 								<input type="password" class="form-control rounded-1" id="password" name="password" placeholder="Password" maxlength="100" required>
-							</div>https://getbootstrap.com/docs/5.3/components/navbar/#
+							</div>
 							<div class="my-4 form-check">
 								<input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
 								<label class="form-check-label" for="rememberMe">Remember me</label>
@@ -29,7 +29,7 @@
 
 						<div class="text-center mt-3">
 							<p>Or login with:</p>
-							<a href="https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-5641bcb4cc525bd5757aa71984f8605d72e965662f61cdb4fdf943f4c7052726&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Foauth%2Fcomplete%2F42%2F&response_type=code" class="btn btn-secondary w-100">
+							<a href="{{ api_42_auth_url }}" class="btn btn-outline-secondary w-100 rounded-3">
 								Login with <img src="{% static 'img/42_Logo.png' %}" id="logo-42" alt="Login with 42 school account" width="24" height="24">
 							</a>
 						</div>

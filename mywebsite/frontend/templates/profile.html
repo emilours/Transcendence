@@ -18,7 +18,11 @@
 							<p class="text-center mb-4 text-secondary-emphasis"><strong>Email:</strong> {{ user.email }}</p>
 							<a href="" class="btn btn-primary mb-2" id="edit-profile">Edit Profile</a>
 							<a href="" class="btn btn-primary ms-2 mb-2" id="edit-password">Edit Password</a>
-							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}">
+							<form id="anonymize-data-form" method="POST" action="{% url 'authentification:request_anonymization' %}">
+								{% csrf_token %}
+								<button type="submit" class="btn btn-primary ms-2 mb-2 rounded-2" onclick="return confirm('Are you sure you want to anonymize your data? This action cannot be undone.');">Anonymize Data</button>
+							</form>
+							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}" class="d-inline">
 								{% csrf_token %}
 								<button type="submit" class="btn btn-danger ms-2 mb-2 rounded-2" onclick="return confirm('Are you sure you want to delete your account?');">
 									Delete Account

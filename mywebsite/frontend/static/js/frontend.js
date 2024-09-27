@@ -3,6 +3,25 @@ import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
+	// SSE - Server-Sent Events
+	// const eventSource = new EventSource('/auth/sse/');
+	// eventSource.onmessage = function(event) {
+	// 	console.log('Message received:', event);
+	// 	const data = JSON.parse(event.data);
+	// 	if (data && data.length > 0) {
+	// 		alert("New friend request");
+	// 		if (window.location.pathname === '/profile/') {
+	// 			loadContent('/profile/', false);
+	// 		}
+	// 	}
+	// };
+	// eventSource.onerror = function(event) {
+	// 	console.error('SSE connection failed:', event);
+	// 	if (event.eventPhase === EventSource.CLOSED) {
+	// 		eventSource.close();
+	// 	}
+	// };
+
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
 
@@ -173,6 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'edit-profile-form', url: '/auth/update_profile/' },
 			{ id: 'edit-password-form', url: '/auth/update_password/' },
 			{ id: 'delete-account-form', url: '/auth/delete_profile/' },
+			{ id: 'anonymize-data-form', url: '/auth/request_anonymization/' },
 		];
 
 		forms.forEach(({ id, url }) => {
@@ -207,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'amonymize-data-form') {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else {
