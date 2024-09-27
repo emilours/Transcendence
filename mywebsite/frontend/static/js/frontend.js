@@ -209,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'edit-profile-form', url: '/auth/update_profile/' },
 			{ id: 'edit-password-form', url: '/auth/update_password/' },
 			{ id: 'delete-account-form', url: '/auth/delete_profile/' },
+			{ id: 'anonymize-data-form', url: '/auth/request_anonymization/' },
 		];
 
 		forms.forEach(({ id, url }) => {
@@ -243,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'amonymize-data-form') {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else {
