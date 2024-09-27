@@ -16,6 +16,8 @@ from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 from django.http import StreamingHttpResponse
 from django.db.models import Q
+import json
+import time
 import os
 
 User = get_user_model()
@@ -463,13 +465,11 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-def check_friend_request_status(request):
-    user = request.user
+def check_friend_request_status(user):
     pending_requests = FriendRequest.objects.filter(
         Q(sender=user) | Q(receiver=user),
         status__in=['accepted', 'declined']
     )
-
     if pending_requests.exists():
         return [
             {
@@ -480,7 +480,6 @@ def check_friend_request_status(request):
             }
             for friend_request in pending_requests
         ]
-    # return tableau vide, reponse json valide
     return []
 
 def sse(request):
