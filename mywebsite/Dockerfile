@@ -15,16 +15,16 @@ COPY requirements.txt .
 
 # Install any dependencies
 RUN apt-get update && \
-	apt-get install -y postgresql-client openssl supervisor && \
+	apt-get install -y postgresql-client openssl && \
 	pip install --no-cache-dir -r requirements.txt
 
 # Copy the script to the working directory and make it executable
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 
-COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-CMD ["/usr/bin/supervisord"]
+# CMD ["/usr/bin/supervisord"]
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
