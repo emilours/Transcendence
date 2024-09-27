@@ -17,6 +17,8 @@ from django.shortcuts import get_object_or_404
 from django.http import StreamingHttpResponse
 from django.db.models import Q
 from django.utils.crypto import get_random_string
+from django.http import StreamingHttpResponse
+import asyncio
 import json
 import time
 import os
@@ -465,37 +467,58 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-# def check_friend_request_status(user):
-#     pending_requests = FriendRequest.objects.filter(
-#         Q(sender=user) | Q(receiver=user),
-#         status__in=['accepted', 'declined']
-#     )
-#     if pending_requests.exists():
-#         return [
-#             {
-#                 "id": friend_request.id,
-#                 "sender": friend_request.sender.display_name,
-#                 "receiver": friend_request.receiver.display_name,
-#                 "status": friend_request.status
-#             }
-#             for friend_request in pending_requests
-#         ]
-#     return []
+@login_required
+def sse(request):
+    async def event_stream():
+        last_status = None
+        while True:
+            status_update = await asyncio.to_thread(check_friend_request_status, request.user)
+            if status_update != last_status:
+                yield f"data: {json.dumps(status_update)}\n\n"
+                last_status = status_update
+            await asyncio.sleep(5)
 
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+def check_friend_request_status(user):
+    pending_requests = FriendRequest.objects.filter(
+        Q(sender=user) | Q(receiver=user),
+        status__in=['accepted', 'declined', 'pending']
+    )
+    if pending_requests.exists():
+        return [
+            {
+                "id": friend_request.id,
+                "sender": friend_request.sender.display_name,
+                "receiver": friend_request.receiver.display_name,
+                "status": friend_request.status
+            }
+            for friend_request in pending_requests
+        ]
+    return []
+
+# @login_required
 # def sse(request):
-#     if not request.user.is_authenticated:
-#         return StreamingHttpResponse("data: Unauthorized\n\n", status=401, content_type='text/event-stream')
-
-#     def event_stream():
+#     async def event_stream():
 #         last_status = None
 #         while True:
-#             try:
-#                 status_update = check_friend_request_status(request.user)
-#                 if status_update != last_status:
-#                     last_status = status_update
-#                     yield f"data: {json.dumps(status_update)}\n\n"
-#                 time.sleep(5)
-#             except Exception as e:
-#                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
-#                 break
+#             # Use a cache or notification system to get the latest status
+#             status_update = await asyncio.to_thread(get_latest_status, request.user)
+#             if status_update != last_status:
+#                 yield f"data: {json.dumps(status_update)}\n\n"
+#                 last_status = status_update
+#             await asyncio.sleep(5)
+
 #     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+# def get_latest_status(user):
+#     # Retrieve the latest friend request status from cache or database
+#     pass
+
+
+def sse_test(request):
+    def event_stream():
+        for i in range(5):
+            time.sleep(1)
+            yield f"data: Hello SSE {i}\n\n"
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
