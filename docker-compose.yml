@@ -46,7 +46,7 @@ services:
       mywebsite:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://localhost:8080/home"]
+      test: ["CMD", "curl", "-kf", "https://localhost:8080/home"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -66,8 +66,6 @@ volumes:
     name: db_volume
   static_volume:
     name: static_volume
-  # uploads_volume:
-  #   name: uploads_volume
   media_volume:
     name: media_volume
 

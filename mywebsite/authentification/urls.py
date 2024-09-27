@@ -18,7 +18,7 @@ urlpatterns = [
     path('request_anonymization/', auth_views.request_anonymization, name='request_anonymization'),
 
     # SSE view
-    path('sse/', auth_views.sse, name='sse'),
+    # path('sse/', auth_views.sse, name='sse'),
 
     # API URLs last
     path('oauth/complete/42/', api_views.callback_42, name='callback_42'),

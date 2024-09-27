@@ -18,6 +18,26 @@ document.addEventListener("DOMContentLoaded", () => {
 		console.error('EventSource failed:', event);
 	};
 
+// document.addEventListener("DOMContentLoaded", () => {
+// 	// SSE - Server-Sent Events
+// 	const eventSource = new EventSource('/auth/sse/');
+// 	eventSource.onmessage = function(event) {
+// 		console.log(event);
+// 		const data = JSON.parse(event.data);
+// 		if (data && data.length > 0) {
+// 			alert("New friend request");
+// 			if (window.location.pathname === '/profile/') {
+// 				loadContent('/profile/', false);
+// 			}
+// 		}
+// 	};
+// 	eventSource.onerror = function(error) {
+// 		console.error('EventSource failed:', error);
+// 		setTimeout(function() {
+// 			eventSource = new EventSource('/auth/sse/');
+// 		}, 5000);
+// 	};
+
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
 
