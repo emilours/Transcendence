@@ -3,6 +3,21 @@ import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
+	// SSE - Server-Sent Events
+	// const eventSource = new EventSource('/auth/sse/');
+	// eventSource.onmessage = function(event) {
+	// 	const data = JSON.parse(event.data);
+	// 	if (data && data.length > 0) {  // Vérifie que les données ne sont pas vides
+	// 		alert("New friend request");
+	// 		if (window.location.pathname === '/profile/') {
+	// 			loadContent('/profile/', false);
+	// 		}
+	// 	}
+	// };
+	// eventSource.onerror = function(event) {
+	// 	console.error('EventSource failed:', event);
+	// };
+
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
 

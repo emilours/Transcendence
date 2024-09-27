@@ -20,9 +20,11 @@ from django.shortcuts import get_object_or_404
 import os
 import json
 import time
+from time import sleep
 from django.http import HttpResponse
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.http import StreamingHttpResponse
 
 User = get_user_model()
 
@@ -62,7 +64,7 @@ def signup(request):
 
     if not firstname or not lastname or not email or not password1 or not password2 or not display_name:
         return JsonResponse({"error": "All fields are required."}, status=400)
-    
+
     try:
         validate_no_special_characters(firstname)
         validate_no_special_characters(lastname)
@@ -471,26 +473,30 @@ def request_anonymization(request):
 
 @login_required
 def sse_view(request):
-    response = HttpResponse(content_type='text/event-stream')
-    response['Cache-Control'] = 'no-cache'
-    response['Connection'] = 'keep-alive'
-
-    def event_stream():
-        last_seen_id = 0
+    def event_stream(user):
+        last_seen_id = 0  # Initialiser l'ID à zéro pour la première exécution
         while True:
-            time.sleep(5)
-            requests = FriendRequest.objects.filter(id__gt=last_seen_id)
-            for req in requests:
-                last_seen_id = max(last_seen_id, req.id)
-                data = {
-                    "id": req.id,
-                    "sender": req.sender.username,
-                    "receiver": req.receiver.username,
-                    "status": req.status
-                }
-                yield f"data: {json.dumps(data)}\n\n"
-    
-    response.streaming_content = event_stream()
+            # Récupérer les demandes d'amis qui ont un ID supérieur au dernier vu
+            new_requests = FriendRequest.objects.filter(receiver=user, status='pending', id__gt=last_seen_id)
+
+            if new_requests.exists():
+                # Parcourir les nouvelles demandes et mettre à jour le dernier identifiant vu
+                for request in new_requests:
+                    last_seen_id = max(last_seen_id, request.id)
+                    # Préparer les données à envoyer
+                    data = {
+                        "id": request.id,
+                        "sender": request.sender.display_name,
+                        "receiver": request.receiver.display_name,
+                        "status": request.status
+                    }
+                    # Envoyer les données au client
+                    yield f"data: {json.dumps(data)}\n\n"
+
+            sleep(5)  # Pause de 5 secondes avant de réessayer
+
+    # Envoyer les événements en streaming avec un content-type SSE
+    response = StreamingHttpResponse(event_stream(request.user), content_type='text/event-stream')
     return response
 
 # # ================================================================================================================================================================
