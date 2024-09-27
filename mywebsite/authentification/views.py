@@ -16,6 +16,7 @@ from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 from django.http import StreamingHttpResponse
 from django.db.models import Q
+from django.utils.crypto import get_random_string
 import json
 import time
 import os
@@ -450,7 +451,6 @@ def request_anonymization(request):
         with transaction.atomic():
             unique_suffix = get_random_string(length=8)
 
-            user.email = f'anonymized_{unique_suffix}@example.com'
             user.display_name = f'Anonymous_{unique_suffix}'
             user.first_name = 'Anonymous'
             user.last_name = 'Anonymous'
