@@ -2,36 +2,14 @@ import { initInvaders } from '/static/js/invaders.js';
 import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
-// document.addEventListener("DOMContentLoaded", () => {
-	// SSE - Server-Sent Events
-	// const eventSource = new EventSource('/auth/sse/');
-	// eventSource.onmessage = function(event) {
-	// 	console.log('Message received:', event);
-	// 	const data = JSON.parse(event.data);
-	// 	if (data && data.length > 0) {
-	// 		alert("New friend request");
-	// 		if (window.location.pathname === '/profile/') {
-	// 			loadContent('/profile/', false);
-	// 		}
-	// 	}
-	// };
-	// eventSource.onerror = function(event) {
-	// 	console.error('SSE connection failed:', event);
-	// 	if (event.eventPhase === EventSource.CLOSED) {
-	// 		eventSource.close();
-	// 	}
-	// };
-
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	const eventSource = new EventSource('/auth/sse/');
 	eventSource.onmessage = function(event) {
-		console.log("SSE message received: ", event.data); // Log pour vérifier les données reçues
 		const data = JSON.parse(event.data);
-		if (data && data.length > 0) {
-			// alert("New friend request");
+		if (data && (data.friend_requests || data.friend_count >= 0)) {
 			if (window.location.pathname === '/profile/') {
-				loadContent('/profile/', false);
+				loadContent('/profile/', 0);
 			}
 		}
 	};
@@ -42,41 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			eventSource = new EventSource('/auth/sse/');
 		}, 5000);
 	};
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     // SSE - Server-Sent Events
-//     const eventSource = new EventSource('/auth/sse/');
-
-//     eventSource.onmessage = function(event) {
-//         console.log("SSE message received: ", event.data); // Log to check received data
-
-//         const data = JSON.parse(event.data);
-//         if (data && data.length > 0) {
-//             // Update UI directly instead of using alert
-//             updateUIWithFriendRequests(data);
-//         }
-//     };
-
-//     eventSource.onerror = function(error) {
-//         console.error('EventSource error:', error);
-//         // Attempt to reconnect
-//         setTimeout(() => {
-//             eventSource = new EventSource('/auth/sse/');
-//         }, 5000);
-//     };
-
-//     function updateUIWithFriendRequests(data) {
-//         // Example function to update the UI
-//         // This function should be implemented based on your specific needs
-//         const profileSection = document.querySelector('#profile-section'); // Adjust selector as needed
-//         if (window.location.pathname === '/profile/') {
-//             loadContent('/profile/', false);
-//         } else {
-//             // Example of updating some part of the page with new data
-//             profileSection.innerHTML = `<p>You have new friend requests: ${data.length}</p>`;
-//         }
-//     }
-// });
 
 	// SPA - Single Page Application
 	const app = document.getElementById('app');

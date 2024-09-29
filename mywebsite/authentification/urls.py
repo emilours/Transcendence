@@ -19,7 +19,7 @@ urlpatterns = [
 
     # SSE view
     path('sse/', auth_views.sse, name='sse'),
-    path('sse_test/', auth_views.sse_test, name='sse_test'),
+    # path('sse_test/', auth_views.sse_test, name='sse_test'),
 
     # API URLs last
     path('oauth/complete/42/', api_views.callback_42, name='callback_42'),

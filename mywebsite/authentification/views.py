@@ -470,21 +470,32 @@ def request_anonymization(request):
 @login_required
 def sse(request):
     async def event_stream():
-        last_status = None
+        last_status = []
+        last_number = await asyncio.to_thread(check_friendlist_update, request.user)
         while True:
-            status_update = await asyncio.to_thread(check_friend_request_status, request.user)
-            if status_update != last_status:
-                yield f"data: {json.dumps(status_update)}\n\n"
+            status_update = await asyncio.to_thread(check_friend_request_update, request.user)
+            number_update = await asyncio.to_thread(check_friendlist_update, request.user)
+            
+            if status_update != last_status or last_number != number_update:
+                combined_update = {
+                    "friend_requests": status_update,
+                    "friend_count": number_update
+                }
+                yield f"data: {json.dumps(combined_update)}\n\n"
+                
                 last_status = status_update
+                last_number = number_update
+                
             await asyncio.sleep(5)
-
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    
 
-def check_friend_request_status(user):
+def check_friend_request_update(user):
     pending_requests = FriendRequest.objects.filter(
         Q(sender=user) | Q(receiver=user),
         status__in=['accepted', 'declined', 'pending']
     )
+
     if pending_requests.exists():
         return [
             {
@@ -497,28 +508,16 @@ def check_friend_request_status(user):
         ]
     return []
 
-# @login_required
-# def sse(request):
-#     async def event_stream():
-#         last_status = None
-#         while True:
-#             # Use a cache or notification system to get the latest status
-#             status_update = await asyncio.to_thread(get_latest_status, request.user)
-#             if status_update != last_status:
-#                 yield f"data: {json.dumps(status_update)}\n\n"
-#                 last_status = status_update
-#             await asyncio.sleep(5)
+def check_friendlist_update(user):
+    try:
+        friendlist = FriendList.objects.get(user=user)
+        return friendlist.friend_count()
+    except FriendList.DoesNotExist:
+        return 0
 
+# def sse_test(request):
+#     def event_stream():
+#         for i in range(5):
+#             time.sleep(1)
+#             yield f"data: Hello SSE {i}\n\n"
 #     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
-# def get_latest_status(user):
-#     # Retrieve the latest friend request status from cache or database
-#     pass
-
-
-def sse_test(request):
-    def event_stream():
-        for i in range(5):
-            time.sleep(1)
-            yield f"data: Hello SSE {i}\n\n"
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
