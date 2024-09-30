@@ -467,7 +467,7 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-@login_required
+# @login_required
 def sse(request):
     async def event_stream():
         last_status = []
