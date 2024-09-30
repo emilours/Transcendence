@@ -13,6 +13,7 @@ from frontend.models import CustomUser
 
 import socketio, uuid, asyncio, json
 from asgiref.sync import sync_to_async
+from urllib.parse import parse_qs
 
 
 # CONST VARIABLES
@@ -52,7 +53,12 @@ games = {}
 #     'http://localhost:8080',
 #     'https://admin.socket.io',
 # ])
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins='*',
+    logger=True,
+    engineio_logger=True
+    )
 # if instrument:
 #     sio.instrument(auth=admin_login)
 
@@ -300,6 +306,8 @@ async def PlayerReady(sid):
 
     log(f"CHECK: {games[room_id]}")
     start = True
+    if not IsRoomFull():
+        start = False
     for ready in games[room_id]['ready']:
         log(f"ready: {ready}")
         if ready == 0:
@@ -356,15 +364,18 @@ async def PongInput(sid, text_data):
 async def StartGame(sid):
     global games
 
+    username
     log('StartGame()')
-    environ = sio.get_environ(sid)
-    username = environ.get('HTTP_X_USERNAME')
-    game_type = environ.get('HTTP_X_GAMETYPE')
+    try:
+        session = await sio.get_session(sid)
+        username = session.get('username')
+    except KeyError:
+        log(f"KeyError in StartGame()")
     room_id = GetUserRoom(username)
     room_full = IsRoomFull(room_id)
     if room_full == NORMAL_GAME:
         # await sio.emit('init_game', room=room_id)
-        asyncio.create_task(StartGameLoop(sid, game_type, room_id))
+        asyncio.create_task(StartGameLoop(sid, games[room_id]['game_type'], room_id))
     elif room_full == TOURNAMENT_GAME:
           pass
     else:
@@ -378,15 +389,21 @@ async def connect(sid, environ):
 
     client_count += 1
     await sio.emit('client_count', client_count)
-    username = environ.get('HTTP_X_USERNAME')
-    game_type = environ.get('HTTP_X_GAMETYPE')
+
+    query_string = environ.get('QUERY_STRING')
+    query = parse_qs(query_string)
+    username = query.get('username', [None])[0]
+    game_type = query.get('gameType', [None])[0]
+
     if not username or not game_type:
+        log(f"No username: {username} or game type: {game_type}")
         await sio.disconnect(sid)
-        return False, 'No username or game type'
+        return False
     if await UserAlreadyConnected(username):
+        log("User already connected to socket")
         await sio.disconnect(sid)
-        return False, 'User already connected to socket'
-    connected_users[sid] = True
+        return False
+    connected_users[sid] = username
     log(f"User {username} connected ({sid})")
 
     room_id = GetUserRoom(username)
@@ -442,14 +459,16 @@ async def disconnect(sid):
 
 
 if __name__ == "__main__":
-    # import eventlet
-    # import eventlet.wsgi
     import uvicorn
 
+    # Path to your SSL certificates
+    ssl_certfile = "daphne/nginx.crt"
+    ssl_keyfile = "daphne/nginx.key" 
+
     # Run the server
-    # eventlet.wsgi.server(eventlet.listen(('0.0.0.0', 6789)), app)
     log("STARTING SOCKET SERVER")
-    uvicorn.run(app, host='0.0.0.0', port=6789)
+    # , ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile
+    uvicorn.run(app, host='0.0.0.0', port=6789, ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile)
 
 
 # OTHER METHOD

@@ -14,7 +14,7 @@ var overlayText;
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 // var threadID;
 var gameType, socket;
-var userName, user1, user2;
+var userName, user1, user2, user3, user4;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -25,9 +25,9 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var menu, player1Info, player2Info;
+var menu, player1Info, player2Info, player3Info, player4Info;
 
-export function UpdateWaitingPlayer(player1, player2)
+export function UpdatePlayerInfo(player1, player2)
 {
 	// /!\ Those 2 lines are very different:
 	// console.log("player1: ", player1);
@@ -74,20 +74,19 @@ export function ConnectWebsocket(type, username)
         console.log('Existing socket disconnected');
     }
 	
-	socket = io("http://localhost:6789", {
-		transportOptions: {
-			polling: {
-				extraHeaders: {
-					'X-Username': username,
-					'X-Gametype': gameType
-				}
-			}
+	// ws:// working fine
+	socket = io('wss://localhost:6789', {
+		transports: ['websocket'],  // Use only WebSocket transport
+		secure: true,
+		query: {
+			username: username,  // Pass username in the query string
+			gameType: gameType   // Pass game type in the query string
 		}
 	});
 
 
 	socket.on("connect", function() {
-		console.log("Connected to the server");
+		console.log("Connected to the server with WSS");
 	});
 	socket.on("message", function(message) {
 		console.log("Message from server: ", message);
@@ -140,6 +139,8 @@ export function ConnectWebsocket(type, username)
 		console.log("Users received: user1 - " + data[0] + " | user2 - " + data[1]);
 		user1 = data[0];
 		user2 = data[1];
+		user3 = data[2];
+		user4 = data[3];
 
 		if (player1Info)
 		{
@@ -368,6 +369,8 @@ function Init()
 	};
 
 	document.body.addEventListener( 'keydown', function(e) {
+	if (e.key === "ArrowUp" || e.key === "ArrowDown")
+		e.preventDefault();
 	var key = e.code.replace('Key', '').toLowerCase();
 	// console.log("key: " + key);
 	if ( keys[ key ] !== undefined )

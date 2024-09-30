@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent, GetUsers, UpdateWaitingPlayer } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 export function initPong(userName) {
@@ -70,7 +70,7 @@ export function initPong(userName) {
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo('waiting'),
 			);
-			UpdateWaitingPlayer(player1Info, player2Info);
+			UpdatePlayerInfo(player1Info, player2Info);
 
 			lobbyMenu.appendChild(playerInfo);
 		}
@@ -81,7 +81,7 @@ export function initPong(userName) {
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo(userName),
 			);
-			UpdateWaitingPlayer(player1Info, player2Info);
+			UpdatePlayerInfo(player1Info, player2Info);
 			lobbyMenu.appendChild(playerInfo);
 		}
 

@@ -192,6 +192,8 @@ function Init()
 	};
 
 	document.body.addEventListener( 'keydown', function(e) {
+	if (e.key === "ArrowUp" || e.key === "ArrowDown")
+		e.preventDefault();
 	var key = e.code.replace('Key', '').toLowerCase();
 	// console.log("key: " + key);
 	if ( keys[ key ] !== undefined )
@@ -392,6 +394,9 @@ function Update()
 	if (leftPlayerScore >= 5 || rightPlayerScore >= 5)
 	{
 		running = false;
+		// Need to removeEventListener when leaving game also
+		// or don't care because everybody scrolls with mouse wheel
+		document.body.removeEventListener("keydown", function(event) {});
 		if (overlayText.classList.contains('text-overlay'))
 		{
 			overlayText.classList.remove('text-overlay');
