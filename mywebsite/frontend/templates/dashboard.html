@@ -13,7 +13,7 @@
 						<table class="table table-striped table-hover dashboard-table">
 							<thead>
 								<tr class="font-balsamiq">
-									<th class="text-secondary-emphasis">Score</th>
+									<th class="text-secondary-emphasis">Result</th>
 									<th class="text-secondary-emphasis">Date</th>
 									<th class="text-secondary-emphasis">Game</th>
 								</tr>
@@ -23,7 +23,17 @@
 									{% for entry in dashboard_data %}
 										{% if forloop.counter <= 5 %}
 											<tr>
-												<td class="text-secondary-emphasis">{{ entry.score }}</td>
+												<td class="text-secondary-emphasis">
+													{% if entry.match.game.name == "Invaders" %}
+														{{ entry.score }}
+													{% elif entry.match.game.name == "Pong" %}
+														{% if entry.is_winner %}
+															<span class="text-success">Won</span>
+															{% else %}
+															<span class="text-danger">Lost</span>
+														{% endif %}
+													{% endif %}
+												</td>
 												<td class="text-secondary-emphasis">{{ entry.match.date|date:"Y-m-d" }}</td>
 												<td class="text-secondary-emphasis">{{ entry.match.game.name }}</td>
 											</tr>
@@ -92,7 +102,13 @@
 								{% if invaders_stats %}
 									<tr>
 										<td class="text-secondary-emphasis text-center">{{ invaders_stats.total_matches }}</td>
-										<td class="text-secondary-emphasis text-center">{{ invaders_stats.average|floatformat:0 }}</td>
+										<td class="text-secondary-emphasis text-center">
+											{% if invaders_stats.average %}
+												{{ invaders_stats.average|floatformat:0 }}
+											{% else %}
+												No games
+											{% endif %}
+										</td>
 										<td class="text-secondary-emphasis text-center">{{ invaders_stats.max_score }}</td>
 									</tr>
 								{% else %}

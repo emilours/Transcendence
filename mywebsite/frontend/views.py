@@ -92,20 +92,22 @@ def games(request):
 	return render(request, 'base.html')
 
 def leaderboard(request):
-	leaderboard_data = PlayerMatch.objects.select_related('player', 'match').order_by('-score')
+	players = PlayerMatch.objects.filter(match__game__name="Pong").values('player').distinct()
 
 	pong_leaderboard = []
+
+	for player_data in players:
+		player = player_data['player']
+		player_instance = CustomUser.objects.get(id=player)
+		victories = PlayerMatch.objects.filter(player=player_instance, match__game__name="Pong", is_winner=True).count()
+		defeats = PlayerMatch.objects.filter(player=player_instance, match__game__name="Pong", is_winner=False).count()
+		pong_leaderboard.append((player_instance.display_name, victories, defeats))
+
+	pong_leaderboard = sorted(pong_leaderboard, key=lambda x: (-x[1], x[2]))[:5]
+
+	leaderboard_data = PlayerMatch.objects.select_related('player', 'match').order_by('-score')
 	invaders_leaderboard = []
-
-	pong_rank = 1
 	invaders_rank = 1
-
-	for entry in leaderboard_data:
-		if entry.match.game.name == "Pong":
-			pong_leaderboard.append((pong_rank, entry))
-			pong_rank += 1
-		if pong_rank > 5:
-			break
 
 	for entry in leaderboard_data:
 		if entry.match.game.name == "Invaders":
