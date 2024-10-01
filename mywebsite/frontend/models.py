@@ -26,8 +26,8 @@ class CustomUserManager(BaseUserManager):
 		return self.create_user(email, password, **extra_fields)
 
 def validate_no_special_characters(value):
-    if not re.match(r'^[a-zA-Z]+$', value):
-        raise ValidationError('Error: this field can only contain letters. Special characters, numbers, and spaces are not allowed.')
+    if not re.match(r'^[a-zA-ZÀ-ÿ\s-]+$', value):
+        raise ValidationError('Error: this field can only contain letters.')
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 	email = models.EmailField(max_length=100, unique=True)
