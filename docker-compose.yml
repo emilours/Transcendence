@@ -74,6 +74,7 @@ volumes:
     name: media_volume
   daphne_volume:
     name: daphne_volume
+    
 
 networks:
   ft_transcendence:

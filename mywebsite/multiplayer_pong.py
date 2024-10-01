@@ -50,12 +50,13 @@ games = {}
 
 # Create a Socket.IO server with CORS allowed for all origins (*), or specify certain domains
 # sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=None if not instrument else [
-#     'http://localhost:8080',
+#     'https://localhost:8080',
 #     'https://admin.socket.io',
 # ])
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins='*',
+    cors_allowed_origins=['https://localhost:8080'],
+    ssl_verify=False,  # Disable SSL verification if self-signed
     logger=True,
     engineio_logger=True
     )
@@ -123,6 +124,22 @@ def SaveMatch(room_id, game_type):
     PlayerMatch.objects.create(player=player2, match=match, score=score2, is_winner=is_player_winner)
 
     log("Match properly saved!")
+
+@sync_to_async
+def GetPlayersAvatar(room_id):
+    avatars = []
+    log(f"Players: {games[room_id]['players']}")
+    for i in range (0, 4):
+        # if i in games[room_id]['players']:
+        if i < len(games[room_id]['players']) and games[room_id]['players'][i] is not None:
+            log(f"{i} initialized: {games[room_id]['players']}")
+            player = CustomUser.objects.filter(display_name=games[room_id]['players'][i])
+            if player.exists():
+                player = player.first()
+                avatars.append(player.avatar.url)
+        else:
+            log(f"{i} not initialized!")
+    return (avatars)
 
 async def StartGameLoop(sid, game_type, room_id):
     global games
@@ -324,7 +341,13 @@ async def SendUsers(sid):
     session = await sio.get_session(sid)
 
     room_id = session.get('room_id')
-    await sio.emit('send_users', games[room_id]['players'], room=room_id)
+
+    data = {
+        'users': games[room_id]['players'],
+        'avatars': await GetPlayersAvatar(room_id)
+    }
+    log(f"Data: {data}")
+    await sio.emit('send_users', data, room=room_id)
 
 @sio.on('pong_input')
 async def PongInput(sid, text_data):

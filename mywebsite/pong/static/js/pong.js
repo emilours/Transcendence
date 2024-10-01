@@ -14,7 +14,7 @@ var overlayText;
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 // var threadID;
 var gameType, socket;
-var userName, user1, user2, user3, user4;
+var userName, user1, user2, user3, user4, avatar1, avatar2, avatar3, avatar4;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -78,6 +78,7 @@ export function ConnectWebsocket(type, username)
 	socket = io('wss://localhost:6789', {
 		transports: ['websocket'],  // Use only WebSocket transport
 		secure: true,
+		reconnection: false, // Disable reconnection to observe disconnection behavior
 		query: {
 			username: username,  // Pass username in the query string
 			gameType: gameType   // Pass game type in the query string
@@ -136,13 +137,19 @@ export function ConnectWebsocket(type, username)
 	// 	StartGame();
 	// });
 	socket.on('send_users', function(data) {
-		console.log("Users received: user1 - " + data[0] + " | user2 - " + data[1]);
-		user1 = data[0];
-		user2 = data[1];
-		user3 = data[2];
-		user4 = data[3];
+		// TODO: Make this cleaner
+		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
+		user1 = data.users[0];
+		user2 = data.users[1];
+		user3 = data.users[2];
+		user4 = data.users[3];
+		avatar1 = data.avatars[0];
+		avatar2 = data.avatars[1];
+		avatar3 = data.avatars[2];
+		avatar4 = data.avatars[3];
 
-		if (player1Info)
+		// can just check later if avatar[i] is undefined then default img
+		if (player1Info && user1 !== undefined && avatar1 !== undefined)
 		{
 			console.log("updating player1info");
 			const playerUsername = player1Info.querySelector('h4');
@@ -151,14 +158,14 @@ export function ConnectWebsocket(type, username)
 			}
 			const playerImage = player1Info.querySelector('img');
 			if (playerImage) {
-				playerImage.src = '/static/img/avatarDefault.gif';
+				playerImage.src = avatar1;
 				playerImage.width = 200;
 				playerImage.height = 200;
 				playerImage.removeAttribute('style');
 			}
 		}
 
-		if (player2Info)
+		if (player2Info && user2 !== undefined && avatar2 !== undefined)
 		{
 			console.log("updating player2info");
 			const playerUsername = player2Info.querySelector('h4');
@@ -167,7 +174,7 @@ export function ConnectWebsocket(type, username)
 			}
 			const playerImage = player2Info.querySelector('img');
 			if (playerImage) {
-				playerImage.src = '/static/img/avatarDefault.gif';
+				playerImage.src = avatar2;
 				playerImage.width = 200;
 				playerImage.height = 200;
 				playerImage.removeAttribute('style');

@@ -2,7 +2,7 @@ import { createElement, createButton, createButtonGreen, appendChildren, createA
 import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
-export function initPong(userName) {
+export function initPong(userName, avatar) {
 	// let user = 'userName';
 	let lobbyMenu;
 	console.log('Pong game initialized - user:', userName);
@@ -36,13 +36,13 @@ export function initPong(userName) {
 				createButton('CREATE LOBBY', () => {
 					onlineMenu.remove();
 					//
-					ConnectWebsocket('normal', userName);
+					ConnectWebsocket('normal', userName, avatar);
 					drawLobbyMenu('create');
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
 					// Need to change so it only joins
-					ConnectWebsocket('normal', userName);
+					ConnectWebsocket('normal', userName, avatar);
 					drawLobbyMenu('join');
 				}),
 				createButton('BACK', () => {
@@ -66,7 +66,7 @@ export function initPong(userName) {
 
 		if (mode === 'create') {
 			let playerInfo = createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;' },
-				player1Info = drawPlayerInfo(userName),
+				player1Info = drawPlayerInfo(userName, avatar),
 				createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
 				player2Info = drawPlayerInfo('waiting'),
 			);
@@ -106,7 +106,7 @@ export function initPong(userName) {
 		let buttonReady;
 
 		const playerInfo = createElement('div', { className: 'button-vertical' },
-			createElement('img', { src: '/static/img/avatarDefault.gif', width: 200, height: 200 }),
+			createElement('img', { src: avatar, width: 200, height: 200 }),
 			createElement('h4', { innerText: userName }),
 			buttonReady = createButtonGreen('READY', () => {
 				buttonReady.style.backgroundColor = '#0ccf0c';

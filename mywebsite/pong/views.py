@@ -11,13 +11,16 @@ import json
 def pong(request):
 	context = {}
 	if request.user.is_authenticated:
-		test_name = request.user.display_name
+		username = request.user.display_name
+		avatar = request.user.avatar.url
+		print(f"username: {username}, avatar: {avatar}")
 		context = {
-			'test_name': test_name
+			'username': username,
+			'avatar': avatar
 		}
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('pong.html', context, request=request)
-		return JsonResponse({'html': html, 'test_name': test_name})
+		return JsonResponse({'html': html, 'username': username, 'avatar': avatar})
 	return render(request, 'base.html')
 
 

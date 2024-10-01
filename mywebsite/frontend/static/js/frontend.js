@@ -94,7 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
-				await initPong(data.test_name);
+				await console.log('username: ', data.username, ' avatar: ', data.avatar);
+				await initPong(data.username, data.avatar);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			}
