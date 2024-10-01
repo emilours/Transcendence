@@ -13,13 +13,14 @@ from django.utils.timezone import localtime
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
 from rest_framework.authtoken.models import Token
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.http import StreamingHttpResponse
 from django.db.models import Q
 from django.utils.crypto import get_random_string
+import asyncio
 import json
-import time
 import os
+import time
 
 User = get_user_model()
 
@@ -465,38 +466,61 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-# def check_friend_request_status(user):
-#     pending_requests = FriendRequest.objects.filter(
-#         Q(sender=user) | Q(receiver=user),
-#         status__in=['accepted', 'declined']
-#     )
-#     if pending_requests.exists():
-#         return [
-#             {
-#                 "id": friend_request.id,
-#                 "sender": friend_request.sender.display_name,
-#                 "receiver": friend_request.receiver.display_name,
-#                 "status": friend_request.status
-#             }
-#             for friend_request in pending_requests
-#         ]
-#     return []
+@login_required
+def sse(request):
+    async def event_stream():
+        last_status = []
+        last_number = await asyncio.to_thread(check_friendlist_update, request.user)
+        try:
+            while True:
+                status_update = await asyncio.to_thread(check_friend_request_update, request.user)
+                number_update = await asyncio.to_thread(check_friendlist_update, request.user)
 
-# def sse(request):
-#     if not request.user.is_authenticated:
-#         return StreamingHttpResponse("data: Unauthorized\n\n", status=401, content_type='text/event-stream')
+                if status_update != last_status or last_number != number_update:
+                    combined_update = {
+                        "friend_requests": status_update,
+                        "friend_count": number_update
+                    }
+                    yield f"data: {json.dumps(combined_update)}\n\n"
 
+                    last_status = status_update
+                    last_number = number_update
+
+                await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            print('Stream closed')
+            return
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+
+def check_friend_request_update(user):
+    pending_requests = FriendRequest.objects.filter(
+        Q(sender=user) | Q(receiver=user),
+        status__in=['accepted', 'declined', 'pending']
+    )
+
+    if pending_requests.exists():
+        return [
+            {
+                "id": friend_request.id,
+                "sender": friend_request.sender.display_name,
+                "receiver": friend_request.receiver.display_name,
+                "status": friend_request.status
+            }
+            for friend_request in pending_requests
+        ]
+    return []
+
+def check_friendlist_update(user):
+    try:
+        friendlist = FriendList.objects.get(user=user)
+        return friendlist.friend_count()
+    except FriendList.DoesNotExist:
+        return 0
+
+# def sse_test(request):
 #     def event_stream():
-#         last_status = None
-#         while True:
-#             try:
-#                 status_update = check_friend_request_status(request.user)
-#                 if status_update != last_status:
-#                     last_status = status_update
-#                     yield f"data: {json.dumps(status_update)}\n\n"
-#                 time.sleep(5)
-#             except Exception as e:
-#                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
-#                 break
+#         for i in range(5):
+#             time.sleep(1)
+#             yield f"data: Hello SSE {i}\n\n"
 #     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
