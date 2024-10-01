@@ -43,6 +43,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 	victories = models.PositiveIntegerField(default=0)
 	defeats = models.PositiveIntegerField(default=0)
+	score_pong = models.PositiveIntegerField(default=0)
 
 	friends_count = models.PositiveIntegerField(default=0)
 	sent_requests_count = models.PositiveIntegerField(default=0)
@@ -105,6 +106,7 @@ class FriendList(models.Model):
 	def __str__(self):
 		return f"{self.user.username}'s Friend List"
 
+	@transaction.atomic
 	def add_friend(self, account):
 		if account != self.user and account not in self.friends.all():
 			with transaction.atomic():
@@ -112,6 +114,7 @@ class FriendList(models.Model):
 				friend_list = FriendList.objects.get(user=account)
 				friend_list.friends.add(self.user)
 
+	@transaction.atomic
 	def remove_friend(self, account):
 		if account != self.user and account in self.friends.all():
 			with transaction.atomic():
@@ -119,6 +122,12 @@ class FriendList(models.Model):
 				friend_list = FriendList.objects.get(user=account)
 				friend_list.friends.remove(self.user)
 
+				self.user.friends_count -= 1
+				account.friends_count -= 1
+				self.user.save()
+				account.save()
+
+	@transaction.atomic
 	def unfriend(self, removee):
 		self.remove_friend(removee)
 		try:
@@ -131,9 +140,11 @@ class FriendList(models.Model):
 		except FriendList.DoesNotExist:
 			pass
 
+	@transaction.atomic
 	def is_mutual_friend(self, friend):
 		return friend in self.friends.all()
 
+	@transaction.atomic
 	def friend_count(self):
 		count = self.friends.count()
 		return count
@@ -176,13 +187,13 @@ class FriendRequest(models.Model):
 			self.sender.save()
 			self.receiver.save()
 
-		sender_friend_list, _ = FriendList.objects.get_or_create(user=self.sender)
-		receiver_friend_list, _ = FriendList.objects.get_or_create(user=self.receiver)
+			sender_friend_list, _ = FriendList.objects.get_or_create(user=self.sender)
+			receiver_friend_list, _ = FriendList.objects.get_or_create(user=self.receiver)
 
-		sender_friend_list.add_friend(self.receiver)
-		receiver_friend_list.add_friend(self.sender)
+			sender_friend_list.add_friend(self.receiver)
+			receiver_friend_list.add_friend(self.sender)
 
-		self.save()
+			self.save()
 
 	@transaction.atomic
 	def decline(self):
@@ -264,62 +275,6 @@ class PlayerMatch(models.Model):
 
 	def __str__(self):
 		return f"{self.player.display_name} in match {self.match.id} with score {self.score}"
-
-# # ================================================================================================================================================================
-# # ===                                                     TOURNAMENTS                                                                                          ===
-# # ================================================================================================================================================================
-
-# class Tournament(models.Model):
-#     STATUS_CHOICES = [
-#         ('upcoming', 'Upcoming'),
-#         ('ongoing', 'Ongoing'),
-#         ('completed', 'Completed'),
-#         ('cancelled', 'Cancelled'),
-#     ]
-
-#     name = models.CharField(max_length=100)
-#     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-#     players = models.ManyToManyField(settings.AUTH_USER_MODEL, through='TournamentPlayer', related_name='tournaments')
-#     start_date = models.DateTimeField()
-#     end_date = models.DateTimeField(null=True, blank=True)
-#     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='upcoming')
-#     details = models.TextField(blank=True)
-
-#     def __str__(self):
-#         return f"Tournament: {self.name} for {self.game.name} ({self.get_status_display()})"
-
-# class TournamentPlayer(models.Model):
-#     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
-#     player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-#     points = models.IntegerField(default=0)
-
-#     def __str__(self):
-#         return f"{self.player.display_name} in {self.tournament.name} with {self.points} points"
-
-# class TournamentMatch(models.Model):
-#     STATUS_CHOICES = [
-#         ('ongoing', 'Ongoing'),
-#         ('completed', 'Completed'),
-#         ('cancelled', 'Cancelled'),
-#     ]
-
-#     tournament = models.ForeignKey(Tournament, related_name='matches', on_delete=models.CASCADE)
-#     players = models.ManyToManyField(settings.AUTH_USER_MODEL, through='PlayerTournamentMatch', related_name='tournament_matches')
-#     date = models.DateTimeField(auto_now_add=True)
-#     details = models.TextField(blank=True)
-#     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='completed')
-
-#     def __str__(self):
-#         return f"{self.tournament.name} match on {self.date} with {self.players.count()} players"
-
-# class PlayerTournamentMatch(models.Model):
-#     player = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-#     match = models.ForeignKey(TournamentMatch, on_delete=models.CASCADE)
-#     score = models.IntegerField(default=0)
-#     is_winner = models.BooleanField(default=False)
-
-#     def __str__(self):
-#         return f"{self.player.display_name} in tournament match {self.match.id} with score {self.score}"
 
 # # ================================================================================================================================================================
 # # ===                                                     TOURNAMENTS                                                                                          ===

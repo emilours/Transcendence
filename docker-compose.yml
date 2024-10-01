@@ -50,7 +50,7 @@ services:
       mywebsite:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/home"]
+      test: ["CMD", "curl", "-kf", "https://localhost:8080/home"]
       interval: 30s
       timeout: 10s
       retries: 3

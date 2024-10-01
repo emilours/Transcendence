@@ -3,6 +3,44 @@ import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
+	// SSE - Server-Sent Events
+	let eventSource = null;
+	function initSSE() {
+		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
+			eventSource = new EventSource('/auth/sse/');
+
+			eventSource.onmessage = function(event) {
+				const data = JSON.parse(event.data);
+				if (data && (data.friend_requests || data.friend_count >= 0)) {
+					if (window.location.pathname === '/profile/') {
+						loadContent('/profile/', false);
+					}
+				}
+			};
+
+			eventSource.onerror = function(error) {
+				console.error('EventSource error:', error);
+				eventSource.close();
+				setTimeout(function() {
+					eventSource = new EventSource('/auth/sse/');
+				}, 5000);
+			};
+
+			console.log('SSE connection initialized');
+		} else {
+			console.log('SSE connection already active');
+		}
+	}
+
+	function checkLoginStatus() {
+		return localStorage.getItem('isLoggedIn') === 'true';
+	}
+
+	if (checkLoginStatus()) {
+		console.log('User is logged in. Initiating SSE after refresh...');
+		initSSE();
+	}
+
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
 
@@ -78,10 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
 				await initPong(data.test_name);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
+			} else if (url.includes('profile')) {
+				if (!checkLoginStatus()) {
+					localStorage.setItem('isLoggedIn', 'true');
+					initSSE();
+				}
 			}
-
 			attachListeners();
-
 			if (addToHistory) history.pushState({ route: url }, null, url);
 		} catch (error) {
 			console.error('Error loading content:', error);
@@ -89,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const attachNavListeners = () => {
-		// Font size adjustment
+		// Accessibility features
 		const increaseFontBtn = document.getElementById('increase-font');
 		const decreaseFontBtn = document.getElementById('decrease-font');
 		const rootElement = document.documentElement;
@@ -118,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			localStorage.setItem('highContrast', isHighContrast);
 		});
 
+		// Navbar links
 		const NavLinks = [
 			{ id: 'navbar-home', url: '/home/' },
 			{ id: 'navbar-login', url: '/login/' },
@@ -140,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const attachListeners = () => {
+		// Attach listeners to links and forms
 		const links = [
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
@@ -172,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ id: 'edit-profile-form', url: '/auth/update_profile/' },
 			{ id: 'edit-password-form', url: '/auth/update_password/' },
 			{ id: 'delete-account-form', url: '/auth/delete_profile/' },
+			{ id: 'anonymize-data-form', url: '/auth/request_anonymization/' },
 		];
 
 		forms.forEach(({ id, url }) => {
@@ -201,12 +245,17 @@ document.addEventListener("DOMContentLoaded", () => {
 						} else {
 							// alert(data.message);
 							if (id === 'logout-form') {
+								localStorage.removeItem('isLoggedIn');
+								if (eventSource) {
+									eventSource.close();
+									console.log('SSE connection closed');
+								}
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'amonymize-data-form') {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else {
@@ -280,7 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
-
 
 	loadContent(window.location.pathname, false);
 	loadHeader();

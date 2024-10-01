@@ -12,13 +12,17 @@
 						<div class="text-center mb-4">
 							<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 						</div>
-						<div class="text-center">
-							<a href="{% url 'user_dashboard' user.display_name %}" class="font-balsamiq text-secondary-emphasis fs-4 ms-2 mb-2">{{ user.display_name }}</a>
-							<p class="text-center mb-4 text-secondary-emphasis"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-							<p class="text-center mb-4 text-secondary-emphasis"><strong>Email:</strong> {{ user.email }}</p>
+						<h3 class="card-title text-center mb-4 font-balsamiq text-secondary-emphasis">{{ user.display_name }}</h3>
+						<p class="text-center mb-4 text-secondary-emphasis"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+						<p class="text-center mb-4 text-secondary-emphasis"><strong>Email:</strong> {{ user.email }}</p>
+						<div class="text-center d-flex justify-content-center flex-wrap">
 							<a href="" class="btn btn-primary mb-2" id="edit-profile">Edit Profile</a>
 							<a href="" class="btn btn-primary ms-2 mb-2" id="edit-password">Edit Password</a>
-							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}">
+							<form id="anonymize-data-form" method="POST" action="{% url 'authentification:request_anonymization' %}">
+								{% csrf_token %}
+								<button type="submit" class="btn btn-warning ms-2 mb-2 rounded-2" onclick="return confirm('Are you sure you want to anonymize your data? This action cannot be undone.');">Anonymize Data</button>
+							</form>
+							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}" class="d-inline">
 								{% csrf_token %}
 								<button type="submit" class="btn btn-danger ms-2 mb-2 rounded-2" onclick="return confirm('Are you sure you want to delete your account?');">
 									Delete Account

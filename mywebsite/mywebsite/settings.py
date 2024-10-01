@@ -21,8 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-=tr6v@=3o78u=rnby-i3&$&b%(wlbr6lm$_7kw3!usjj&bbn9%'
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = 'django-insecure-=tr6v@=3o78u=rnby-i3&$&b%(wlbr6lm$_7kw3!usjj&bbn9%'
+# SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == 'True'
@@ -195,9 +195,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8080',  # Nginx is serving the app here
-    'http://127.0.0.1:8080',  # Ensure this is included if you're using localhost
-    'http://paul-f4ar5s4:8080',# Add other domains as needed
+    'https://localhost:8080',
+    'https://127.0.0.1:8080',
+    'https://paul-f4ar5s4:8080',
 ]
 
 # Custom user model

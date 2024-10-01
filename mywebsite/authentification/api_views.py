@@ -15,6 +15,7 @@ from rest_framework.authtoken.models import Token
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.crypto import get_random_string
+from django.shortcuts import render
 import requests
 import os
 
@@ -123,3 +124,4 @@ def callback_42(request):
     user.save(update_fields=['is_online'])
 
     return redirect('/profile/')
+
