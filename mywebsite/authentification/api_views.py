@@ -112,8 +112,8 @@ def callback_42(request):
                 avatar_content = ContentFile(avatar_response.content)
                 user.avatar.save(avatar_name, avatar_content, save=False)
             else:
-                return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
-                # return redirect('/error_api/')
+                # return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
+                return redirect('/error_api/')
 
     token, _ = Token.objects.get_or_create(user=user)
 
