@@ -9,10 +9,12 @@
 						<h2 class="fs-4">Profile</h2>
 					</div>
 					<div class="card-body p-5">
-						<div class="text-center mb-4">
+						<div class="text-center mb-4 text-center">
 							<img src="{{ user.avatar.url }}" alt="{{ user.display_name }}'s Avatar" class="rounded-circle" width="120" height="120">
 						</div>
-						<h3 class="card-title text-center mb-4 font-balsamiq text-secondary-emphasis">{{ user.display_name }}</h3>
+						<div class="text-center">
+							<a href="{% url 'user_dashboard' user.display_name %}" class="font-balsamiq text-secondary-emphasis fs-4 ms-2 mb-2 text-center">{{ user.display_name }}</a>
+						</div>
 						<p class="text-center mb-4 text-secondary-emphasis"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
 						<p class="text-center mb-4 text-secondary-emphasis"><strong>Email:</strong> {{ user.email }}</p>
 						<div class="text-center d-flex justify-content-center flex-wrap">
