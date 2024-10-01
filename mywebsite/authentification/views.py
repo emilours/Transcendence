@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404, render
 from django.http import StreamingHttpResponse
 from django.db.models import Q
 from django.utils.crypto import get_random_string
+from django.conf import settings
 import asyncio
 import json
 import os
@@ -453,16 +454,16 @@ def request_anonymization(request):
             unique_suffix = get_random_string(length=8)
 
             avatar_dir = os.path.join(settings.MEDIA_ROOT, 'img/avatars/')
-            
+
             deleted_files = []
             for filename in os.listdir(avatar_dir):
                 if user.display_name in filename:
                     file_path = os.path.join(avatar_dir, filename)
-                    
+
                     if os.path.exists(file_path):
                         os.remove(file_path)
                         deleted_files.append(file_path)
-            
+
             user.avatar = 'img/avatars/avatar0.jpg'
             user.display_name = f'Anonymous_{unique_suffix}'
             user.first_name = 'Anonymous'

@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'amonymize-data-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'anonymize-data-form') {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else {

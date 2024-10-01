@@ -11,29 +11,29 @@
 						</div>
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
 							{% csrf_token %}
-							<div class="mb-2">
-								<label for="display_name" class="form-label">Username</label>
-								<input type="text" class="form-control rounded-1" id="display_name" name="display_name" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="text" class="form-control rounded-1" id="display_name" name="display_name" maxlength="100" required placeholder="Username">
+								<label for="display_name" >Username</label>
 							</div>
-							<div class="mb-2">
-								<label for="firstName" class="form-label">First Name</label>
-								<input type="text" class="form-control rounded-1" id="firstName" name="firstname" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="text" class="form-control rounded-1" id="firstName" name="firstname" maxlength="100" required placeholder="First Name">
+								<label for="firstName">First Name</label>
 							</div>
-							<div class="mb-2">
-								<label for="lastName" class="form-label">Last Name</label>
-								<input type="text" class="form-control rounded-1" id="lastName" name="lastname" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="text" class="form-control rounded-1" id="lastName" name="lastname" maxlength="100" required placeholder="Last Name">
+								<label for="lastName">Last Name</label>
 							</div>
-							<div class="mb-2">
-								<label for="email" class="form-label">Email Address</label>
-								<input type="email" class="form-control rounded-1" id="email" name="email" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="email" class="form-control rounded-1" id="email" name="email" maxlength="100" required placeholder="Email Address">
+								<label for="email">Email Address</label>
 							</div>
-							<div class="mb-2">
-								<label for="password" class="form-label">Password</label>
-								<input type="password" class="form-control rounded-1" id="password" name="password1" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="password" class="form-control rounded-1" id="password" name="password1" maxlength="100" required placeholder="Password">
+								<label for="password">Password</label>
 							</div>
-							<div class="mb-2">
-								<label for="confirmPassword" class="form-label">Confirm Password</label>
-								<input type="password" class="form-control rounded-1" id="confirmPassword" name="password2" maxlength="100" required>
+							<div class="form-floating mb-2">
+								<input type="password" class="form-control rounded-1" id="confirmPassword" name="password2" maxlength="100" required placeholder="Confirm Password">
+								<label for="confirmPassword">Confirm Password</label>
 							</div>
 							<div class="mb-2">
 								<label for="avatar" class="form-label">Avatar (optional)</label>
@@ -45,7 +45,7 @@
 									I agree to the <a href="#" id="privacyPolicyLink">privacy policy</a>
 								</label>
 							</div>
-							<button type="submit" class="btn btn-secondary w-100 rounded-2" id="signup-submit">Sign Up</button>
+							<button type="submit" class="btn btn-outline-primary w-100 rounded-2" id="signup-submit">Sign Up</button>
 						</form>
 					</div>
 				</div>
