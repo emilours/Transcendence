@@ -452,6 +452,18 @@ def request_anonymization(request):
         with transaction.atomic():
             unique_suffix = get_random_string(length=8)
 
+            avatar_dir = os.path.join(settings.MEDIA_ROOT, 'img/avatars/')
+            
+            deleted_files = []
+            for filename in os.listdir(avatar_dir):
+                if user.display_name in filename:
+                    file_path = os.path.join(avatar_dir, filename)
+                    
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        deleted_files.append(file_path)
+            
+            user.avatar = 'img/avatars/avatar0.jpg'
             user.display_name = f'Anonymous_{unique_suffix}'
             user.first_name = 'Anonymous'
             user.last_name = 'Anonymous'
