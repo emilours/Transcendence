@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo, UpdateMenu } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 export function initPong(userName, avatar) {
@@ -38,12 +38,14 @@ export function initPong(userName, avatar) {
 					//
 					ConnectWebsocket('normal', userName, avatar);
 					drawLobbyMenu('create');
+					UpdateMenu(lobbyMenu);
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
 					// Need to change so it only joins
 					ConnectWebsocket('normal', userName, avatar);
-					drawLobbyMenu('join');
+					drawJoinMenu();
+					// UpdateMenu(lobbyMenu);
 				}),
 				createButton('BACK', () => {
 					onlineMenu.remove();
@@ -54,11 +56,46 @@ export function initPong(userName, avatar) {
 		document.querySelector('.pong-container').appendChild(onlineMenu);
 	}
 
-	
+	function drawJoinMenu() {
+		let buttonJoin;
+		lobbyMenu = createElement('div', { className: 'menu' },
+			createElement('h2', { innerText: 'Enter lobby code' }),
+			createElement('input', { type: 'text', id: 'inputField', name: 'inputField', placeholder: 'Enter lobby code' }),
+			buttonJoin = createButton('JOIN', () => {
+				const lobbyCode = document.getElementById('inputField').value;
+				UpdateMenu(lobbyMenu);
+				//joinlobby on websocket
+				SendEvent('join_lobby', lobbyCode);
+				// after successful drawLobbyMenu('join')
+				// drawLobbyMenu('join');
+			}),
+		);
+
+		const backButton = createButton('BACK', () => {
+			document.querySelector('.menu').remove();
+			drawOnlineMenu();
+		});
+		lobbyMenu.appendChild(backButton);
+
+		document.querySelector('.pong-container').appendChild(lobbyMenu);
+	}
+
 	function drawLobbyMenu(mode) {
+		let lobbyCode = createElement('h4', {innerText: '', style: 'co'});
 		lobbyMenu = createElement('div', { className: 'menu' },
 			createElement('h2', { innerText: 'ONLINE MATCH' }),
-			createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
+			createElement('h3', { innerText: 'LOBBY CODE', style: 'margin-bottom: 20px;' }),
+			createElement('div', {
+				style: `
+					font-size: 1em;
+					padding: 5px;
+					text-align: center;
+					color: black;
+					display: inline-block;
+					background-color: rgba(0.9, 0.9, 0.9, 0.7);
+					width: fit-content;
+				`
+			}, lobbyCode)
 		);
 
 		let player1Info;
@@ -112,7 +149,8 @@ export function initPong(userName, avatar) {
 				buttonReady.style.backgroundColor = '#0ccf0c';
 				buttonReady.innerText = 'OK';
 				console.log("lobby: ", lobbyMenu);
-				SendEvent('player_ready', lobbyMenu);
+				UpdateMenu(lobbyMenu);
+				SendEvent('player_ready', null);
 			})
 		);
 		return playerInfo;

@@ -92,7 +92,7 @@ def SaveMatch(room_id, game_type):
 
     log("SAVING MATCH TO DB")
     # normal or tournament
-    
+
     game, _ = Game.objects.get_or_create(name='pong', description=game_type)
     match = Match.objects.create(game=game, status='completed', details=game_type)
 
@@ -200,7 +200,7 @@ async def StartGameLoop(sid, game_type, room_id):
             current_task.cancel()
             current_task = None
             # TODO: Disconnect both client ?
-            # TEST 
+            # TEST
             log(f"calling disconnect for {sid1}")
             await sio.disconnect(sid1)
             log(f"calling disconnect for {sid2}")
@@ -332,8 +332,8 @@ async def PlayerReady(sid):
     if start:
         await sio.emit('game_ready', room=room_id)
 
-@sio.on('get_users')
-async def SendUsers(sid):
+
+async def SendLobbyData(sid):
     global games
 
     log(f"SendUsers({sid})")
@@ -343,11 +343,12 @@ async def SendUsers(sid):
     room_id = session.get('room_id')
 
     data = {
+        'lobby_id': room_id[:8],
         'users': games[room_id]['players'],
         'avatars': await GetPlayersAvatar(room_id)
     }
     log(f"Data: {data}")
-    await sio.emit('send_users', data, room=room_id)
+    await sio.emit('send_lobby_data', data, room=room_id)
 
 @sio.on('pong_input')
 async def PongInput(sid, text_data):
@@ -445,7 +446,7 @@ async def connect(sid, environ):
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
     # send the users
-    await SendUsers(sid)
+    await SendLobbyData(sid)
 
 @sio.event
 async def message(sid, data):
@@ -477,7 +478,7 @@ async def disconnect(sid):
         log(f"User {username} disconnected ({sid})")
     except KeyError:
         log(f"No session found for {sid}")
-    
+
 
 
 
@@ -486,7 +487,7 @@ if __name__ == "__main__":
 
     # Path to your SSL certificates
     ssl_certfile = "daphne/nginx.crt"
-    ssl_keyfile = "daphne/nginx.key" 
+    ssl_keyfile = "daphne/nginx.key"
 
     # Run the server
     log("STARTING SOCKET SERVER")

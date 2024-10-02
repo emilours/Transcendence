@@ -38,26 +38,26 @@ export function UpdatePlayerInfo(player1, player2)
 	// modify user
 }
 
-export function GetUsers()
+export function UpdateMenu(activeMenu)
 {
-	const user_1 = { name: user1 };
-	const user_2 = { name: user2 };
-	return [user1, user2];
+	menu = activeMenu;
+	console.log("Active menu: ", menu);
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event, lobbyMenu)
+export function SendEvent(event, data)
 {
-	console.log("SendEvent()");
-	menu = lobbyMenu;
-	console.log("menu: ", menu);
+	console.log("SendEvent(), data: ", data);
 
 	if (!socket || !socket.connected)
 	{
 		console.log("Socket.io connection not open");
 		return false;
 	}
-	socket.emit(event);
+	if (data == null)
+		socket.emit(event);
+		else
+		socket.emit(event, data);
 	return true;
 }
 
@@ -73,7 +73,7 @@ export function ConnectWebsocket(type, username)
         socket.disconnect();  // Disconnect the existing socket
         console.log('Existing socket disconnected');
     }
-	
+
 	// ws:// working fine
 	socket = io('wss://localhost:6789', {
 		transports: ['websocket'],  // Use only WebSocket transport
@@ -136,9 +136,10 @@ export function ConnectWebsocket(type, username)
 	// 	menu.remove();
 	// 	StartGame();
 	// });
-	socket.on('send_users', function(data) {
+	socket.on('send_lobby_data', function(data) {
 		// TODO: Make this cleaner
 		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
+		const lobbyCode = data.lobby_id;
 		user1 = data.users[0];
 		user2 = data.users[1];
 		user3 = data.users[2];
@@ -147,6 +148,17 @@ export function ConnectWebsocket(type, username)
 		avatar2 = data.avatars[1];
 		avatar3 = data.avatars[2];
 		avatar4 = data.avatars[3];
+
+
+		console.log("lobbyCode: ", lobbyCode);
+		console.log("menu: ", menu);
+		if (menu && lobbyCode !== undefined)
+		{
+			console.log("updating menu");
+			const codeText = menu.querySelector('h4');
+			if (codeText)
+				codeText.innerText = lobbyCode;
+		}
 
 		// can just check later if avatar[i] is undefined then default img
 		if (player1Info && user1 !== undefined && avatar1 !== undefined)
