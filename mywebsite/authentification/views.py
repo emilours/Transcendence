@@ -114,7 +114,6 @@ def signout(request):
         request.user.is_online = False
         request.user.save(update_fields=['is_online'])
         logout(request)
-        # request.session.flush()
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
