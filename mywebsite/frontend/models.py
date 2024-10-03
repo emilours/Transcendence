@@ -26,8 +26,8 @@ class CustomUserManager(BaseUserManager):
 		return self.create_user(email, password, **extra_fields)
 
 def validate_no_special_characters(value):
-    if not re.match(r'^[a-zA-Z]+$', value):
-        raise ValidationError('Error: this field can only contain letters. Special characters, numbers, and spaces are not allowed.')
+    if not re.match(r'^[a-zA-ZÀ-ÿ\s-]+$', value):
+        raise ValidationError('Error: this field can only contain letters.')
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 	email = models.EmailField(max_length=100, unique=True)
@@ -80,13 +80,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 		if created and not hasattr(self, 'friend_list'):
 			FriendList.objects.get_or_create(user=self)
 
-	# TESTS TO BE DONE
-	def clean(self):
-		if CustomUser.objects.filter(email=self.email).exclude(pk=self.pk).exists():
-			raise ValidationError({'email': 'This mail address is already in use.'})
+	# def clean(self):
+	# 	if CustomUser.objects.filter(email=self.email).exclude(pk=self.pk).exists():
+	# 		raise ValidationError({'email': 'This mail address is already in use.'})
 
-		if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
-			raise ValidationError({'display_name': 'This display name is already in use.'})
+	# 	if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
+	# 		raise ValidationError({'display_name': 'This display name is already in use.'})
 
 	def save(self, *args, **kwargs):
 		created = self.pk is None
@@ -140,9 +139,9 @@ class FriendList(models.Model):
 		except FriendList.DoesNotExist:
 			pass
 
-	@transaction.atomic
-	def is_mutual_friend(self, friend):
-		return friend in self.friends.all()
+	# @transaction.atomic
+	# def is_mutual_friend(self, friend):
+	# 	return friend in self.friends.all()
 
 	@transaction.atomic
 	def friend_count(self):
