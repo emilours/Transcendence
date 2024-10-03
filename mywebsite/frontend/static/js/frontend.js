@@ -1,4 +1,4 @@
-import { initInvaders } from '/static/js/invaders.js';
+import { startInvaders, stopInvaders } from '/static/js/invaders.js';
 import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 		// close ws connection and cleanup threejsz
 		CloseWebsocket();
+		stopInvaders();
 
 		// Close any open Bootstrap modals
 		const modals = document.querySelectorAll('.modal.show');
@@ -108,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initInvaders(data.test_name);
+				await startInvaders(data.test_name);
 			} else if (url.includes('pong')) {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');

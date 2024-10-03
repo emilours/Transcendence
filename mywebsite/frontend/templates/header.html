@@ -17,9 +17,11 @@
 					<li class="nav-item">
 						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" href="#" id="navbar-games">Games</a>
 					</li>
+					{% if user.is_authenticated %}
 					<li class="nav-item">
 						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" href="#" id="navbar-leaderboard">Leaderboard</a>
 					</li>
+					{% endif %}
 					<li class="nav-item">
 						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4 text-nowrap" aria-current="page" href="#" id="navbar-contact">Contact</a>
 					</li>

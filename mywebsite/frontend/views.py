@@ -91,6 +91,7 @@ def games(request):
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
 
+@login_required
 def leaderboard(request):
 	players = PlayerMatch.objects.filter(match__game__name="Pong").values('player').distinct()
 
@@ -127,6 +128,7 @@ def leaderboard(request):
 
 	return render(request, 'base.html', context)
 
+@login_required
 def user_dashboard(request, username):
 	user = get_object_or_404(CustomUser, display_name=username)
 	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-match__date')

@@ -6,11 +6,13 @@ import { Color } from "./Colors.js";
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 import { tournamentSetup } from "./Tournament.js";
 
-export function initInvaders(userName) {
+let gameInstance;
 
-	const game = new Canvas(userName);
+export function startInvaders(userName) {
+
+	gameInstance = new Canvas(userName);
 	let mode;
-	game.ctx.drawImage(game.gifCanvas, 0, 0, game.canvas.width, game.canvas.height);
+	gameInstance.ctx.drawImage(gameInstance.gifCanvas, 0, 0, gameInstance.canvas.width, gameInstance.canvas.height);
 
 	const menuScreen = createElement('div', { className: 'menu' },
 		createElement('h1', { innerText: 'PUSHEEN\nINVADERS' }),
@@ -18,19 +20,19 @@ export function initInvaders(userName) {
 		createElement('div', { className: 'button-vertical' },
 			createButton('ARCADE 1P', () => {
 				menuScreen.remove();
-				const player1 = new Player(game.canvas, 'Player1', 'player1');
+				const player1 = new Player(gameInstance.canvas, 'Player1', 'player1');
 				startGame(mode = 'arcade', player1, null);
 			}),
 			createButton('VERSUS 2P', () => {
 				menuScreen.remove();
-				const player1 = new Player(game.canvas, 'Player1', 'player1');
-				const player2 = new Player(game.canvas, 'Player2', 'player2');
+				const player1 = new Player(gameInstance.canvas, 'Player1', 'player1');
+				const player2 = new Player(gameInstance.canvas, 'Player2', 'player2');
 				player2.setAltControls();
 				startGame(mode = 'versus', player1, player2);
 			}),
 			createButton('TOURNAMENT', () => {
 				menuScreen.remove();
-				tournamentSetup(startGame, game);
+				tournamentSetup(startGame, gameInstance);
 			})
 		)
 	);
@@ -39,8 +41,8 @@ export function initInvaders(userName) {
 	// Start game with parameters
 	function startGame(selectedMode, player1, player2, tournament) {
 		let mode = selectedMode;
-		game.isGameOver = false;
-		game.didWin = false;
+		gameInstance.isGameOver = false;
+		gameInstance.didWin = false;
 
 
 		const controlsScreen = createElement('div', { className: 'menu' });
@@ -71,7 +73,7 @@ export function initInvaders(userName) {
 
 		const backButton = createButton('MENU', () => {
 			controlsScreen.remove();
-			initInvaders(game.userName);
+			startInvaders(gameInstance.userName);
 		});
 
 		const buttonContainer = createElement('div', { className: 'button-horizontal' }, backButton, startButton);
@@ -124,7 +126,7 @@ export function initInvaders(userName) {
 					updatePlayerTitleColor(Color[`player${index}`]);
 					updatePlayerId(index);
 				});
-				let name = mode === 'arcade' ? game.userName : player.name;
+				let name = mode === 'arcade' ? gameInstance.userName : player.name;
 				appendChildren(playerImageContainer, leftButton, playerImage, rightButton);
 				playerTitle = createElement('h3', { innerText: name, style: `color: ${player.color};` });
 
@@ -152,33 +154,33 @@ export function initInvaders(userName) {
 		// Launche the function to initialize the game
 		function initializeMatch(mode, player1, player2) {
 
-			game.enemyBulletController = new BulletController(game.canvas, 4, "yellow", false);
+			gameInstance.enemyBulletController = new BulletController(gameInstance.canvas, 4, "yellow", false);
 
 			if (mode === 'arcade') {
-				game.enemyController = new EnemyController(game.canvas, game.enemyBulletController, player1, null, mode);
+				gameInstance.enemyController = new EnemyController(gameInstance.canvas, gameInstance.enemyBulletController, player1, null, mode);
 			} else if (mode === 'versus' || mode === 'tournament') {
-				player1.x = game.canvas.width / 4;
-				player2.x = game.canvas.width / 4 * 3;
+				player1.x = gameInstance.canvas.width / 4;
+				player2.x = gameInstance.canvas.width / 4 * 3;
 				player2.control = 2;
-				game.enemyController = new EnemyController(game.canvas, game.enemyBulletController, player1, player2, mode);
+				gameInstance.enemyController = new EnemyController(gameInstance.canvas, gameInstance.enemyBulletController, player1, player2, mode);
 			}
-			game.gameInterval = setInterval(loopGame, 1000 / 60);
+			gameInstance.gameInterval = setInterval(loopGame, 1000 / 60);
 		}
 
 		// Main game loop
 		function loopGame() {
 			checkGameOver();
-			game.ctx.drawImage(game.gifCanvas, 0, 0, game.canvas.width, game.canvas.height);
+			gameInstance.ctx.drawImage(gameInstance.gifCanvas, 0, 0, gameInstance.canvas.width, gameInstance.canvas.height);
 			displayGameOver();
-			if (!game.isGameOver) {
-				game.enemyController.draw(game.ctx);
-				player1.draw(game.ctx);
-				player1.bulletController.draw(game.ctx);
+			if (!gameInstance.isGameOver) {
+				gameInstance.enemyController.draw(gameInstance.ctx);
+				player1.draw(gameInstance.ctx);
+				player1.bulletController.draw(gameInstance.ctx);
 				if (player2) {
-					player2.draw(game.ctx);
-					player2.bulletController.draw(game.ctx);
+					player2.draw(gameInstance.ctx);
+					player2.bulletController.draw(gameInstance.ctx);
 				}
-				game.enemyBulletController.draw(game.ctx);
+				gameInstance.enemyBulletController.draw(gameInstance.ctx);
 			} else if (mode === 'tournament') {
 				tournament.onMatchEnd(player1, player2);
 			}
@@ -186,8 +188,8 @@ export function initInvaders(userName) {
 
 		// Display the game over screen
 		function displayGameOver() {
-			if (!game.isGameOver) return;
-			clearInterval(game.gameInterval);
+			if (!gameInstance.isGameOver) return;
+			clearInterval(gameInstance.gameInterval);
 
 			if (mode === 'arcade' || mode === 'versus') {
 				const gameOverScreen = createElement('div', { className: 'menu' });
@@ -206,8 +208,8 @@ export function initInvaders(userName) {
 					actionButton = createElement('div', { className: 'button-horizontal' },
 						createButton('MENU', () => {
 							gameOverScreen.remove();
-							resetGame(game);
-							initInvaders(game.userName);
+							resetGame(gameInstance);
+							startInvaders(gameInstance.userName);
 						}
 					));
 					appendChildren(gameOverScreen, titleText, scoreText, actionButton);
@@ -219,7 +221,7 @@ export function initInvaders(userName) {
 							gameOverScreen.remove();
 							player1.reset();
 							player2.reset();
-							resetGame(game);
+							resetGame(gameInstance);
 							startGame(mode, player1, player2);
 						});
 						appendChildren(gameOverScreen, titleText, actionButton);
@@ -236,8 +238,8 @@ export function initInvaders(userName) {
 						if (mode === 'versus') {
 							actionButton = createButton('BACK TO MENU', () => {
 								gameOverScreen.remove();
-								resetGame(game);
-								initInvaders(game.userName);
+								resetGame(gameInstance);
+								startInvaders(gameInstance.userName);
 							});
 							appendChildren(gameOverScreen, titleText, winnerName, scoreText, actionButton);
 						}
@@ -249,31 +251,31 @@ export function initInvaders(userName) {
 
 		// Check if the game is over
 		function checkGameOver() {
-			if (game.isGameOver) return;
+			if (gameInstance.isGameOver) return;
 
-			if (game.enemyBulletController.collideWith(player1))
+			if (gameInstance.enemyBulletController.collideWith(player1))
 				player1.isDestroyed = true;
-			if (game.enemyController.collideWith(player1) || game.enemyController.checkIfEnemiesReachedBottom()) {
-				game.isGameOver = true;
+			if (gameInstance.enemyController.collideWith(player1) || gameInstance.enemyController.checkIfEnemiesReachedBottom()) {
+				gameInstance.isGameOver = true;
 			}
 
 			if (mode === 'versus' || mode === 'tournament') {
-				if (game.enemyBulletController.collideWith(player2))
+				if (gameInstance.enemyBulletController.collideWith(player2))
 					player2.isDestroyed = true;
-				if (game.enemyController.collideWith(player2))
-					game.isGameOver = true;
+				if (gameInstance.enemyController.collideWith(player2))
+					gameInstance.isGameOver = true;
 			}
-			if (game.enemyController.enemyRows.length === 0) {
-				game.isGameOver = true;
-				game.didWin = true;
+			if (gameInstance.enemyController.enemyRows.length === 0) {
+				gameInstance.isGameOver = true;
+				gameInstance.didWin = true;
 			}
 
 			if (mode === 'arcade' && player1.isDestroyed)
-				game.isGameOver = true;
+				gameInstance.isGameOver = true;
 
 			if ((mode === 'versus' || mode === 'tournament') && player1.isDestroyed
-				&& player2.isDestroyed && game.isGameOver === false)
-				game.isGameOver = true;
+				&& player2.isDestroyed && gameInstance.isGameOver === false)
+				gameInstance.isGameOver = true;
 		}
 
 		function saveScore(score) {
@@ -324,4 +326,9 @@ export function resetGame(game) {
 	game.enemyBulletController = null;
 }
 
-// initializeGame();
+export function stopInvaders() {
+	if (gameInstance) {
+		clearInterval(gameInstance.gameInterval);
+		gameInstance = null;
+	}
+}
