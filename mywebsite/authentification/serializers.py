@@ -36,7 +36,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         avatar_url = self.context.get('avatar_url')
         if avatar_url:
-            avatar_response = requests.get(avatar_url)
+            avatar_response = requests.get(avatar_url, verify=False)
             if avatar_response.status_code == 200:
                 avatar_name = os.path.basename(urlparse(avatar_url).path)
                 instance.avatar.save(avatar_name, ContentFile(avatar_response.content), save=False)
