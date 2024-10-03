@@ -34,8 +34,6 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
 ALLOWED_HOSTS = ['*']
 
-# Application definition
-
 INSTALLED_APPS = [
     'daphne',
     'channels',
