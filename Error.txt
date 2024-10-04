@@ -1,2 +1,0 @@
-Invaders:
-	The games doesnt stop when exit the window

@@ -133,17 +133,24 @@ def user_dashboard(request, username):
 	user = get_object_or_404(CustomUser, display_name=username)
 	dashboard_data = PlayerMatch.objects.select_related('player', 'match').filter(player__display_name=user.display_name).order_by('-match__date')
 
+	total_matches = dashboard_data.filter(match__game__name="Pong").count()
+	victories = dashboard_data.filter(match__game__name="Pong", is_winner=True).count()
+	defeats = dashboard_data.filter(match__game__name="Pong", is_winner=False).count()
+
+	win_rate = (victories / total_matches * 100) if total_matches > 0 else 0
+
 	pong_stats = {
-		'total_matches': dashboard_data.filter(match__game__name="Pong").count(),
-		'victories': dashboard_data.filter(match__game__name="Pong", is_winner=True).count(),
-		'defeats': dashboard_data.filter(match__game__name="Pong", is_winner=False).count(),
-		'max_score': dashboard_data.filter(match__game__name="Pong").aggregate(Max('score'))['score__max']
+		'total_matches': total_matches,
+		'victories': victories,
+		'defeats': defeats,
+		'win_rate': round(win_rate, 2)
 	}
 
 	invaders_stats = {
 		'total_matches': dashboard_data.filter(match__game__name="Invaders").count(),
 		'average': dashboard_data.filter(match__game__name="Invaders").aggregate(Avg('score'))['score__avg'],
-		'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max']
+		'max_score': dashboard_data.filter(match__game__name="Invaders").aggregate(Max('score'))['score__max'],
+		'last_five_scores': list(dashboard_data.filter(match__game__name="Invaders").order_by('-match__date').values_list('score', flat=True)[:5])
 	}
 
 	context = {
@@ -155,7 +162,7 @@ def user_dashboard(request, username):
 
 	if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 		html = render_to_string('dashboard.html', context, request=request)
-		return JsonResponse({'html': html})
+		return JsonResponse({'html': html, 'pong_stats': pong_stats, 'invaders_stats': invaders_stats})
 
 	return render(request, 'base.html', context)
 

@@ -1,6 +1,7 @@
 import { startInvaders, stopInvaders } from '/static/js/invaders.js';
 import { initPong } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
+import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
@@ -47,11 +48,13 @@ document.addEventListener("DOMContentLoaded", () => {
 	const loadResource = (url, type) => {
 		return new Promise((resolve, reject) => {
 			const element = document.createElement(type);
-			if (type === 'script')
+			if (type === 'script') {
 				element.type = "module";
-			if (type === 'link')
-				element.rel = "stylesheet";
-			element.href = element.src = url
+				element.src = url;
+ 			} else if (type === 'link') {
+				 element.rel = "stylesheet";
+				 element.href = element.src = url
+			}
 			element.onload = resolve;
 			element.onerror = reject;
 			element.dataset.dynamic = true;
@@ -111,10 +114,15 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('/static/js/invaders.js', 'script');
 				await startInvaders(data.test_name);
 			} else if (url.includes('pong')) {
-				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
+				await loadResource('https://cdn.jsdelivr.net/Failed to load resource: the server responded with a status of 404 (Not Found)/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
 				await initPong(data.test_name);
+			} else if (url.includes('dashboard')) {
+				await loadResource('/static/js/dashboard.js', 'script');
+				await console.log('pong_stats:', data.pong_stats);
+				await showPongChart(data.pong_stats);
+				await showInvadersChart(data.invaders_stats.last_five_scores);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			} else if (url.includes('profile')) {
