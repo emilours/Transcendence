@@ -128,17 +128,17 @@ def SaveMatch(room_id, game_type):
 @sync_to_async
 def GetPlayersAvatar(room_id):
     avatars = []
-    log(f"Players: {games[room_id]['players']}")
+    # log(f"Players: {games[room_id]['players']}")
     for i in range (0, 4):
         # if i in games[room_id]['players']:
         if i < len(games[room_id]['players']) and games[room_id]['players'][i] is not None:
-            log(f"{i} initialized: {games[room_id]['players']}")
+            # log(f"{i} initialized: {games[room_id]['players']}")
             player = CustomUser.objects.filter(display_name=games[room_id]['players'][i])
             if player.exists():
                 player = player.first()
                 avatars.append(player.avatar.url)
-        else:
-            log(f"{i} not initialized!")
+        # else:
+        #   log(f"{i} not initialized!")
     return (avatars)
 
 async def StartGameLoop(sid, game_type, room_id):
@@ -281,6 +281,14 @@ async def JoinRoom(sid, username, room_id):
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
 
+def IsLobbyCreated(room_key):
+    global games
+
+    for game in games.keys():
+        if game[:8] == room_key:
+            return game
+    return None
+
 def IsRoomFull(room_id):
     global games
 
@@ -309,7 +317,7 @@ async def DeleteRoom(room_id):
     log(f"Room {room_id} deleted")
 
 @sio.on('player_ready')
-async def PlayerReady(sid):
+async def PlayerReady(sid, username):
     global games
 
     session = await sio.get_session(sid)
@@ -323,23 +331,23 @@ async def PlayerReady(sid):
 
     log(f"CHECK: {games[room_id]}")
     start = True
-    if not IsRoomFull():
+    if not IsRoomFull(room_id):
         start = False
     for ready in games[room_id]['ready']:
         log(f"ready: {ready}")
         if ready == 0:
             start = False
     if start:
+        log("EVERYONE READY TO PLAY")
         await sio.emit('game_ready', room=room_id)
+    else:
+        log("SOMEONE IS NOT READY")
 
 
 async def SendLobbyData(sid):
     global games
 
-    log(f"SendUsers({sid})")
-
     session = await sio.get_session(sid)
-
     room_id = session.get('room_id')
 
     data = {
@@ -385,16 +393,10 @@ async def PongInput(sid, text_data):
 
 
 @sio.on('start_game')
-async def StartGame(sid):
+async def StartGame(sid, username):
     global games
 
-    username
     log('StartGame()')
-    try:
-        session = await sio.get_session(sid)
-        username = session.get('username')
-    except KeyError:
-        log(f"KeyError in StartGame()")
     room_id = GetUserRoom(username)
     room_full = IsRoomFull(room_id)
     if room_full == NORMAL_GAME:
@@ -405,10 +407,51 @@ async def StartGame(sid):
     else:
         log("room not full")
 
+@sio.on('join_lobby')
+async def JoinLobby(sid, username, room_key):
+    
+    log("JoinLobby()")
+    room_id = IsLobbyCreated(room_key)
+    if room_id is not None and not IsRoomFull(room_id):
+        await sio.save_session(sid, {
+            'username': username,
+            'room_id': room_id
+            })
+        log("JOIN SUCCESSFULL")
+        await JoinRoom(sid, username, room_id)
+        await sio.emit('user_joined', username)
+        await SendLobbyData(sid)
+    else:
+        log(f"invalid_lobby_code")
+    
+    # sio.emit("invalid_lobby_code", data)
+    # need and send an error event if room doesn't exist or full already
 
 
-@sio.event
-async def connect(sid, environ):
+@sio.on('create_lobby')
+async def CreateLobby(sid, username, game_type):
+    
+    log(f"CreateLobby() username: {username}, game_type: {game_type}")
+    # here
+
+    room_id = GetUserRoom(username)
+    if room_id is not None:
+        log(f"User {username} is already in a game")
+    else:
+        room_id = CreateRoom(game_type)
+    #     room_id = GetAvailableRoom(game_type)
+    # if room_id is None:
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+        })
+    await JoinRoom(sid, username, room_id)
+    await sio.emit('user_joined', username)
+    await SendLobbyData(sid)
+
+
+@sio.on('connect')
+async def Connect(sid, environ):
     global games, client_count, connected_users
 
     client_count += 1
@@ -420,7 +463,7 @@ async def connect(sid, environ):
     game_type = query.get('gameType', [None])[0]
 
     if not username or not game_type:
-        log(f"No username: {username} or game type: {game_type}")
+        log(f"No username or game type")
         await sio.disconnect(sid)
         return False
     if await UserAlreadyConnected(username):
@@ -430,26 +473,9 @@ async def connect(sid, environ):
     connected_users[sid] = username
     log(f"User {username} connected ({sid})")
 
-    room_id = GetUserRoom(username)
-    if room_id is not None:
-        log(f"User {username} is already in a game")
-    else:
-        room_id = GetAvailableRoom(game_type)
-    if room_id is None:
-        room_id = CreateRoom(game_type)
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
-    session = await sio.get_session(sid)
-    log(f"session in connect: {session}")
-    await JoinRoom(sid, username, room_id)
-    await sio.emit('user_joined', username)
-    # send the users
-    await SendLobbyData(sid)
 
-@sio.event
-async def message(sid, data):
+@sio.on('message')
+async def Message(sid, data):
     log(f"Message from {sid}: {data}")
     await sio.send(f"Server received {data} from {sid}!")
 

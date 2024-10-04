@@ -35,7 +35,6 @@ export function UpdatePlayerInfo(player1, player2)
 	// /!\
 	player1Info = player1;
 	player2Info = player2;
-	// modify user
 }
 
 export function UpdateMenu(activeMenu)
@@ -45,19 +44,35 @@ export function UpdateMenu(activeMenu)
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event, data)
+export function SendEvent(event, username, data)
 {
-	console.log("SendEvent(), data: ", data);
+	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
 
 	if (!socket || !socket.connected)
 	{
 		console.log("Socket.io connection not open");
 		return false;
 	}
-	if (data == null)
+	if (username == null && data == null)
+	{
+		console.log("username and data NULL");
 		socket.emit(event);
-		else
+	}
+	else if (username == null)
+	{
+		console.log("username NULL");
 		socket.emit(event, data);
+	}
+	else if (data == null)
+	{
+		console.log("data NULL");
+		socket.emit(event, username);
+	}
+	else
+	{
+		console.log("'nothing' NULL");
+		socket.emit(event, username, data);
+	}
 	return true;
 }
 
@@ -128,7 +143,7 @@ export function ConnectWebsocket(type, username)
 		console.log("BOTH PLAYER READY");
 		menu.remove();
 		StartGame();
-		SendEvent('start_game', menu);
+		SendEvent('start_game', userName);
 	});
 	// might not be needed anymore
 	// socket.on('init_game', function() {

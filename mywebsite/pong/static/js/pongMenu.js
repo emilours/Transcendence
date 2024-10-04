@@ -4,6 +4,8 @@ import { StartLocalGame } from './pongLocal.js'
 
 export function initPong(userName, avatar) {
 	// let user = 'userName';
+	const NORMAL_MODE = 'normal';
+	const TOURNAMENT_MODE = 'tournament';
 	let lobbyMenu;
 	console.log('Pong game initialized - user:', userName);
 
@@ -14,6 +16,7 @@ export function initPong(userName, avatar) {
 			createElement('div', { className: 'button-vertical' },
 				createButton('ONLINE MATCH', () => {
 					mainMenu.remove();
+					ConnectWebsocket(NORMAL_MODE, userName, avatar);
 					drawOnlineMenu();
 				}),
 				createButton('LOCAL MATCH', () => {
@@ -22,6 +25,8 @@ export function initPong(userName, avatar) {
 				}),
 				createButton('TOURNAMENT', () => {
 					mainMenu.remove();
+					// ConnectWebsocket(TOURNAMENT_MODE, userName, avatar);
+
 				})
 			)
 		);
@@ -36,15 +41,15 @@ export function initPong(userName, avatar) {
 				createButton('CREATE LOBBY', () => {
 					onlineMenu.remove();
 					//
-					ConnectWebsocket('normal', userName, avatar);
+					SendEvent('create_lobby', userName, NORMAL_MODE)
 					drawLobbyMenu('create');
 					UpdateMenu(lobbyMenu);
 				}),
 				createButton('JOIN LOBBY', () => {
 					onlineMenu.remove();
 					// Need to change so it only joins
-					ConnectWebsocket('normal', userName, avatar);
-					drawJoinMenu();
+					// ConnectWebsocket('normal', userName, avatar);
+					drawJoinMenu(NORMAL_MODE);
 					// UpdateMenu(lobbyMenu);
 				}),
 				createButton('BACK', () => {
@@ -56,7 +61,7 @@ export function initPong(userName, avatar) {
 		document.querySelector('.pong-container').appendChild(onlineMenu);
 	}
 
-	function drawJoinMenu() {
+	function drawJoinMenu(mode) {
 		let buttonJoin;
 		lobbyMenu = createElement('div', { className: 'menu' },
 			createElement('h2', { innerText: 'Enter lobby code' }),
@@ -65,9 +70,10 @@ export function initPong(userName, avatar) {
 				const lobbyCode = document.getElementById('inputField').value;
 				UpdateMenu(lobbyMenu);
 				//joinlobby on websocket
-				SendEvent('join_lobby', lobbyCode);
+				lobbyMenu.remove();
+				SendEvent('join_lobby', userName, lobbyCode);
 				// after successful drawLobbyMenu('join')
-				// drawLobbyMenu('join');
+				drawLobbyMenu('join');
 			}),
 		);
 
@@ -150,7 +156,7 @@ export function initPong(userName, avatar) {
 				buttonReady.innerText = 'OK';
 				console.log("lobby: ", lobbyMenu);
 				UpdateMenu(lobbyMenu);
-				SendEvent('player_ready', null);
+				SendEvent('player_ready', userName, null);
 			})
 		);
 		return playerInfo;
