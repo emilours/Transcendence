@@ -326,8 +326,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
-	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 
+	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
 	loadHeader();
 });

@@ -14,6 +14,7 @@ from django.db import transaction
 from django.contrib.auth.hashers import check_password
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404, render
+from asgiref.sync import sync_to_async
 from django.http import StreamingHttpResponse
 from django.db.models import Q
 from django.utils.crypto import get_random_string
@@ -479,11 +480,45 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
+# @login_required
+# def sse(request):
+#     async def event_stream():
+#         last_status = []
+#         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
+#         try:
+#             while True:
+#                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
+#                 number_update = await asyncio.to_thread(check_friendlist_update, request.user)
+
+#                 if status_update != last_status or last_number != number_update:
+#                     combined_update = {
+#                         "friend_requests": status_update,
+#                         "friend_count": number_update
+#                     }
+#                     yield f"data: {json.dumps(combined_update)}\n\n"
+
+#                     last_status = status_update
+#                     last_number = number_update
+
+#                 await asyncio.sleep(5)
+#         except asyncio.CancelledError:
+#             print('Stream closed')
+#             # await sync_to_async(request.user.__class__.objects.filter(pk=request.user.pk).update)(
+#             #     is_online=False
+#             # )
+#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+
 @login_required
 def sse(request):
     async def event_stream():
         last_status = []
         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
+
+        if not request.user.is_online:
+            request.user.is_online = True
+            await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+
         try:
             while True:
                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
@@ -503,8 +538,12 @@ def sse(request):
         except asyncio.CancelledError:
             print('Stream closed')
             return
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        finally:
+            if request.user.is_online:
+                request.user.is_online = False
+                await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
 def check_friend_request_update(user):
     pending_requests = FriendRequest.objects.filter(
