@@ -16,6 +16,18 @@ from asgiref.sync import sync_to_async
 from urllib.parse import parse_qs
 
 
+# COLORS (BOLD)
+DARK_GRAY = "\033[1;90m"
+RED = "\033[1;91m"
+GREEN = "\033[1;92m"
+YELLOW = "\033[1;93m"
+BLUE = "\033[1;94m"
+MAGENTA = "\033[1;95m"
+CYAN = "\033[1;96m"
+WHITE = "\033[1;97m"
+RESET = "\033[1;0m"
+
+
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
 BALL_SPEED = 0.1
@@ -55,7 +67,7 @@ games = {}
 # ])
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins=['https://localhost:8080'],
+    cors_allowed_origins='*',
     ssl_verify=False,  # Disable SSL verification if self-signed
     logger=True,
     engineio_logger=True
@@ -69,6 +81,9 @@ app = socketio.ASGIApp(sio)
 
 def log(message):
     print(f"[LOG] {message}")
+
+def color_print(color, message):
+    print(color + message + RESET)
 
 def reset_ball(room_id):
 
@@ -233,6 +248,7 @@ def GetUserRoom(username):
             return game['room_id']
     return None
 
+# not needed anymore
 def GetAvailableRoom(game_type):
     global games
 
@@ -410,42 +426,55 @@ async def StartGame(sid, username):
 @sio.on('join_lobby')
 async def JoinLobby(sid, username, room_key):
     
-    log("JoinLobby()")
-    room_id = IsLobbyCreated(room_key)
-    if room_id is not None and not IsRoomFull(room_id):
+    log("JoinLobby() username: {username}, room_key: {room_key}")
+    room_id = GetUserRoom(username)
+    if room_id is not None:
         await sio.save_session(sid, {
             'username': username,
             'room_id': room_id
             })
-        log("JOIN SUCCESSFULL")
-        await JoinRoom(sid, username, room_id)
-        await sio.emit('user_joined', username)
-        await SendLobbyData(sid)
-    else:
-        log(f"invalid_lobby_code")
-    
-    # sio.emit("invalid_lobby_code", data)
-    # need and send an error event if room doesn't exist or full already
-
-
-@sio.on('create_lobby')
-async def CreateLobby(sid, username, game_type):
-    
-    log(f"CreateLobby() username: {username}, game_type: {game_type}")
-    # here
-
-    room_id = GetUserRoom(username)
-    if room_id is not None:
         log(f"User {username} is already in a game")
-    else:
-        room_id = CreateRoom(game_type)
-    #     room_id = GetAvailableRoom(game_type)
-    # if room_id is None:
+        await sio.enter_room(sid, room_id)
+        log(f"User [{username}] joined room [{room_id}]") 
+        # need to send error if player already in a lobby/room
+
+    room_id = IsLobbyCreated(room_key)
+    if room_id is None or IsRoomFull(room_id):
+        log(f"invalid_lobby_code")
+        # need and send an error event if room doesn't exist or full already
+        sio.emit("invalid_lobby_code")
+        return
+    
+    log("JOIN SUCCESSFULL")
     await sio.save_session(sid, {
         'username': username,
         'room_id': room_id
         })
     await JoinRoom(sid, username, room_id)
+    await sio.emit('user_joined', username)
+    await SendLobbyData(sid)
+    
+
+@sio.on('create_lobby')
+async def CreateLobby(sid, username, game_type):
+    
+    log(f"CreateLobby() username: {username}, game_type: {game_type}")
+
+    # Check if user is already in a game
+    room_id = GetUserRoom(username)
+    if room_id is not None:
+        log(f"User {username} is already in a game")
+        await sio.enter_room(sid, room_id)
+        log(f"User [{username}] joined room [{room_id}]") 
+    else:
+        room_id = CreateRoom(game_type)
+        await JoinRoom(sid, username, room_id)
+    # room_id = GetAvailableRoom(game_type)
+    # if room_id is None:
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+        })
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
@@ -506,6 +535,38 @@ async def disconnect(sid):
         log(f"No session found for {sid}")
 
 
+@sio.on('debug_print')
+async def DebugPrint(sid, username):
+    global games, connected_users
+    color_print(DARK_GRAY, f"\n\n--------DEBUG--------\n")
+
+    # 
+    try:
+        session = await sio.get_session(sid)
+        color_print(BLUE, f"session for {username}: {session}\n")
+    except KeyError:
+        print(f"KeyError in DebugPrint()\n")
+        color_print(DARK_GRAY, f"---------------------\n\n")
+
+    color_print(BLUE, f"connected_users: {connected_users}\n")
+
+    all_rooms = sio.manager.rooms
+    for rooms in all_rooms.values():
+        for room, participants in rooms.items():
+            if room not in participants and room is not None:
+                color_print(BLUE, f"Room: {room} -> Participants: {list(participants)}\n")
+
+    color_print(BLUE, f"    [GAMES]    ")
+    for game in games.values():
+        color_print(BLUE, f"id: {game['room_id']}")
+        color_print(BLUE, f"type: {game['game_type']}")
+        color_print(BLUE, f"status: {game['status']}")
+        color_print(BLUE, f"players: {game['players']}")
+        color_print(BLUE, f"sids: {game['sids']}")
+        color_print(BLUE, f"ready: {game['ready']}")
+        print("")
+
+    color_print(DARK_GRAY, f"---------------------\n\n")
 
 
 if __name__ == "__main__":

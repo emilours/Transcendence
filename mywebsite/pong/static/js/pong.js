@@ -83,14 +83,14 @@ export function ConnectWebsocket(type, username)
 	gameType = type;
 	userName = username;
 	console.log("Connecting to game: " + gameType + " for user: " + username);
-
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
         console.log('Existing socket disconnected');
     }
 
-	// ws:// working fine
-	socket = io('wss://localhost:6789', {
+	console.log("location:", window.location);
+	// ${window.location.host}
+	socket = io(`wss://${window.location.hostname}:6789`, {
 		transports: ['websocket'],  // Use only WebSocket transport
 		secure: true,
 		reconnection: false, // Disable reconnection to observe disconnection behavior
@@ -403,6 +403,9 @@ function Init()
 	};
 
 	document.body.addEventListener( 'keydown', function(e) {
+	// debug event
+	if (e.key === 't')
+		SendEvent('debug_print', userName)
 	if (e.key === "ArrowUp" || e.key === "ArrowDown")
 		e.preventDefault();
 	var key = e.code.replace('Key', '').toLowerCase();

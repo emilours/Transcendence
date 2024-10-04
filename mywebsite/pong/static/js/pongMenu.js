@@ -3,11 +3,15 @@ import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo, UpdateMe
 import { StartLocalGame } from './pongLocal.js'
 
 export function initPong(userName, avatar) {
-	// let user = 'userName';
 	const NORMAL_MODE = 'normal';
 	const TOURNAMENT_MODE = 'tournament';
 	let lobbyMenu;
 	console.log('Pong game initialized - user:', userName);
+
+	document.body.addEventListener( 'keydown', function(event) {
+	if (event.key === 't')
+		SendEvent('debug_print', userName)
+	});
 
 	function drawMainMenu() {
 		const mainMenu = createElement('div', { className: 'menu' },
@@ -54,6 +58,7 @@ export function initPong(userName, avatar) {
 				}),
 				createButton('BACK', () => {
 					onlineMenu.remove();
+					CloseWebsocket();
 					drawMainMenu();
 				})
 			)

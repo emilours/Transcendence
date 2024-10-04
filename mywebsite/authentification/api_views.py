@@ -105,7 +105,7 @@ def callback_42(request):
             return redirect('/error_api/')
 
         if avatar_url:
-            avatar_response = requests.get(avatar_url)
+            avatar_response = requests.get(avatar_url, verify=False)
             if avatar_response.status_code == 200:
                 avatar_name = os.path.basename(urlparse(avatar_url).path)
                 avatar_content = ContentFile(avatar_response.content)
