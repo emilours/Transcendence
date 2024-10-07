@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			eventSource.onmessage = function(event) {
 				const data = JSON.parse(event.data);
-				if (data && (data.friend_requests || data.friend_count >= 0)) {
+				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
 					if (window.location.pathname === '/profile/') {
 						loadContent('/profile/', false);
 					}

@@ -65,29 +65,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 	def __str__(self):
 		return self.email
 
-	# TESTS TO BE DONE
-	def clean(self):
-		if CustomUser.objects.filter(email=self.email).exclude(pk=self.pk).exists():
-			raise ValidationError({'email': 'This mail address is already in use.'})
-
-		if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
-			raise ValidationError({'display_name': 'This display name is already in use.'})
-
-	def save(self, *args, **kwargs):
-		created = self.pk is None
-		super().save(*args, **kwargs)
-
-		if created and not hasattr(self, 'friend_list'):
-			FriendList.objects.get_or_create(user=self)
-
-	# TESTS TO BE DONE
-	def clean(self):
-		if CustomUser.objects.filter(email=self.email).exclude(pk=self.pk).exists():
-			raise ValidationError({'email': 'This mail address is already in use.'})
-
-		if CustomUser.objects.filter(display_name=self.display_name).exclude(pk=self.pk).exists():
-			raise ValidationError({'display_name': 'This display name is already in use.'})
-
 	def save(self, *args, **kwargs):
 		created = self.pk is None
 		super().save(*args, **kwargs)
@@ -141,10 +118,6 @@ class FriendList(models.Model):
 			pass
 
 	@transaction.atomic
-	def is_mutual_friend(self, friend):
-		return friend in self.friends.all()
-
-	@transaction.atomic
 	def friend_count(self):
 		count = self.friends.count()
 		return count
@@ -152,8 +125,6 @@ class FriendList(models.Model):
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUEST                                                                                      ===
 # # ================================================================================================================================================================
-
-from django.db import models, transaction
 
 class FriendRequest(models.Model):
 	sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="sent_requests")

@@ -480,40 +480,12 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-# @login_required
-# def sse(request):
-#     async def event_stream():
-#         last_status = []
-#         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
-#         try:
-#             while True:
-#                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
-#                 number_update = await asyncio.to_thread(check_friendlist_update, request.user)
-
-#                 if status_update != last_status or last_number != number_update:
-#                     combined_update = {
-#                         "friend_requests": status_update,
-#                         "friend_count": number_update
-#                     }
-#                     yield f"data: {json.dumps(combined_update)}\n\n"
-
-#                     last_status = status_update
-#                     last_number = number_update
-
-#                 await asyncio.sleep(5)
-#         except asyncio.CancelledError:
-#             print('Stream closed')
-#             # await sync_to_async(request.user.__class__.objects.filter(pk=request.user.pk).update)(
-#             #     is_online=False
-#             # )
-#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
-
 @login_required
 def sse(request):
     async def event_stream():
         last_status = []
         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
+        last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
 
         if not request.user.is_online:
             request.user.is_online = True
@@ -521,22 +493,24 @@ def sse(request):
 
         try:
             while True:
+                friend_statuses_update = await asyncio.to_thread(check_friends_statuses_update, request.user)
                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
                 number_update = await asyncio.to_thread(check_friendlist_update, request.user)
 
-                if status_update != last_status or last_number != number_update:
+                if status_update != last_status or last_number != number_update or last_friend_statuses != friend_statuses_update:
                     combined_update = {
                         "friend_requests": status_update,
-                        "friend_count": number_update
+                        "friend_count": number_update,
+                        "friend_statuses": friend_statuses_update
                     }
                     yield f"data: {json.dumps(combined_update)}\n\n"
 
                     last_status = status_update
                     last_number = number_update
+                    last_friend_statuses = friend_statuses_update
 
                 await asyncio.sleep(5)
         except asyncio.CancelledError:
-            print('Stream closed')
             return
         finally:
             if request.user.is_online:
@@ -569,6 +543,25 @@ def check_friendlist_update(user):
         return friendlist.friend_count()
     except FriendList.DoesNotExist:
         return 0
+
+def check_friends_statuses_update(user):
+    try:
+        user_friend_list = user.friend_list
+        friends = user_friend_list.friends.all()
+
+        friend_statuses = [
+            {
+                "id": friend.id,
+                "display_name": friend.display_name,
+                "is_online": friend.is_online
+            }
+            for friend in friends
+        ]
+        
+        return friend_statuses
+
+    except FriendList.DoesNotExist:
+        return []
 
 # def sse_test(request):
 #     def event_stream():
