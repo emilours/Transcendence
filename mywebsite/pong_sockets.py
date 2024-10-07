@@ -11,7 +11,7 @@ django.setup()
 from frontend.models import Game, Match, PlayerMatch
 from frontend.models import CustomUser
 
-import socketio, uuid, asyncio, json
+import socketio, uuid, asyncio, json, time
 from asgiref.sync import sync_to_async
 from urllib.parse import parse_qs
 
@@ -30,7 +30,8 @@ RESET = "\033[1;0m"
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
-BALL_SPEED = 0.1
+# BALL_SPEED = 0.1
+BALL_SPEED = 2.0
 BALL_SIZE = 0.2
 PADDLE_HEIGHT = 2.0
 PADDLE_WIDTH = 0.2
@@ -161,14 +162,19 @@ async def StartGameLoop(sid, game_type, room_id):
     log(f"STARTING GAME LOOP by {sid}")
     sid1 = games[room_id]['sids'][0]
     sid2 = games[room_id]['sids'][1]
+    delta_time = 0
     current_task = asyncio.current_task()
     while True:
         while games[room_id]['status'] == "paused":
             await asyncio.sleep(1 / 2)
             log("GAME IS PAUSE, SLEEPING!")
 
-        # Handle collisions with walls
+        # Delta time
+        current_time = time.time()
+        delta_time = current_time - games[room_id]['last_time']
+        games[room_id]['last_time'] = current_time
 
+        # Handle collisions with walls
         if games[room_id]['ballPosition'][1] <= BOTTOM_WALL or games[room_id]['ballPosition'][1] >= TOP_WALL:
             games[room_id]['ballVelocity'][1] *= -1
 
@@ -200,8 +206,8 @@ async def StartGameLoop(sid, game_type, room_id):
 
 
         # Update the ball position
-        games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0]
-        games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1]
+        games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * BALL_SPEED * delta_time
+        games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1] * BALL_SPEED * delta_time
 
 
         # Broadcast the updated game state to all clients
@@ -276,7 +282,7 @@ def CreateRoom(game_type):
         'ballPosition': [0, 0],
         'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
         'game_over': 0,
-        'text': "waiting for 2 players",
+        'last_time': 0,
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
 	}
     log(f"Room {room_id} created")
@@ -414,9 +420,14 @@ async def StartGame(sid, username):
 
     log('StartGame()')
     room_id = GetUserRoom(username)
+    # Used so only one socketio connection runs the game loop
+    # TODO: change this for tournament (index of player that runs loop)
+    if (username != games[room_id]['players'][0]):
+        return
     room_full = IsRoomFull(room_id)
     if room_full == NORMAL_GAME:
         # await sio.emit('init_game', room=room_id)
+        games[room_id]['last_time'] = time.time()
         asyncio.create_task(StartGameLoop(sid, games[room_id]['game_type'], room_id))
     elif room_full == TOURNAMENT_GAME:
           pass
@@ -426,7 +437,7 @@ async def StartGame(sid, username):
 @sio.on('join_lobby')
 async def JoinLobby(sid, username, room_key):
     
-    log("JoinLobby() username: {username}, room_key: {room_key}")
+    log(f"JoinLobby() username: {username}, room_key: {room_key}")
     room_id = GetUserRoom(username)
     if room_id is not None:
         await sio.save_session(sid, {
@@ -436,13 +447,19 @@ async def JoinLobby(sid, username, room_key):
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]") 
-        # need to send error if player already in a lobby/room
+        await sio.emit('player_already_in_room', games[room_id]['players'].index(username))
+        await SendLobbyData(sid)
+        return 
 
     room_id = IsLobbyCreated(room_key)
-    if room_id is None or IsRoomFull(room_id):
+    if room_id is None:
         log(f"invalid_lobby_code")
         # need and send an error event if room doesn't exist or full already
-        sio.emit("invalid_lobby_code")
+        await sio.emit('invalid_lobby_code')
+        return
+    
+    if IsRoomFull(room_id):
+        await sio.emit('room_already_full')
         return
     
     log("JOIN SUCCESSFULL")

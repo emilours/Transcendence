@@ -3,13 +3,15 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
+import { drawOnlineMenu, drawLobbyMenu } from './pongMenu.js';
+
 
 // standard global variables
 var scene, camera, renderer, controls, loader;
 
 // custom global variables
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
-var overlayText;
+// var overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 // var threadID;
@@ -82,6 +84,7 @@ export function ConnectWebsocket(type, username)
 	running = true;
 	gameType = type;
 	userName = username;
+	InitCustomAlerts();
 	console.log("Connecting to game: " + gameType + " for user: " + username);
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
@@ -145,12 +148,32 @@ export function ConnectWebsocket(type, username)
 		StartGame();
 		SendEvent('start_game', userName);
 	});
-	// might not be needed anymore
-	// socket.on('init_game', function() {
-	// 	console.log("init_game event called!");
-	// 	menu.remove();
-	// 	StartGame();
-	// });
+	socket.on('invalid_lobby_code', function() {
+		if (menu)
+		{
+			console.log("restoring online menu");
+			menu.remove();
+			drawOnlineMenu();
+		}
+		CustomAlert("Invalid Lobby Code");		
+	});
+	socket.on('player_already_in_room', function (index) {
+		console.log("player already in room, player index:", index);
+		if (menu)
+		{
+			let mode;
+			console.log("restoring online menu");
+			menu.remove();
+			if (index == 0)
+				mode = 'create';
+			else if (index == 1)
+				mode = 'join';
+			drawLobbyMenu(mode);
+			// drawLobbyMenu('create') or drawLobbyMenu('join'); modified
+		}
+		CustomAlert("You already are in a game, joining lobby...");
+	});
+	
 	socket.on('send_lobby_data', function(data) {
 		// TODO: Make this cleaner
 		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
@@ -173,6 +196,9 @@ export function ConnectWebsocket(type, username)
 			const codeText = menu.querySelector('h4');
 			if (codeText)
 				codeText.innerText = lobbyCode;
+			else
+				console.log("NO h4 in menu");
+		
 		}
 
 		// can just check later if avatar[i] is undefined then default img
@@ -215,6 +241,45 @@ export function CloseWebsocket() {
 		socket.disconnect();
 		console.log("Socket.IO connection closed");
 	}
+}
+
+function CustomAlert(alertMessage)
+{
+	const customAlert = document.getElementById('customAlert');
+	if (customAlert)
+	{
+		const customAlertText = customAlert.querySelector('p');
+		if (customAlertText)
+		{
+			customAlertText.innerText = alertMessage;
+			customAlert.style.display = 'block';
+		}
+	}
+}
+
+function InitCustomAlerts()
+{
+	// Get elements
+	const customAlert = document.getElementById('customAlert');
+	const closeAlert = document.getElementById('closeButton');
+	const alertOkBtn = document.getElementById('OkButton');
+
+	// Close the alert when the "X" is clicked
+	closeAlert.onclick = function () {
+	customAlert.style.display = 'none';
+	};
+
+	// Close the alert when the "OK" button is clicked
+	alertOkBtn.onclick = function () {
+	customAlert.style.display = 'none';
+	};
+
+	// Close the alert when clicking outside the modal content
+	window.onclick = function (event) {
+	if (event.target === customAlert) {
+		customAlert.style.display = 'none';
+	}
+};
 }
 
 function onWindowResize()
@@ -382,8 +447,8 @@ function Init()
 	container.appendChild(renderer.domElement);
 
 
-	// OVERLAY TEXT
-	overlayText = document.getElementById('overlay-text');
+	// // OVERLAY TEXT
+	// overlayText = document.getElementById('overlay-text');
 
 	// LIGHT
 	// can't see textures without light
@@ -401,6 +466,7 @@ function Init()
 		arrowdown: false,
 		i: false
 	};
+
 
 	document.body.addEventListener( 'keydown', function(e) {
 	// debug event

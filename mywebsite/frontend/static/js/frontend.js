@@ -1,5 +1,5 @@
 import { initInvaders } from '/static/js/invaders.js';
-import { initPong } from '/static/js/pongMenu.js';
+import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -43,8 +43,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-		// close ws connection and cleanup threejsz
+		// close ws connection and cleanup threejs
 		CloseWebsocket();
+		cleanupPongMenu();
 
 		// Close any open Bootstrap modals
 		const modals = document.querySelectorAll('.modal.show');
@@ -95,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
 				await console.log('username: ', data.username, ' avatar: ', data.avatar);
-				await initPong(data.username, data.avatar);
+				await initPongMenu(data.username, data.avatar);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			}
