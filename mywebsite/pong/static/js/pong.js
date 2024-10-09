@@ -142,7 +142,7 @@ export function ConnectWebsocket(type, username)
 
 	// CUSTOM EVENTS
 	socket.on('client_count', function(count) {
-        if (client <= 1)
+        if (count <= 1)
 		    console.log(count + " client connected");
         else
 		    console.log(count + " clients connected");
