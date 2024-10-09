@@ -22,7 +22,7 @@
 							<a href="" class="btn btn-primary ms-2 mb-2" id="edit-password" style="width: 140px;">Edit Password</a>
 							<form id="anonymize-data-form" method="POST" action="{% url 'authentification:request_anonymization' %}">
 								{% csrf_token %}
-								<button type="submit" class="btn btn-warning ms-2 mb-2 rounded-2" style="width: 140px;" onclick="return confirm('Are you sure you want to anonymize your data? This action cannot be undone.');">Anonymize data</button>
+								<button type="submit" class="btn btn-warning ms-2 mb-2 rounded-2 text-nowrap" style="width: 140px;" onclick="return confirm('Are you sure you want to anonymize your data? This action cannot be undone.');">Anonymize data</button>
 							</form>
 							<form id="delete-account-form" method="POST" action="{% url 'authentification:delete_profile' %}" class="d-inline">
 								{% csrf_token %}

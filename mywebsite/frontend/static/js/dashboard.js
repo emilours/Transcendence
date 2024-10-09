@@ -12,17 +12,27 @@ export function showPongChart(stats) {
 						'rgba(0, 128, 0, 0.5)',
 						'rgba(220, 53, 69, 0.5)'
 					],
-					borderColor: [
+					hoverBackgroundColor: [
 						'rgba(0, 128, 0, 1)',
 						'rgba(220, 53, 69, 1)'
 					],
-					borderWidth: 1
+					borderColor: [
+						'rgba(83, 53, 35, 0.8)',
+						'rgba(83, 53, 35, 0.8)'
+					],
+					borderWidth: 2
 				}]
 			},
 			options: {
 				plugins: {
 					legend: {
-						position: 'left'
+						position: 'left',
+						labels: {
+							color: 'rgba(83, 53, 35, 0.7)'
+						}
+					},
+					tooltip: {
+						backgroundColor: 'rgba(83, 53, 35, 0.9)'
 					}
 				}
 			}
@@ -42,16 +52,38 @@ export function showInvadersChart(stats) {
 				datasets: [{
 					label: 'Scores',
 					data: stats,
-					backgroundColor: 'rgba(75, 192, 192, 0.2)',
-					borderColor: 'rgba(75, 192, 192, 1)',
-					borderWidth: 1,
-					fill: false
+					backgroundColor: 'rgba(255, 235, 234, 1)',
+					hoverBackgroundColor: 'rgba(255, 167, 200, 1)',
+					borderColor: 'rgba(83, 53, 35, 0.8)',
+					borderWidth: 2,
+					fill: false,
+					pointRadius: 5,
+					hoverRadius: 10,
+					hoverBorderWidth: 3
 				}]
 			},
 			options: {
 				scales: {
 					y: {
-						beginAtZero: true
+						beginAtZero: true,
+						ticks: {
+							color: 'rgba(83, 53, 35, 0.7)'
+						}
+					},
+					x: {
+						ticks: {
+							color: 'rgba(83, 53, 35, 0.7)'
+						}
+					}
+				},
+				plugins: {
+					legend: {
+						labels: {
+							color: 'rgba(83, 53, 35, 0.7)'
+						}
+					},
+					tooltip: {
+						backgroundColor: 'rgba(83, 53, 35, 0.9)'
 					}
 				}
 			}
