@@ -144,9 +144,7 @@ def SaveMatch(room_id, game_type):
 @sync_to_async
 def GetPlayersAvatar(room_id):
     avatars = []
-    # log(f"Players: {games[room_id]['players']}")
     for i in range (0, 4):
-        # if i in games[room_id]['players']:
         if i < len(games[room_id]['players']) and games[room_id]['players'][i] is not None:
             # log(f"{i} initialized: {games[room_id]['players']}")
             player = CustomUser.objects.filter(display_name=games[room_id]['players'][i])
@@ -324,15 +322,23 @@ def IsRoomFull(room_id):
         return TOURNAMENT_GAME
     return None
 
-async def LeaveRoom(sid, room_id):
+async def LeaveRoom(sid, username, room_id):
     global games
 
     await sio.leave_room(sid, room_id)
+    index = games[room_id]['players'].index(username)
+    del games[room_id]['players'][index]
+    del games[room_id]['sids'][index]
+    del games[room_id]['pos'][index]
+    del games[room_id]['scores'][index]
+    del games[room_id]['ready'][index]
+
     games[room_id]['player_count'] -= 1
-    session = await sio.get_session(sid)
-    if not session:
-        return False
-    log(f"User [{session['username']}] left room [{room_id}]")
+    if games[room_id]['player_count'] <= 0:
+        await DeleteRoom(room_id)
+        games[room_id] = {}
+        del games[room_id]
+    log(f"User [{username}] left room [{room_id}]")
 
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
@@ -413,7 +419,6 @@ async def PongInput(sid, text_data):
                 games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
 
-
 @sio.on('start_game')
 async def StartGame(sid, username):
     global games
@@ -434,9 +439,22 @@ async def StartGame(sid, username):
     else:
         log("room not full")
 
+
+@sio.on('leave_lobby')
+async def LeaveLobby(sid, username):
+
+    log(f"LeaveLobby() username: {username}")
+    room_id = GetUserRoom(username)
+    if room_id is None:
+        log(f"WARNING: User is not in a room")
+        return
+    await LeaveRoom(sid, username, room_id)
+    await SendLobbyData(sid)
+
+
 @sio.on('join_lobby')
 async def JoinLobby(sid, username, room_key):
-    
+
     log(f"JoinLobby() username: {username}, room_key: {room_key}")
     room_id = GetUserRoom(username)
     if room_id is not None:
@@ -446,10 +464,10 @@ async def JoinLobby(sid, username, room_key):
             })
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
-        log(f"User [{username}] joined room [{room_id}]") 
+        log(f"User [{username}] joined room [{room_id}]")
         await sio.emit('player_already_in_room', games[room_id]['players'].index(username))
         await SendLobbyData(sid)
-        return 
+        return
 
     room_id = IsLobbyCreated(room_key)
     if room_id is None:
@@ -457,11 +475,11 @@ async def JoinLobby(sid, username, room_key):
         # need and send an error event if room doesn't exist or full already
         await sio.emit('invalid_lobby_code')
         return
-    
+
     if IsRoomFull(room_id):
         await sio.emit('room_already_full')
         return
-    
+
     log("JOIN SUCCESSFULL")
     await sio.save_session(sid, {
         'username': username,
@@ -470,11 +488,11 @@ async def JoinLobby(sid, username, room_key):
     await JoinRoom(sid, username, room_id)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
-    
+
 
 @sio.on('create_lobby')
 async def CreateLobby(sid, username, game_type):
-    
+
     log(f"CreateLobby() username: {username}, game_type: {game_type}")
 
     # Check if user is already in a game
@@ -482,7 +500,7 @@ async def CreateLobby(sid, username, game_type):
     if room_id is not None:
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
-        log(f"User [{username}] joined room [{room_id}]") 
+        log(f"User [{username}] joined room [{room_id}]")
     else:
         room_id = CreateRoom(game_type)
         await JoinRoom(sid, username, room_id)
@@ -525,6 +543,7 @@ async def Message(sid, data):
     log(f"Message from {sid}: {data}")
     await sio.send(f"Server received {data} from {sid}!")
 
+
 @sio.on('disconnect')
 async def disconnect(sid):
     global games, client_count, connected_users
@@ -536,11 +555,11 @@ async def disconnect(sid):
         session = await sio.get_session(sid)
         log(f"session in disconnect: {session}")
         room_id = session.get('room_id')
-        if await LeaveRoom(sid, room_id) == False:
+        username = session.get('username')
+        if await LeaveRoom(sid, username, room_id) == False:
             log(f"User {username} disconnected ({sid})")
             return
 
-        username = session.get('username')
         if sid in connected_users:
             del connected_users[sid]
         if games[room_id]['player_count'] == 0:
@@ -557,7 +576,7 @@ async def DebugPrint(sid, username):
     global games, connected_users
     color_print(DARK_GRAY, f"\n\n--------DEBUG--------\n")
 
-    # 
+    #
     try:
         session = await sio.get_session(sid)
         color_print(BLUE, f"session for {username}: {session}\n")

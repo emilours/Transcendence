@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyMenu, initPongMenu } from './pongMenu.js';
 
 
 // standard global variables
@@ -49,32 +49,42 @@ export function UpdateMenu(activeMenu)
 export function SendEvent(event, username, data)
 {
 	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
-
-	if (!socket || !socket.connected)
-	{
-		console.log("Socket.io connection not open");
-		return false;
-	}
-	if (username == null && data == null)
-	{
-		console.log("username and data NULL");
-		socket.emit(event);
-	}
-	else if (username == null)
-	{
-		console.log("username NULL");
-		socket.emit(event, data);
-	}
-	else if (data == null)
-	{
-		console.log("data NULL");
-		socket.emit(event, username);
-	}
-	else
-	{
-		console.log("'nothing' NULL");
-		socket.emit(event, username, data);
-	}
+    let ret;
+    try
+    {
+        if (!socket || !socket.connected)
+        {
+            console.log("Socket.io connection not open");
+            return false;
+        }
+        if (username == null && data == null)
+        {
+            console.log("username and data NULL");
+            ret = socket.emit(event);
+        }
+        else if (username == null)
+        {
+            console.log("username NULL");
+            ret = socket.emit(event, data);
+        }
+        else if (data == null)
+        {
+            console.log("data NULL");
+            ret = socket.emit(event, username);
+        }
+        else
+        {
+            console.log("'nothing' NULL");
+            ret = socket.emit(event, username, data);
+        }
+    }
+    catch (error)
+    {
+        console.log("catch: " + error);
+        document.querySelector('.menu').remove();
+        initPongMenu(username, null);
+    }
+    console.log("ret: " + ret);
 	return true;
 }
 
@@ -85,13 +95,11 @@ export function ConnectWebsocket(type, username)
 	gameType = type;
 	userName = username;
 	InitCustomAlerts();
-	console.log("Connecting to game: " + gameType + " for user: " + username);
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
         console.log('Existing socket disconnected');
     }
 
-	console.log("location:", window.location);
 	// ${window.location.host}
 	socket = io(`wss://${window.location.hostname}:6789`, {
 		transports: ['websocket'],  // Use only WebSocket transport
@@ -105,7 +113,7 @@ export function ConnectWebsocket(type, username)
 
 
 	socket.on("connect", function() {
-		console.log("Connected to the server with WSS");
+		console.log("Connected to socket.io");
 	});
 	socket.on("message", function(message) {
 		console.log("Message from server: ", message);
@@ -113,7 +121,7 @@ export function ConnectWebsocket(type, username)
 
 	// DISCONNECT/ERROR EVENTS
 	socket.on("disconnect", function(reason) {
-		console.log("Disconnected from the server due to: " + reason);
+		console.log("Disconnected from socket.io for: " + reason);
 		running = false;
 	});
 	// Handle connection errors
@@ -134,8 +142,12 @@ export function ConnectWebsocket(type, username)
 
 	// CUSTOM EVENTS
 	socket.on('client_count', function(count) {
-		console.log("There is " + count + " client connected");
-	});
+        if (client <= 1)
+		    console.log(count + " client connected");
+        else
+		    console.log(count + " clients connected");
+
+    });
 	socket.on('user_joined', function(user) {
 		console.log("User " + user + " has joined.");
 	});
@@ -155,7 +167,7 @@ export function ConnectWebsocket(type, username)
 			menu.remove();
 			drawOnlineMenu();
 		}
-		CustomAlert("Invalid Lobby Code");		
+		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
 		console.log("player already in room, player index:", index);
@@ -173,7 +185,7 @@ export function ConnectWebsocket(type, username)
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});
-	
+
 	socket.on('send_lobby_data', function(data) {
 		// TODO: Make this cleaner
 		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
@@ -198,7 +210,7 @@ export function ConnectWebsocket(type, username)
 				codeText.innerText = lobbyCode;
 			else
 				console.log("NO h4 in menu");
-		
+
 		}
 
 		// can just check later if avatar[i] is undefined then default img

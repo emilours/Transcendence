@@ -9,8 +9,10 @@ var avatar, userName;
 
 export function initPongMenu(username, userAvatar) {
 
-	avatar = userAvatar;
-	userName = username;
+    if (userAvatar)
+	    avatar = userAvatar;
+    if (username)
+	    userName = username;
 	console.log('Pong game initialized - user:', userName);
 
 	document.body.addEventListener( 'keydown', function(event) {
@@ -23,13 +25,12 @@ export function initPongMenu(username, userAvatar) {
 
 export function cleanupPongMenu()
 {
-	if (lobbyMenu)
-	{
-		lobbyMenu.close();
-		lobbyMenu = null;
-	}
+    const menu = document.querySelector('.menu');
+    if (menu)
+        menu.remove();
 	// Maybe use UpdateMenu()
 	avatar = null;
+    userName = null;
 }
 
 function drawMainMenu() {
@@ -152,6 +153,7 @@ export function drawLobbyMenu(mode) {
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
+        SendEvent('leave_lobby', userName)
 		drawOnlineMenu();
 	});
 	lobbyMenu.appendChild(backButton);
