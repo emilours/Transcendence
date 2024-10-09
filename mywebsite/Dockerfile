@@ -17,6 +17,7 @@ COPY requirements.txt .
 RUN apt-get update && \
 	apt-get install -y postgresql-client openssl supervisor && \
 	pip install --no-cache-dir -r requirements.txt
+	
 
 # Copy the script to the working directory and make it executable
 COPY entrypoint.sh /

@@ -34,8 +34,6 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
 ALLOWED_HOSTS = ['*']
 
-# Application definition
-
 INSTALLED_APPS = [
     'daphne',
     'channels',
@@ -76,7 +74,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -195,9 +193,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
-    'https://localhost:8080',  # Nginx is serving the app here
-    'https://127.0.0.1:8080',  # Ensure this is included if you're using localhost
-    'https://paul-f4ar5s4:8080',# Add other domains as needed
+    'https://localhost:8080',
+    'https://127.0.0.1:8080',
+	'https://10.24.4.5:8080',
+    'https://paul-f4ar5s4:8080',
+    'https://paul-f4Ar3s2:8080',
 ]
 
 # Custom user model

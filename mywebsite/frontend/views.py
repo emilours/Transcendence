@@ -160,3 +160,4 @@ def load_header(request):
 		html = render_to_string('header.html', request=request)
 		return JsonResponse({'html': html})
 	return render(request, 'base.html')
+
