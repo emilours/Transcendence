@@ -49,7 +49,6 @@ export function UpdateMenu(activeMenu)
 export function SendEvent(event, username, data)
 {
 	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
-    let ret;
     try
     {
         if (!socket || !socket.connected)
@@ -58,33 +57,22 @@ export function SendEvent(event, username, data)
             return false;
         }
         if (username == null && data == null)
-        {
-            console.log("username and data NULL");
-            ret = socket.emit(event);
-        }
+            socket.emit(event);
         else if (username == null)
-        {
-            console.log("username NULL");
-            ret = socket.emit(event, data);
-        }
+            socket.emit(event, data);
         else if (data == null)
-        {
-            console.log("data NULL");
-            ret = socket.emit(event, username);
-        }
+            socket.emit(event, username);
         else
-        {
-            console.log("'nothing' NULL");
-            ret = socket.emit(event, username, data);
-        }
+            socket.emit(event, username, data);
     }
     catch (error)
     {
         console.log("catch: " + error);
-        document.querySelector('.menu').remove();
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+            activeMenu.remove();
         initPongMenu(username, null);
     }
-    console.log("ret: " + ret);
 	return true;
 }
 
@@ -110,7 +98,6 @@ export function ConnectWebsocket(type, username)
 			gameType: gameType   // Pass game type in the query string
 		}
 	});
-
 
 	socket.on("connect", function() {
 		console.log("Connected to socket.io");
