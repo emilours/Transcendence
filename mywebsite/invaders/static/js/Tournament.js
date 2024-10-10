@@ -1,6 +1,6 @@
 import Player from './Player.js';
 import { createElement, appendChildren, createButton, createButtonGreen } from './GameUtils.js';
-import { resetGame, initInvaders } from './invaders.js';
+import { resetGame, startInvaders } from './invaders.js';
 import { Color } from "./Colors.js";
 import { createPlayerContainer, shuffleArray } from './GameUtils.js';
 
@@ -58,7 +58,7 @@ export default class Tournament {
 			createButton('MENU', () => {
 				winnerScreen.remove();
 				resetGame(this.canvas);
-				initInvaders(game.userName);
+				startInvaders(game.userName);
 			}),
 		);
 		document.querySelector('.invaders-container').appendChild(winnerScreen);
@@ -125,7 +125,7 @@ export default class Tournament {
 					createButton('MENU', () => {
 						winnerScreen.remove();
 						resetGame(this.canvas);
-						initInvaders(game.userName);
+						startInvaders(game.userName);
 					}),
 					createButtonGreen('NEXT', () => {
 						winnerScreen.remove();
@@ -184,7 +184,7 @@ export function tournamentSetup(startGame, game) {
 		createElement('div', { className: 'button-horizontal' },
 			createButton('MENU', () => {
 				tournamentScreen.remove();
-				initInvaders(game.userName);
+				startInvaders(game.userName);
 			}),
 			createButtonGreen('CREATE', () => {
 				if (playerList.length === 4 || playerList.length === 8) {

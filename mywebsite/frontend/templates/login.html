@@ -11,14 +11,13 @@
 						</div>
 						<form id="login-form" class="font-roboto" method="POST" action="{% url 'home' %}">
 							{% csrf_token %}
-							<div class="mb-3">
-								<label for="email" class="form-label">Email Address</label>
+							<div class="form-floating mb-3">
 								<input type="email" class="form-control rounded-1" id="email" name="email" placeholder="Email" aria-describedby="emailHelp" maxlength="100" required>
-								<div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+								<label for="email">Email Address</label>
 							</div>
-							<div class="mb-3">
-								<label for="password" class="form-label">Password</label>
+							<div class="form-floating mb-3">
 								<input type="password" class="form-control rounded-1" id="password" name="password" placeholder="Password" maxlength="100" required>
+								<label for="password">Password</label>
 							</div>
 							<div class="my-4 form-check">
 								<input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
@@ -35,8 +34,8 @@
 						</div>
 					</div>
 				</div>
-				<div class="text-center mt-3 font-roboto">
-					<p>Don't have an account? <a href="#" class="text-decoration-none" id="signup-from-login">Sign up</a></p>
+				<div class="text-center mt-3 font-roboto text-secondary-emphasis">
+					<p style="opacity: 0.7;">Don't have an account? <a href="#" id="signup-from-login">Sign up</a></p>
 				</div>
 			</div>
 		</div>

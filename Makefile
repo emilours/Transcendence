@@ -19,6 +19,17 @@ up:
 	@docker compose -f ./docker-compose.yml up
 	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"
 
+# USED FOR TESTS
+malo: all
+	@docker exec -it mywebsite tail -f /var/log/socket.log
+
+socket:
+	@docker exec -it mywebsite tail -f /var/log/socket.log
+
+socket_err:
+	@docker exec -it mywebsite tail -f /var/log/socket.err.log
+#
+
 start:
 	@echo "$(YELLOW)\n. . . starting containers . . . \n$(RESET)";
 	@if [ -n "$$(docker ps -aq)" ]; then \
@@ -60,6 +71,8 @@ clean: stop down
 		echo "Removing images..."; \
 		docker rmi -f $(IMAGES); \
 	fi
+# removing daphne_volume for CRITICAL Listen failure
+	@docker volume rm -f daphne_volume
 
 fclean: clean
 	@echo "$(YELLOW)\n. . . Performing full cleanup . . .\n$(RESET)"

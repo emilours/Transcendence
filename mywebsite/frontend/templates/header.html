@@ -15,16 +15,16 @@
 						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" aria-current="page" href="#" id="navbar-home">Home</a>
 					</li>
 					<li class="nav-item">
-						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4 text-nowrap" aria-current="page" href="#" id="navbar-contact">Contact</a>
+						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" href="#" id="navbar-games">Games</a>
 					</li>
 					{% if user.is_authenticated %}
 					<li class="nav-item">
-						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" href="#" id="navbar-games">Games</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link fs-5 p-0 ms-2 mx-lg-4" href="#" id="navbar-leaderboard">Leaderboard</a>
+						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4" href="#" id="navbar-leaderboard">Leaderboard</a>
 					</li>
 					{% endif %}
+					<li class="nav-item">
+						<a class="nav-link fs-5 p-0 ms-2 ms-lg-4 text-nowrap" aria-current="page" href="#" id="navbar-contact">Contact</a>
+					</li>
 					<li class="nav-item">
 						<button id="decrease-font" class="btn btn-icon shadow-none btn-lg p-0 ms-2 ms-lg-4" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Decrease font size">
 							<i class="bi bi-dash-circle"></i>
@@ -43,10 +43,10 @@
 							<span class="d-md-none ms-1 fs-5">High Contrast</span>
 						</button>
 					</li>
-					<!-- <div class="navbar-nav nav-item dropdown text-secondary-emphasis me-3">
-						<a class="nav-link dropdown-toggle fs-5" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+					<!-- <div class="navbar-nav nav-item dropdown btn btn-icon shadow-none btn-lg">
+						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							<i class="bi bi-globe"></i>
-							<span class="d-md-none ms-1 fs-5">Account</span>
+							<span class="d-md-none ms-1 fs-4">Language</span>
 						</a>
 						<ul class="dropdown-menu rounded-2 dropdown-menu-primary" aria-labelledby="navbarDropdown">
 							<li><a class="dropdown-item text-link" href="#">English</a></li>

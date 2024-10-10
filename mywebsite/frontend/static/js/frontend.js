@@ -1,6 +1,8 @@
-import { initInvaders } from '/static/js/invaders.js';
-import { initPong } from '/static/js/pongMenu.js';
+import { startInvaders, stopInvaders } from '/static/js/invaders.js';
+import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
+import { CleanupLocalPong } from '/static/js/pongLocal.js';
+import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
@@ -47,11 +49,13 @@ document.addEventListener("DOMContentLoaded", () => {
 	const loadResource = (url, type) => {
 		return new Promise((resolve, reject) => {
 			const element = document.createElement(type);
-			if (type === 'script')
+			if (type === 'script') {
 				element.type = "module";
-			if (type === 'link')
-				element.rel = "stylesheet";
-			element.href = element.src = url
+				element.src = url;
+ 			} else if (type === 'link') {
+				 element.rel = "stylesheet";
+				 element.href = element.src = url
+			}
 			element.onload = resolve;
 			element.onerror = reject;
 			element.dataset.dynamic = true;
@@ -62,8 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-		// close ws connection and cleanup threejsz
+		// close ws connection and cleanup threejs
 		CloseWebsocket();
+		CleanupLocalPong();
+		cleanupPongMenu();
+		stopInvaders();
 
 		// Close any open Bootstrap modals
 		const modals = document.querySelectorAll('.modal.show');
@@ -108,12 +115,17 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/invaders.css', 'link');
 				await loadResource('/static/js/invaders.js', 'script');
-				await initInvaders(data.test_name);
+				await startInvaders(data.test_name);
 			} else if (url.includes('pong')) {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
-				await initPong(data.test_name);
+				await initPongMenu(data.username, data.avatar);
+			} else if (url.includes('dashboard')) {
+				await loadResource('/static/js/dashboard.js', 'script');
+				await console.log('pong_stats:', data.pong_stats);
+				await showPongChart(data.pong_stats);
+				await showInvadersChart(data.invaders_stats.last_five_scores);
 			} else if (url.includes('signup')) {
 				attachPolicyListeners();
 			} else if (url.includes('profile')) {
@@ -186,11 +198,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		const links = [
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
+			{ id: 'games-from-home', url: '/games/' },
 			{ id: 'signup-from-login', url: '/signup/' },
 			{ id: 'home-from-deleted', url: '/home/' },
 			{ id: 'edit-profile', url: '/edit_profile/' },
 			{ id: 'edit-password', url: '/edit_password/' },
-			{ id: 'games', url: '/games/' },
+			{ id: 'dashboard', url: '/dashboard/' },
+			{ id: 'login-from-games', url: '/login/' },
 			{ id: 'invaders', url: '/invaders/' },
 			{ id: 'pong', url: '/pong/' },
 		];

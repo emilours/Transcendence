@@ -29,6 +29,12 @@
 .env
 .env.db
 
+# Ignorer les fichiers __pycache__
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Virtual Environment
 myVirtualEnv/
 

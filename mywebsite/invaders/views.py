@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -28,6 +29,7 @@ def save_match(request):
 			print('--------HERE--------')
 			if request.user.is_authenticated:
 				user = request.user
+				print(f"[INVADER LOG] type of user: {type(user)}")
 
 			data = json.loads(request.body)
 

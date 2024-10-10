@@ -1,4 +1,10 @@
 {% load static %}
-<div class="invaders-container container mt-5">
-	<canvas id="game"></canvas>
+<div class="invaders-container container mt-5 position-relative">
+	<canvas id="game" class="d-none d-md-block"></canvas>
+</div>
+
+<div class="d-md-none position-fixed top-0 start-0 w-100 vh-100 bg-white d-flex justify-content-center align-items-center">
+	<div class="alert alert-warning" role="alert">
+		<p class="text-secondary-emphasis text-center font-balsamiq fs-4">Please use a larger screen to play the game</p>
+	</div>
 </div>

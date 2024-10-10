@@ -11,6 +11,7 @@ urlpatterns = [
 	path('edit_password/', views.edit_password, name='edit_password'),
 	path('games/', views.games, name='games'),
 	path('leaderboard/', views.leaderboard, name='leaderboard'),
+	path('dashboard/<str:username>/', views.user_dashboard, name='user_dashboard'),
 	path('load_header/', views.load_header, name='load_header'),
 	path('contact/', views.contact, name='contact'),
 	path('deleted_profile/', views.deleted_profile, name='deleted_profile'),
