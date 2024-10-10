@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyMenu, initPongMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, initPongMenu } from './pongMenu.js';
 
 
 // standard global variables
@@ -169,8 +169,8 @@ export function ConnectWebsocket(type, username)
 				mode = 'create';
 			else if (index == 1)
 				mode = 'join';
-			drawLobbyMenu(mode);
-			// drawLobbyMenu('create') or drawLobbyMenu('join'); modified
+			drawLobbyOnline(mode);
+			// drawLobbyOnline('create') or drawLobbyOnline('join'); modified
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});

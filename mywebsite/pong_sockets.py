@@ -48,6 +48,7 @@ MAX_PLAYER_TOURNAMENT = 4
 
 NORMAL_GAME = 'normal'
 TOURNAMENT_GAME = 'tournament'
+GAME_NAME = 'Pong'
 
 client_count = 0
 connected_users = {}
@@ -109,7 +110,7 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
     log("SAVING MATCH TO DB")
     # normal or tournament
 
-    game, _ = Game.objects.get_or_create(name='pong', description=game_type)
+    game, _ = Game.objects.get_or_create(name=GAME_NAME, description=game_type)
     match = Match.objects.create(game=game, status='completed', details=game_type)
 
     # player1
