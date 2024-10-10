@@ -552,7 +552,8 @@ def check_friends_statuses_update(user):
             {
                 "id": friend.id,
                 "display_name": friend.display_name,
-                "is_online": friend.is_online
+                "is_online": friend.is_online,
+                "avatar": friend.avatar.url
             }
             for friend in friends
         ]
