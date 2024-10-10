@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('/static/js/invaders.js', 'script');
 				await startInvaders(data.test_name);
 			} else if (url.includes('pong')) {
-				await loadResource('https://cdn.jsdelivr.net/Failed to load resource: the server responded with a status of 404 (Not Found)/gifler@0.1.0/gifler.min.js', 'script');
+				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
 				await initPong(data.test_name);
