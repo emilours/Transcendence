@@ -561,10 +561,3 @@ def check_friends_statuses_update(user):
 
     except FriendList.DoesNotExist:
         return []
-
-# def sse_test(request):
-#     def event_stream():
-#         for i in range(5):
-#             time.sleep(1)
-#             yield f"data: Hello SSE {i}\n\n"
-#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
