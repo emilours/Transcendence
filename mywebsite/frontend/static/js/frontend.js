@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			eventSource.onmessage = function(event) {
 				const data = JSON.parse(event.data);
-				if (data && (data.friend_requests || data.friend_count >= 0)) {
+				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
 					if (window.location.pathname === '/profile/') {
 						loadContent('/profile/', false);
 					}
@@ -337,8 +337,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
-	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 
+	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
 	loadHeader();
 });

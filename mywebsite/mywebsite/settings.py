@@ -21,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# SECRET_KEY = 'django-insecure-=tr6v@=3o78u=rnby-i3&$&b%(wlbr6lm$_7kw3!usjj&bbn9%'
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -32,8 +33,6 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
 ALLOWED_HOSTS = ['*']
-
-# Application definition
 
 INSTALLED_APPS = [
     'daphne',
@@ -196,7 +195,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CSRF_TRUSTED_ORIGINS = [
     'https://localhost:8080',
     'https://127.0.0.1:8080',
+	'https://10.24.4.5:8080',
     'https://paul-f4ar5s4:8080',
+    'https://paul-f4Ar3s2:8080',
 ]
 
 # Custom user model
