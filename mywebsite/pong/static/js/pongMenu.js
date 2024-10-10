@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo, UpdateMenu } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, UpdatePlayerInfo } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 const NORMAL_MODE = 'normal';
@@ -34,7 +34,6 @@ export function cleanupPongMenu()
     const menu = document.querySelector('.menu');
     if (menu)
         menu.remove();
-	// Maybe use UpdateMenu()
 	avatar = null;
     userName = null;
 }
@@ -72,7 +71,7 @@ export function drawOnlineMenu() {
 				onlineMenu.remove();
 				SendEvent('create_lobby', userName, NORMAL_MODE);
 				drawLobbyOnline('create');
-				UpdateMenu(lobbyMenu);
+				// UpdateMenu(lobbyMenu);
 			}),
 			createButton('JOIN LOBBY', () => {
 				onlineMenu.remove();
@@ -98,13 +97,13 @@ function drawJoinMenu(mode) {
 			lobbyMenu.remove();
 			SendEvent('join_lobby', userName, lobbyCode);
 			// after successful drawLobbyMenu('join')
-			// HERE --> reword UpdateMenu:
+			// HERE --> rework UpdateMenu:
 			// Cleaner and just better
 			if (mode === NORMAL_MODE)
 				drawLobbyOnline('join');
 			else
 				drawLobbyTournament('join');
-			UpdateMenu(lobbyMenu);
+			// UpdateMenu(lobbyMenu);
 		}),
 	);
 
@@ -145,7 +144,7 @@ export function drawLobbyOnline(mode) {
 			player2Info = drawPlayerOnline('waiting'),
 		);
 		UpdatePlayerInfo(player1Info, player2Info);
-		UpdateMenu(lobbyMenu);
+		// UpdateMenu(lobbyMenu);
 
 		lobbyMenu.appendChild(playerInfo);
 	}
@@ -188,7 +187,7 @@ function drawPlayerOnline(userName) {
 			buttonReady.style.backgroundColor = '#0ccf0c';
 			buttonReady.innerText = 'OK';
 			console.log("lobby: ", lobbyMenu);
-			UpdateMenu(lobbyMenu);
+			// UpdateMenu(lobbyMenu);
 			SendEvent('player_ready', userName, null);
 		})
 	);

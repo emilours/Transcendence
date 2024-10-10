@@ -27,7 +27,7 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var menu, player1Info, player2Info, player3Info, player4Info;
+var player1Info, player2Info, player3Info, player4Info;
 
 export function UpdatePlayerInfo(player1, player2)
 {
@@ -39,16 +39,10 @@ export function UpdatePlayerInfo(player1, player2)
 	player2Info = player2;
 }
 
-export function UpdateMenu(activeMenu)
-{
-	menu = activeMenu;
-	console.log("Active menu: ", menu);
-}
-
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 export function SendEvent(event, username, data)
 {
-	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
+	console.log("Sending event:", event, "username:", username, "data:", data);
     try
     {
         if (!socket || !socket.connected)
@@ -143,41 +137,38 @@ export function ConnectWebsocket(type, username)
 	});
 	socket.on('game_ready', function() {
 		console.log("BOTH PLAYER READY");
-		if (menu)
-			menu.remove();
-		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?) 
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		StartGame();
 		SendEvent('start_game', userName);
 	});
 	socket.on('invalid_lobby_code', function() {
-		if (menu)
-		{
-			console.log("restoring online menu");
-			menu.remove();
-			drawOnlineMenu();
-		}
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+            activeMenu.remove();
+        drawOnlineMenu();
 		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
 		console.log("player already in room, player index:", index);
-		if (menu)
+		const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
 		{
 			let mode;
-			console.log("restoring online menu");
-			menu.remove();
+			activeMenu.remove();
 			if (index == 0)
 				mode = 'create';
 			else if (index == 1)
 				mode = 'join';
 			drawLobbyOnline(mode);
-			// drawLobbyOnline('create') or drawLobbyOnline('join'); modified
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});
 
 	socket.on('send_lobby_data', function(data) {
 		// TODO: Make this cleaner
-		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
+		console.log("Received data from server..");
 		const lobbyCode = data.lobby_id;
 		user1 = data.users[0];
 		user2 = data.users[1];
@@ -190,11 +181,11 @@ export function ConnectWebsocket(type, username)
 
 
 		console.log("lobbyCode: ", lobbyCode);
-		console.log("menu: ", menu);
-		if (menu && lobbyCode !== undefined)
+
+        const activeMenu = document.querySelector('.menu');
+		if (activeMenu && lobbyCode !== undefined)
 		{
-			console.log("updating menu");
-			const codeText = menu.querySelector('h4');
+			const codeText = activeMenu.querySelector('h4');
 			if (codeText)
 				codeText.innerText = lobbyCode;
 			else
@@ -205,7 +196,6 @@ export function ConnectWebsocket(type, username)
 		// can just check later if avatar[i] is undefined then default img
 		if (player1Info && user1 !== undefined && avatar1 !== undefined)
 		{
-			console.log("updating player1info");
 			const playerUsername = player1Info.querySelector('h4');
 			if (playerUsername) {
 				playerUsername.innerText = user1;
@@ -221,7 +211,6 @@ export function ConnectWebsocket(type, username)
 
 		if (player2Info && user2 !== undefined && avatar2 !== undefined)
 		{
-			console.log("updating player2info");
 			const playerUsername = player2Info.querySelector('h4');
 			if (playerUsername) {
 				playerUsername.innerText = user2;
