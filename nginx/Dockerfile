@@ -8,6 +8,8 @@ RUN openssl req -x509 -nodes -days 365 \
     -out /etc/nginx/ssl/nginx.crt \
     -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=arincon.42.fr/UID=arincon"
 
+RUN cp -r /etc/nginx/ssl/ /daphne/
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 8080

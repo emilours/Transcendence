@@ -19,6 +19,58 @@
 	z-index: 1; /* Make sure it's above the canvas */
 }
 
+/* Custom Alert container - hidden by default */
+.custom-alert {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent background */
+}
+  
+/* Custom Alert content box */
+.custom-alert-content {
+background-color: rgba(255, 255, 255, 0.75);
+margin: 15% auto;
+padding: 20px;
+border: 1px solid #888;
+width: 30%;
+text-align: center;
+border-radius: 10px;
+}
+  
+/* Close button (X) */
+.alert-close-button {
+color: #aaa;
+float: right;
+font-size: 28px;
+font-weight: bold;
+}
+
+.alert-close-button:hover,
+.alert-close-button:focus {
+color: #000;
+cursor: pointer;
+}
+
+.alert-button {
+padding: 10px 20px;
+margin-top: 10px;
+border: none;
+background-color: #00ff37;
+color: rgb(255, 255, 255);
+font-size: 16px;
+border-radius: 5px;
+cursor: pointer;
+}
+
+.alert-button:hover {
+background-color: #00b627;
+}
+
 canvas {
 	box-shadow: 20px 10px 50px black;
 	background-image: url("../img/background2.gif");

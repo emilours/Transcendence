@@ -1,6 +1,7 @@
 import { startInvaders, stopInvaders } from '/static/js/invaders.js';
-import { initPong } from '/static/js/pongMenu.js';
+import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
+import { CleanupLocalPong } from '/static/js/pongLocal.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -65,8 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-		// close ws connection and cleanup threejsz
+		// close ws connection and cleanup threejs
 		CloseWebsocket();
+		CleanupLocalPong();
+		cleanupPongMenu();
 		stopInvaders();
 
 		// Close any open Bootstrap modals
@@ -117,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
-				await initPong(data.test_name);
+				await initPongMenu(data.username, data.avatar);
 			} else if (url.includes('dashboard')) {
 				await loadResource('/static/js/dashboard.js', 'script');
 				await console.log('pong_stats:', data.pong_stats);

@@ -3,18 +3,20 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
+import { drawOnlineMenu, drawLobbyMenu, initPongMenu } from './pongMenu.js';
+
 
 // standard global variables
 var scene, camera, renderer, controls, loader;
 
 // custom global variables
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
-var overlayText;
+// var overlayText;
 // TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
 // OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
 // var threadID;
 var gameType, socket;
-var userName, user1, user2;
+var userName, user1, user2, user3, user4, avatar1, avatar2, avatar3, avatar4;
 var scoreGeometry, scoreFont, gameOver;
 // const PADDLE_SPEED = 0.2;
 const BALL_SPEED = 0.1;
@@ -25,24 +27,52 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+var menu, player1Info, player2Info, player3Info, player4Info;
 
-export function GetUsers()
+export function UpdatePlayerInfo(player1, player2)
 {
-	const user_1 = { name: user1 };
-	const user_2 = { name: user2 };
-	return [user1, user2];
+	// /!\ Those 2 lines are very different:
+	// console.log("player1: ", player1);
+	// console.log("player1: " + player1);
+	// /!\
+	player1Info = player1;
+	player2Info = player2;
+}
+
+export function UpdateMenu(activeMenu)
+{
+	menu = activeMenu;
+	console.log("Active menu: ", menu);
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event)
+export function SendEvent(event, username, data)
 {
-	console.log("SendEvent()");
-	if (!socket || !socket.connected)
-	{
-		console.log("Socket.io connection not open");
-		return false;
-	}
-	socket.emit(event);
+	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
+    try
+    {
+        if (!socket || !socket.connected)
+        {
+            console.log("Socket.io connection not open");
+            return false;
+        }
+        if (username == null && data == null)
+            socket.emit(event);
+        else if (username == null)
+            socket.emit(event, data);
+        else if (data == null)
+            socket.emit(event, username);
+        else
+            socket.emit(event, username, data);
+    }
+    catch (error)
+    {
+        console.log("catch: " + error);
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+            activeMenu.remove();
+        initPongMenu(username, null);
+    }
 	return true;
 }
 
@@ -52,29 +82,25 @@ export function ConnectWebsocket(type, username)
 	running = true;
 	gameType = type;
 	userName = username;
-	console.log("socket type: " + typeof(socket));
-	console.log("username: " + username);
-	console.log("gametype: " + gameType);
-
+	InitCustomAlerts();
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
         console.log('Existing socket disconnected');
     }
-	
-	socket = io("http://localhost:6789", {
-		transportOptions: {
-			polling: {
-				extraHeaders: {
-					'X-Username': username,
-					'X-Gametype': gameType
-				}
-			}
+
+	// ${window.location.host}
+	socket = io(`wss://${window.location.hostname}:6789`, {
+		transports: ['websocket'],  // Use only WebSocket transport
+		secure: true,
+		reconnection: false, // Disable reconnection to observe disconnection behavior
+		query: {
+			username: username,  // Pass username in the query string
+			gameType: gameType   // Pass game type in the query string
 		}
 	});
 
-
 	socket.on("connect", function() {
-		console.log("Connected to the server");
+		console.log("Connected to socket.io");
 	});
 	socket.on("message", function(message) {
 		console.log("Message from server: ", message);
@@ -82,7 +108,7 @@ export function ConnectWebsocket(type, username)
 
 	// DISCONNECT/ERROR EVENTS
 	socket.on("disconnect", function(reason) {
-		console.log("Disconnected from the server due to: " + reason);
+		console.log("Disconnected from socket.io for: " + reason);
 		running = false;
 	});
 	// Handle connection errors
@@ -102,24 +128,113 @@ export function ConnectWebsocket(type, username)
     });
 
 	// CUSTOM EVENTS
-	socket.on("client_count", function(count) {
-		console.log("There is " + count + " client connected");
-	});
-	socket.on("user_joined", function(user) {
+	socket.on('client_count', function(count) {
+        if (count <= 1)
+		    console.log(count + " client connected");
+        else
+		    console.log(count + " clients connected");
+
+    });
+	socket.on('user_joined', function(user) {
 		console.log("User " + user + " has joined.");
 	});
-	socket.on("user_left", function(user) {
+	socket.on('user_left', function(user) {
 		console.log("User " + user + " has left.");
 	});
-	socket.on("init_game", function() {
-		console.log("init_game event called!");
+	socket.on('game_ready', function() {
+		console.log("BOTH PLAYER READY");
+		if (menu)
+			menu.remove();
+		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?) 
 		StartGame();
-	})
-	socket.on('send_users', function(data) {
-		user1 = data[0];
-		user2 = data[1];
+		SendEvent('start_game', userName);
 	});
-	console.log("HERE?");
+	socket.on('invalid_lobby_code', function() {
+		if (menu)
+		{
+			console.log("restoring online menu");
+			menu.remove();
+			drawOnlineMenu();
+		}
+		CustomAlert("Invalid Lobby Code");
+	});
+	socket.on('player_already_in_room', function (index) {
+		console.log("player already in room, player index:", index);
+		if (menu)
+		{
+			let mode;
+			console.log("restoring online menu");
+			menu.remove();
+			if (index == 0)
+				mode = 'create';
+			else if (index == 1)
+				mode = 'join';
+			drawLobbyMenu(mode);
+			// drawLobbyMenu('create') or drawLobbyMenu('join'); modified
+		}
+		CustomAlert("You already are in a game, joining lobby...");
+	});
+
+	socket.on('send_lobby_data', function(data) {
+		// TODO: Make this cleaner
+		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
+		const lobbyCode = data.lobby_id;
+		user1 = data.users[0];
+		user2 = data.users[1];
+		user3 = data.users[2];
+		user4 = data.users[3];
+		avatar1 = data.avatars[0];
+		avatar2 = data.avatars[1];
+		avatar3 = data.avatars[2];
+		avatar4 = data.avatars[3];
+
+
+		console.log("lobbyCode: ", lobbyCode);
+		console.log("menu: ", menu);
+		if (menu && lobbyCode !== undefined)
+		{
+			console.log("updating menu");
+			const codeText = menu.querySelector('h4');
+			if (codeText)
+				codeText.innerText = lobbyCode;
+			else
+				console.log("NO h4 in menu");
+
+		}
+
+		// can just check later if avatar[i] is undefined then default img
+		if (player1Info && user1 !== undefined && avatar1 !== undefined)
+		{
+			console.log("updating player1info");
+			const playerUsername = player1Info.querySelector('h4');
+			if (playerUsername) {
+				playerUsername.innerText = user1;
+			}
+			const playerImage = player1Info.querySelector('img');
+			if (playerImage) {
+				playerImage.src = avatar1;
+				playerImage.width = 200;
+				playerImage.height = 200;
+				playerImage.removeAttribute('style');
+			}
+		}
+
+		if (player2Info && user2 !== undefined && avatar2 !== undefined)
+		{
+			console.log("updating player2info");
+			const playerUsername = player2Info.querySelector('h4');
+			if (playerUsername) {
+				playerUsername.innerText = user2;
+			}
+			const playerImage = player2Info.querySelector('img');
+			if (playerImage) {
+				playerImage.src = avatar2;
+				playerImage.width = 200;
+				playerImage.height = 200;
+				playerImage.removeAttribute('style');
+			}
+		}
+	});
 }
 
 export function CloseWebsocket() {
@@ -127,6 +242,46 @@ export function CloseWebsocket() {
 		socket.disconnect();
 		console.log("Socket.IO connection closed");
 	}
+	running = false;
+}
+
+function CustomAlert(alertMessage)
+{
+	const customAlert = document.getElementById('customAlert');
+	if (customAlert)
+	{
+		const customAlertText = customAlert.querySelector('p');
+		if (customAlertText)
+		{
+			customAlertText.innerText = alertMessage;
+			customAlert.style.display = 'block';
+		}
+	}
+}
+
+function InitCustomAlerts()
+{
+	// Get elements
+	const customAlert = document.getElementById('customAlert');
+	const closeAlert = document.getElementById('closeButton');
+	const alertOkBtn = document.getElementById('OkButton');
+
+	// Close the alert when the "X" is clicked
+	closeAlert.onclick = function () {
+	customAlert.style.display = 'none';
+	};
+
+	// Close the alert when the "OK" button is clicked
+	alertOkBtn.onclick = function () {
+	customAlert.style.display = 'none';
+	};
+
+	// Close the alert when clicking outside the modal content
+	window.onclick = function (event) {
+	if (event.target === customAlert) {
+		customAlert.style.display = 'none';
+	}
+};
 }
 
 function onWindowResize()
@@ -290,35 +445,12 @@ function Init()
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	renderer.outputEncoding = THREE.sRGBEncoding;
-	// renderer.setClearColor(0x1c1c1c, 1); // same as scene.background
 	const container = document.getElementById('pong-container-id');
 	container.appendChild(renderer.domElement);
-	// renderer.setAnimationLoop(animate);
 
-	// CONTROLS
 
-	// controls = new OrbitControls( camera, renderer.domElement);
-	// controls.update();
-
-	// TEXT TEXTURE
-	// const textCanvas = document.createElement('canvas');
-	// const textContext = textCanvas.getContext('2d');
-	// textCanvas.width  = 512;
-	// textCanvas.height = 512;
-	// textContext.fillStyle = 'black';
-	// textContext.fillRect(0, 0, textCanvas.width, textCanvas.height);
-	// textContext.fillStyle = 'white';
-	// textContext.font = 'Bold 40px Arial';
-	// textContext.fillText('Game Starting', 50, 200);
-
-	// const textTexture = new THREE.CanvasTexture(textCanvas);
-	// const textGeometry = new THREE.PlaneGeometry(5, 5);
-	// const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture });
-	// const textPlane = new THREE.Mesh(textGeometry, textMaterial);
-	// scene.add(textPlane);
-
-	// OVERLAY TEXT
-	overlayText = document.getElementById('overlay-text');
+	// // OVERLAY TEXT
+	// overlayText = document.getElementById('overlay-text');
 
 	// LIGHT
 	// can't see textures without light
@@ -337,7 +469,13 @@ function Init()
 		i: false
 	};
 
+
 	document.body.addEventListener( 'keydown', function(e) {
+	// debug event
+	if (e.key === 't')
+		SendEvent('debug_print', userName)
+	if (e.key === "ArrowUp" || e.key === "ArrowDown")
+		e.preventDefault();
 	var key = e.code.replace('Key', '').toLowerCase();
 	// console.log("key: " + key);
 	if ( keys[ key ] !== undefined )
@@ -384,14 +522,9 @@ function Init()
 	arenaLeftSide.position.x -= 8.25;
 
 	// Ball
-	// const cubeGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-	// cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
 	ball = new THREE.Mesh(ballGeometry, ballMaterial);
-	// scene.add(cube);
 	scene.add(ball);
-
-	// ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
 
 
 	// Paddles
@@ -443,7 +576,7 @@ function Loop()
 	requestAnimationFrame(Loop);
 	Inputs();
 	Update();
-	Render();
+	renderer.render(scene, camera);
 }
 
 function Inputs()
@@ -461,11 +594,6 @@ function Inputs()
 	//CLIENT SIDE PADDLE INPUTS
 	if (keys.w)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'1',
-		// 	'action':'up'
-		// }))
-
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
@@ -474,10 +602,6 @@ function Inputs()
 
 	if (keys.s)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'1',
-		// 	'action':'down'
-		// }))
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'down'
@@ -486,11 +610,6 @@ function Inputs()
 
 	if (keys.arrowup)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'2',
-		// 	'action':'up'
-		// }))
-		// socket.emit(inputEvent, 'up');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
@@ -499,11 +618,6 @@ function Inputs()
 
 	if (keys.arrowdown)
 	{
-		// pongSocket.send(JSON.stringify({
-		// 	// 'player_id':'2',
-		// 	'action':'down'
-		// }))
-		// socket.emit(inputEvent, 'down');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'down'
@@ -513,17 +627,7 @@ function Inputs()
 
 function Update()
 {
-	// Wireframe Cube
-	// cube.position.x = ball.position.x;
-	// cube.position.y = ball.position.y;
-
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
 }
-
-function Render()
-{
-	renderer.render(scene, camera);
-}
-
