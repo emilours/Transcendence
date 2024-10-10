@@ -11,7 +11,7 @@ django.setup()
 from frontend.models import Game, Match, PlayerMatch
 from frontend.models import CustomUser
 
-import socketio, uuid, asyncio, json, time
+import socketio, uuid, asyncio, json, time, random
 from asgiref.sync import sync_to_async
 from urllib.parse import parse_qs
 
@@ -29,8 +29,8 @@ RESET = "\033[1;0m"
 
 
 # CONST VARIABLES
-PADDLE_SPEED = 0.2
-# BALL_SPEED = 0.1
+PADDLE_SPEED = 3.0
+PADDLE_WIDTH = 0.2
 BALL_SPEED = 2.0
 BALL_SIZE = 0.2
 PADDLE_HEIGHT = 2.0
@@ -104,7 +104,7 @@ def reset_ball(room_id):
 # ['player1'] --> ['players'][0]
 
 @sync_to_async
-def SaveMatch(room_id, game_type):
+def SaveMatch(room_id, game_type, player_1_index, player_2_index):
 
     log("SAVING MATCH TO DB")
     # normal or tournament
@@ -113,12 +113,12 @@ def SaveMatch(room_id, game_type):
     match = Match.objects.create(game=game, status='completed', details=game_type)
 
     # player1
-    player1 = CustomUser.objects.filter(display_name=games[room_id]['players'][0])
+    player1 = CustomUser.objects.filter(display_name=games[room_id]['players'][player_1_index])
     if player1.exists():
         player1 = player1.first()
         log(player1)
 
-    score1 = games[room_id]['scores'][0]
+    score1 = games[room_id]['scores'][player_1_index]
     if score1 >= WINNING_SCORE :
         is_player_winner = True
     else:
@@ -127,11 +127,11 @@ def SaveMatch(room_id, game_type):
     PlayerMatch.objects.create(player=player1, match=match, score=score1, is_winner=is_player_winner)
 
     #player2
-    player2 = CustomUser.objects.filter(display_name=games[room_id]['players'][1])
+    player2 = CustomUser.objects.filter(display_name=games[room_id]['players'][player_2_index])
     if player2.exists():
         player2 = player2.first()
         log(player2)
-    score2 = games[room_id]['scores'][1]
+    score2 = games[room_id]['scores'][player_2_index]
     if score2 >= WINNING_SCORE :
         is_player_winner = True
     else:
@@ -155,11 +155,12 @@ def GetPlayersAvatar(room_id):
         #   log(f"{i} not initialized!")
     return (avatars)
 
-async def StartGameLoop(sid, game_type, room_id):
+async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
-    sid1 = games[room_id]['sids'][0]
-    sid2 = games[room_id]['sids'][1]
+    game_type = games[room_id]['game_type']
+    sid1 = games[room_id]['sids'][player_1_index]
+    sid2 = games[room_id]['sids'][player_2_index]
     delta_time = 0
     current_task = asyncio.current_task()
     while True:
@@ -178,27 +179,27 @@ async def StartGameLoop(sid, game_type, room_id):
 
         # Handle paddle collisions
         if (abs(games[room_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][0]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][player_1_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
             games[room_id]['ballVelocity'][0] *= -1
+            games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * PADDLE_WIDTH
         if (abs(games[room_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][1]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][player_2_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
             games[room_id]['ballVelocity'][0] *= -1
+            games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * PADDLE_WIDTH
 
         # Handle scoring
         if games[room_id]['ballPosition'][0] >= RIGHT_WALL:
-            games[room_id]['scores'][0] += 1 #
+            games[room_id]['scores'][player_1_index] += 1 #
             reset_ball(room_id)
         elif games[room_id]['ballPosition'][0] <= LEFT_WALL:
-            games[room_id]['scores'][1] += 1 #
+            games[room_id]['scores'][player_2_index] += 1 #
             reset_ball(room_id)
 
-        if games[room_id]['scores'][0] >= WINNING_SCORE: #
-            # log(f"Player 1 {games[room_id]['player1']} Won!") #
-            log(f"player 1 {games[room_id]['players'][0]} won the game")
+        if games[room_id]['scores'][player_1_index] >= WINNING_SCORE: #
+            log(f"player 1 {games[room_id]['players'][player_1_index]} won the game")
             games[room_id]['game_over'] = 1
-        elif games[room_id]['scores'][1] >= WINNING_SCORE: #
-            # log(f"Player 2 {games[room_id]['player2']} Won!") #
-            log(f"player 2 {games[room_id]['players'][1]} won the game")
+        elif games[room_id]['scores'][player_2_index] >= WINNING_SCORE: #
+            log(f"player 2 {games[room_id]['players'][player_2_index]} won the game")
             games[room_id]['game_over'] = 1
 
 
@@ -214,23 +215,21 @@ async def StartGameLoop(sid, game_type, room_id):
 
         # Check if game is over
         if games[room_id]['game_over'] == 1 and current_task:
-            # SaveMatch breaks everything
-            await SaveMatch(room_id, game_type)
+            await SaveMatch(room_id, game_type, player_1_index, player_2_index)
+            # TODO: don't disconnect if game_type == TOURNAMENT
             current_task.cancel()
             current_task = None
-            # TODO: Disconnect both client ?
-            # TEST
-            log(f"calling disconnect for {sid1}")
-            await sio.disconnect(sid1)
-            log(f"calling disconnect for {sid2}")
-            await sio.disconnect(sid2)
-            games[room_id] = {}
-            del games[room_id]
+            if (game_type == NORMAL_GAME):
+                log(f"calling disconnect for {sid1}")
+                await sio.disconnect(sid1)
+                log(f"calling disconnect for {sid2}")
+                await sio.disconnect(sid2)
             return
 
 
         # Control the game loop speed
         await asyncio.sleep(1 / 60)
+
 
 async def UserAlreadyConnected(username):
     global connected_users
@@ -315,10 +314,10 @@ def IsRoomFull(room_id):
     game_type = games[room_id]['game_type']
     log(f"{games[room_id]['player_count']} players in room for {game_type} game")
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
-        log(f"Room {room_id} is full")
+        log(f"{game_type} room full: {room_id}")
         return NORMAL_GAME
     elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
-        log(f"Room {room_id} is full with")
+        log(f"{game_type} room full: {room_id}")
         return TOURNAMENT_GAME
     return None
 
@@ -418,6 +417,17 @@ async def PongInput(sid, text_data):
             if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
                 games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
+async def StartTournament(sid, room_id):
+    global games
+
+    # TODO: MAKE IT so one of the players playing the tournament runs the game loop!
+    log(f"Starting Tournament")
+    player_index_list = [0, 1, 2, 3]
+    random.shuffle(player_index_list)
+    log(f"index list: {player_index_list}")
+    games[room_id]['last_time'] = time.time()
+    asyncio.create_task(StartGameLoop(sid, room_id), player_index_list[0], player_index_list[1])
+    color_print(RED, "TEST")
 
 @sio.on('start_game')
 async def StartGame(sid, username):
@@ -430,12 +440,13 @@ async def StartGame(sid, username):
     if (username != games[room_id]['players'][0]):
         return
     room_full = IsRoomFull(room_id)
+    log(f"room_full: {room_full}")
     if room_full == NORMAL_GAME:
         # await sio.emit('init_game', room=room_id)
         games[room_id]['last_time'] = time.time()
-        asyncio.create_task(StartGameLoop(sid, games[room_id]['game_type'], room_id))
+        asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
     elif room_full == TOURNAMENT_GAME:
-          pass
+        await StartTournament(sid, room_id)
     else:
         log("room not full")
 
@@ -470,6 +481,8 @@ async def JoinLobby(sid, username, room_key):
         return
 
     room_id = IsLobbyCreated(room_key)
+    if (room_key == 'admin'):
+        room_id = GetAvailableRoom(TOURNAMENT_GAME)
     if room_id is None:
         log(f"invalid_lobby_code")
         # need and send an error event if room doesn't exist or full already

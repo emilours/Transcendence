@@ -1,6 +1,7 @@
 import { initInvaders } from '/static/js/invaders.js';
 import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
 import { CloseWebsocket } from '/static/js/pong.js';
+import { CleanupLocalPong } from '/static/js/pongLocal.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
@@ -64,6 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 		// close ws connection and cleanup threejs
 		CloseWebsocket();
+		CleanupLocalPong();
 		cleanupPongMenu();
 
 		// Close any open Bootstrap modals

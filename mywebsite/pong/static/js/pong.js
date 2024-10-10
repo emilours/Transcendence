@@ -143,7 +143,9 @@ export function ConnectWebsocket(type, username)
 	});
 	socket.on('game_ready', function() {
 		console.log("BOTH PLAYER READY");
-		menu.remove();
+		if (menu)
+			menu.remove();
+		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?) 
 		StartGame();
 		SendEvent('start_game', userName);
 	});
@@ -240,6 +242,7 @@ export function CloseWebsocket() {
 		socket.disconnect();
 		console.log("Socket.IO connection closed");
 	}
+	running = false;
 }
 
 function CustomAlert(alertMessage)

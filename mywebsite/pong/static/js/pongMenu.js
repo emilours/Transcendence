@@ -18,6 +18,12 @@ export function initPongMenu(username, userAvatar) {
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
+	else if (event.key === 'c')
+		SendEvent('create_lobby', userName, TOURNAMENT_MODE);
+	else if (event.key === 'j')
+		SendEvent('join_lobby', userName, 'admin');
+	else if (event.key === 'k')
+		SendEvent('player_ready', userName, null);
 	});
 
 	drawMainMenu();
@@ -49,8 +55,7 @@ function drawMainMenu() {
 			}),
 			createButton('TOURNAMENT', () => {
 				mainMenu.remove();
-				// ConnectWebsocket(TOURNAMENT_MODE, userName, avatar);
-
+				ConnectWebsocket(TOURNAMENT_MODE, userName, avatar);
 			})
 		)
 	);

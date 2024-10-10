@@ -11,10 +11,10 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 
 
 var overlayText;
-var userName;
 var scoreGeometry, scoreFont, gameOver;
-const PADDLE_SPEED = 0.2;
-const BALL_SPEED = 0.1;
+const PADDLE_SPEED = 10.0;
+const PADDLE_WIDTH = 0.2;
+const BALL_SPEED = 2.0;
 const BALL_SIZE = 0.2; // maybe a bit bigger
 const MAX_HEIGHT = 4.5;
 const MIN_HEIGHT = -4.5;
@@ -22,6 +22,8 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+var lastTime = 1;
+var deltaTime = 0;
 
 
 function onWindowResize()
@@ -38,11 +40,16 @@ function onWindowResize()
 	console.log("width: " + width + " height: " + height);
 }
 
+export function CleanupLocalPong()
+{
+	running = false;
+}
+
 export function StartLocalGame()
 {
 	Load();
 	Init();
-	Loop();
+	requestAnimationFrame(Loop);
 	//Cleanup();
 }
 
@@ -137,6 +144,8 @@ function Init()
 	running = true;
 	leftPlayerScore = 0;
 	rightPlayerScore = 0;
+	lastTime = 0;
+	deltaTime = 0;
 	ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 
 	// SCENE
@@ -245,13 +254,16 @@ function Init()
 	// cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
 	ball = new THREE.Mesh(ballGeometry, ballMaterial);
 	// scene.add(cube);
+	ball.position.x = 0;
+	ball.position.y = 0;
 	scene.add(ball);
 
 	ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
 
 
+
 	// PADDLES
-	const paddleGeometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+	const paddleGeometry = new THREE.BoxGeometry(PADDLE_WIDTH, 2, 0.2);
 	leftPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
 	leftPaddleOutLine = new THREE.Mesh(paddleGeometry, paddleOutlineMaterial);
 	rightPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
@@ -288,17 +300,18 @@ function Init()
 }
 
 
-function Loop()
+function Loop(timestamp)
 {
 	if (running == false)
 	{
 		console.log("Not running anymore!");
 		return;
 	}
-	requestAnimationFrame(Loop);
+	// requestAnimationFrame(Loop);
 	Inputs();
-	Update();
+	Update(timestamp);
 	renderer.render(scene, camera);
+	requestAnimationFrame(Loop);
 }
 
 function Inputs()
@@ -318,13 +331,12 @@ function Inputs()
 
 	// PADDLE MOVEMENT
     const paddleHeight = leftPaddle.geometry.parameters.height;
-	const paddleWidth = leftPaddle.geometry.parameters.width;
 	
 	// LEFT
 	if (keys.w && leftPaddle.position.y + paddleHeight / 2 < MAX_HEIGHT)
-        leftPaddle.position.y += PADDLE_SPEED;
+        leftPaddle.position.y += PADDLE_SPEED * deltaTime; //
     else if (keys.s && leftPaddle.position.y - paddleHeight / 2 > MIN_HEIGHT)
-        leftPaddle.position.y -= PADDLE_SPEED;
+        leftPaddle.position.y -= PADDLE_SPEED * deltaTime; //
 
     if (leftPaddle.position.y + paddleHeight / 2 > MAX_HEIGHT)
         leftPaddle.position.y = MAX_HEIGHT - paddleHeight / 2;
@@ -334,9 +346,9 @@ function Inputs()
 
 	// RIGHT
 	if (keys.arrowup && rightPaddle.position.y + rightPaddle.geometry.parameters.height / 2 < MAX_HEIGHT)
-        rightPaddle.position.y += PADDLE_SPEED;
+        rightPaddle.position.y += PADDLE_SPEED * deltaTime; //
     else if (keys.arrowdown && rightPaddle.position.y - rightPaddle.geometry.parameters.height / 2 > MIN_HEIGHT)
-        rightPaddle.position.y -= PADDLE_SPEED;
+        rightPaddle.position.y -= PADDLE_SPEED * deltaTime; //
 
     if (rightPaddle.position.y + paddleHeight / 2 > MAX_HEIGHT)
         rightPaddle.position.y = MAX_HEIGHT - paddleHeight / 2;
@@ -345,8 +357,12 @@ function Inputs()
 
 }
 
-function Update()
+function Update(timestamp)
 {
+	// DELTA TIME
+	deltaTime = (timestamp - lastTime) / 1000;
+	lastTime = timestamp;
+	
 	// PADDLE OUTLINE UPDATE
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
@@ -366,29 +382,29 @@ function Update()
 		ball.position.x = 0;
 		ball.position.y = 0;
 	}
-	if (ball.position.y - BALL_SIZE < MIN_HEIGHT || ball.position.y + BALL_SIZE > MAX_HEIGHT)
+	if ((ball.position.y - BALL_SIZE < MIN_HEIGHT && ballSpeed.y < 0)|| (ball.position.y + BALL_SIZE > MAX_HEIGHT && ballSpeed.y > 0))
 		ballSpeed.y = -ballSpeed.y;
 
 	// BALL-PADDLE COLLISIONS
 	leftPaddleBB.copy(leftPaddle.geometry.boundingBox).applyMatrix4(leftPaddle.matrixWorld);
     rightPaddleBB.copy(rightPaddle.geometry.boundingBox).applyMatrix4(rightPaddle.matrixWorld);
-	if (ballBB.intersectsBox(rightPaddleBB))
+	if (ballBB.intersectsBox(rightPaddleBB) && ballSpeed.x > 0)
 	{
 		ballSpeed.x = -ballSpeed.x;
-		ball.position.x += ballSpeed.x;
+		ball.position.x += ballSpeed.x * (PADDLE_WIDTH / 2); //
 	}
 	
-	if (ballBB.intersectsBox(leftPaddleBB))
+	if (ballBB.intersectsBox(leftPaddleBB)  && ballSpeed.x < 0)
 	{
 		ballSpeed.x = -ballSpeed.x;
-		ball.position.x += ballSpeed.x;
+		ball.position.x += ballSpeed.x * (PADDLE_WIDTH / 2); //
 	}
 	
 	// BALL MOVEMENT
-	ball.position.x += ballSpeed.x;
-	ball.position.y += ballSpeed.y;
-	ball.rotation.x += 2 * ballSpeed.x;
-	ball.rotation.y += 2 * ballSpeed.y;
+	ball.position.x += ballSpeed.x * BALL_SPEED * deltaTime; //
+	ball.position.y += ballSpeed.y * BALL_SPEED * deltaTime; //
+	ball.rotation.x += 1.5 * ballSpeed.x * deltaTime; //
+	ball.rotation.y += 1.5 * ballSpeed.y * deltaTime; //
 
 	// SCORE
 	if (leftPlayerScore >= 5 || rightPlayerScore >= 5)
