@@ -113,12 +113,19 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        user.active_sessions -= 1
-        # request.user.is_online = False
-        if user.active_sessions == 0:
-            user.is_online = False
-        user.save(update_fields=['is_online', 'active_sessions'])
+        # print les infos mais cause des soucis de signout
+        # with open('errors_signout.txt', 'a') as f:
+            # f.write('=== SIGNOUT === User display name: {}\n'.format(request.user.display_name))
+            # f.write('=== SIGNOUT === Active sessions before signout: {}\n'.format(request.user.active_sessions))
+            # f.write('=== SIGNOUT === User is online: {}\n'.format(request.user.is_online))
+        request.user.active_sessions -= 1
+        if request.user.active_sessions == 0:
+            request.user.is_online = False
+        request.user.save(update_fields=['is_online', 'active_sessions'])
         logout(request)
+        # with open('errors_signout.txt', 'a') as f:
+            # f.write('=== SIGNOUT === User is online: {}\n'.format(request.user.is_online))
+            # f.write('=== SIGNOUT === User logged out successfully.\n')
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -502,7 +509,11 @@ def sse(request):
         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
         last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
 
-        if not request.user.is_online:
+        # if not request.user.is_online:
+        #     request.user.is_online = True
+        #     await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+
+        if request.user.active_sessions > 0 and not request.user.is_online:
             request.user.is_online = True
             await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
@@ -528,9 +539,9 @@ def sse(request):
         except asyncio.CancelledError:
             return
         finally:
-            if request.user.is_online:
-                request.user.is_online = False
-                await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+            if request.user.active_sessions == 0:
+                            request.user.is_online = False
+                            await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 

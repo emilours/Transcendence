@@ -16,6 +16,8 @@ urlpatterns = [
     path('delete_profile/', auth_views.delete_profile, name='delete_profile'),
     path('update_password/', auth_views.update_password, name='update_password'),
     path('request_anonymization/', auth_views.request_anonymization, name='request_anonymization'),
+    path('session-close/', auth_views.session_close, name='session_close'),
+
 
     # SSE view
     path('sse/', auth_views.sse, name='sse'),

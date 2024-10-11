@@ -340,6 +340,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
+	window.addEventListener('beforeunload', () => {
+        navigator.sendBeacon('/auth/session-close/', {});
+    });
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
