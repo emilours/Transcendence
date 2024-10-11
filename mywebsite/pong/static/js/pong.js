@@ -30,15 +30,7 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var player1Info, player2Info, player3Info, player4Info;
-
-// TODO: delete this function later (after rework)
-export function UpdatePlayerInfo(player1, player2)
-{
-	player1Info = player1;
-	player2Info = player2;
-}
-
+    
 function UpdateLobbyOnline(user, avatar, playerInfo)
 {
 
