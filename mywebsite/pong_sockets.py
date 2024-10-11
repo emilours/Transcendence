@@ -29,7 +29,7 @@ RESET = "\033[1;0m"
 
 
 # CONST VARIABLES
-PADDLE_SPEED = 3.0
+PADDLE_SPEED = 8.0
 PADDLE_WIDTH = 0.2
 BALL_SPEED = 2.0
 BALL_SIZE = 0.2
@@ -172,6 +172,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
         # Delta time
         current_time = time.time()
         delta_time = current_time - games[room_id]['last_time']
+        games[room_id]['delta_time'] = delta_time
         games[room_id]['last_time'] = current_time
 
         # Handle collisions with walls
@@ -281,6 +282,7 @@ def CreateRoom(game_type):
         'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
         'game_over': 0,
         'last_time': 0,
+        'delta_time': 0,
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
 	}
     log(f"Room {room_id} created")
@@ -339,6 +341,7 @@ async def LeaveRoom(sid, username, room_id):
         games[room_id] = {}
         del games[room_id]
     log(f"User [{username}] left room [{room_id}]")
+    await sio.emit('user_left', username)
 
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
@@ -377,9 +380,15 @@ async def SendLobbyData(sid):
 
     session = await sio.get_session(sid)
     room_id = session.get('room_id')
-
+    game_type = games[room_id]['game_type']
+    if game_type == NORMAL_GAME:
+        max_lobby_size = MAX_PLAYER_NORMAL
+    else:
+        max_lobby_size = MAX_PLAYER_TOURNAMENT
     data = {
         'lobby_id': room_id[:8],
+        'game_type': game_type,
+        'max_lobby_size': max_lobby_size,
         'users': games[room_id]['players'],
         'avatars': await GetPlayersAvatar(room_id)
     }
@@ -399,22 +408,23 @@ async def PongInput(sid, text_data):
     room_id = session.get('room_id')
     log(f"room: {room_id}")
 
+    delta_time = games[room_id]['delta_time']
     if username == games[room_id]['players'][0]:
         if action == 'up':
-            games[room_id]['pos'][0] += PADDLE_SPEED
+            games[room_id]['pos'][0] += PADDLE_SPEED * delta_time
             if games[room_id]['pos'][0] + PADDLE_HEIGHT / 2 > TOP_WALL:
                 games[room_id]['pos'][0] = TOP_WALL - PADDLE_HEIGHT / 2
         elif action == 'down':
-            games[room_id]['pos'][0] -= PADDLE_SPEED
+            games[room_id]['pos'][0] -= PADDLE_SPEED * delta_time
             if games[room_id]['pos'][0] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
                 games[room_id]['pos'][0] = BOTTOM_WALL + PADDLE_HEIGHT / 2
     else:
         if action == 'up':
-            games[room_id]['pos'][1] += PADDLE_SPEED
+            games[room_id]['pos'][1] += PADDLE_SPEED * delta_time
             if games[room_id]['pos'][1] + PADDLE_HEIGHT / 2 > TOP_WALL:
                 games[room_id]['pos'][1] = TOP_WALL - PADDLE_HEIGHT / 2
         elif action == 'down':
-            games[room_id]['pos'][1] -= PADDLE_SPEED
+            games[room_id]['pos'][1] -= PADDLE_SPEED * delta_time
             if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
                 games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
@@ -477,7 +487,7 @@ async def JoinLobby(sid, username, room_key):
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
-        await sio.emit('player_already_in_room', games[room_id]['players'].index(username))
+        await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sidz)
         await SendLobbyData(sid)
         return
 
@@ -487,11 +497,11 @@ async def JoinLobby(sid, username, room_key):
     if room_id is None:
         log(f"invalid_lobby_code")
         # need and send an error event if room doesn't exist or full already
-        await sio.emit('invalid_lobby_code')
+        await sio.emit('invalid_lobby_code', to=sid)
         return
 
     if IsRoomFull(room_id):
-        await sio.emit('room_already_full')
+        await sio.emit('room_already_full', to=sid)
         return
 
     log("JOIN SUCCESSFULL")

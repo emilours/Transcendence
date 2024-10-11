@@ -18,12 +18,12 @@ export function initPongMenu(username, userAvatar) {
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
-	else if (event.key === 'c')
-		SendEvent('create_lobby', userName, TOURNAMENT_MODE);
-	else if (event.key === 'j')
-		SendEvent('join_lobby', userName, 'admin');
-	else if (event.key === 'k')
-		SendEvent('player_ready', userName, null);
+	// else if (event.key === 'c')
+	// 	SendEvent('create_lobby', userName, TOURNAMENT_MODE);
+	// else if (event.key === 'j')
+	// 	SendEvent('join_lobby', userName, 'admin');
+	// else if (event.key === 'k')
+	// 	SendEvent('player_ready', userName, null);
 	});
 
 	drawMainMenu();
@@ -186,7 +186,6 @@ function drawPlayerOnline(userName) {
 		buttonReady = createButtonGreen('READY', () => {
 			buttonReady.style.backgroundColor = '#0ccf0c';
 			buttonReady.innerText = 'OK';
-			console.log("lobby: ", lobbyMenu);
 			// UpdateMenu(lobbyMenu);
 			SendEvent('player_ready', userName, null);
 		})
@@ -250,7 +249,7 @@ function drawTournament() {
 			createButton('CREATE TOURNAMENT', () => {
 				onlineMenu.remove();
 				console.log("CREATE TOURNAMENT button clicked")
-				SendEvent('create_lobby', userName, NORMAL_MODE);
+				SendEvent('create_lobby', userName, TOURNAMENT_MODE);
 				drawLobbyTournament('create');
 				// TODO: rework UpdateMenu();
 			}),

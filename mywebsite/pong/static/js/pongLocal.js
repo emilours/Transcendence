@@ -12,7 +12,7 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 
 var overlayText;
 var scoreGeometry, scoreFont, gameOver;
-const PADDLE_SPEED = 10.0;
+const PADDLE_SPEED = 8.0;
 const PADDLE_WIDTH = 0.2;
 const BALL_SPEED = 2.0;
 const BALL_SIZE = 0.2; // maybe a bit bigger

@@ -4,7 +4,17 @@ import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
 import { drawOnlineMenu, drawLobbyOnline, initPongMenu } from './pongMenu.js';
+import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
+const BALL_SPEED = 0.1; //not needed i think
+const BALL_SIZE = 0.2; // maybe a bit bigger
+const MAX_HEIGHT = 4.5; // idk how to name this
+const MIN_HEIGHT = -4.5;
+const LOADING_AVATAR = '/static/img/loading.gif';
+const WAITING_FOR_PLAYER = 'Waiting for a player';
+const PLAYER_IMG_SIZE = 200;
+const LOADING_IMG_SIZE = 70;
+const TOURNAMENT_MODE = 'tournament';
 
 // standard global variables
 var scene, camera, renderer, controls, loader;
@@ -12,31 +22,56 @@ var scene, camera, renderer, controls, loader;
 // custom global variables
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 // var overlayText;
-// TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
-// OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
-// var threadID;
-var gameType, socket;
-var userName, user1, user2, user3, user4, avatar1, avatar2, avatar3, avatar4;
+var socket;
+var userName;
 var scoreGeometry, scoreFont, gameOver;
-// const PADDLE_SPEED = 0.2;
-const BALL_SPEED = 0.1;
-const BALL_SIZE = 0.2; // maybe a bit bigger
-const MAX_HEIGHT = 4.5; // idk how to name this
-const MIN_HEIGHT = -4.5;
-var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
+
+var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
 var player1Info, player2Info, player3Info, player4Info;
 
+// TODO: delete this function later (after rework)
 export function UpdatePlayerInfo(player1, player2)
 {
-	// /!\ Those 2 lines are very different:
-	// console.log("player1: ", player1);
-	// console.log("player1: " + player1);
-	// /!\
 	player1Info = player1;
 	player2Info = player2;
+}
+
+function UpdateLobbyOnline(user, avatar, playerInfo)
+{
+
+	let img_size = PLAYER_IMG_SIZE;
+	if (user == undefined)
+		user = WAITING_FOR_PLAYER;
+	if (avatar == undefined)
+	{
+		avatar = LOADING_AVATAR;
+		img_size = LOADING_IMG_SIZE;
+	}
+	if (playerInfo)
+	{
+		const playerUsername = playerInfo.querySelector('h4');
+		if (playerUsername) {
+			playerUsername.innerText = user;
+		}
+		const playerImage = playerInfo.querySelector('img');
+		if (playerImage) {
+			playerImage.src = avatar;
+			playerImage.width = img_size;
+			playerImage.height = img_size;
+			if (img_size == PLAYER_IMG_SIZE)
+				playerImage.removeAttribute('style');
+			else
+				playerImage.style.margin = '65px';
+		}
+	}
+}
+
+function UpdateLobbyTournament(user, avatar, playerInfo)
+{
+	console.log("UpdateLobbyTournament()");
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
@@ -70,11 +105,11 @@ export function SendEvent(event, username, data)
 	return true;
 }
 
+
 export function ConnectWebsocket(type, username)
 {
 	// WEBSOCKET
 	running = true;
-	gameType = type;
 	userName = username;
 	InitCustomAlerts();
 	if (socket && socket.connected) {
@@ -89,7 +124,7 @@ export function ConnectWebsocket(type, username)
 		reconnection: false, // Disable reconnection to observe disconnection behavior
 		query: {
 			username: username,  // Pass username in the query string
-			gameType: gameType   // Pass game type in the query string
+			gameType: type   // Pass game type in the query string
 		}
 	});
 
@@ -130,15 +165,16 @@ export function ConnectWebsocket(type, username)
 
     });
 	socket.on('user_joined', function(user) {
-		console.log("User " + user + " has joined.");
+		console.log("User " + user + " has joined a lobby.");
 	});
 	socket.on('user_left', function(user) {
-		console.log("User " + user + " has left.");
+		console.log("User " + user + " has left a lobby.");
 	});
 	socket.on('game_ready', function() {
 		console.log("BOTH PLAYER READY");
         const activeMenu = document.querySelector('.menu');
         if (activeMenu)
+			activeMenu.remove();
 		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		StartGame();
 		SendEvent('start_game', userName);
@@ -167,24 +203,16 @@ export function ConnectWebsocket(type, username)
 	});
 
 	socket.on('send_lobby_data', function(data) {
-		// TODO: Make this cleaner
 		console.log("Received data from server..");
 		const lobbyCode = data.lobby_id;
-		user1 = data.users[0];
-		user2 = data.users[1];
-		user3 = data.users[2];
-		user4 = data.users[3];
-		avatar1 = data.avatars[0];
-		avatar2 = data.avatars[1];
-		avatar3 = data.avatars[2];
-		avatar4 = data.avatars[3];
-
-
-		console.log("lobbyCode: ", lobbyCode);
+		const maxLobbySize = data.max_lobby_size;
+		const gameType = data.game_type;
+		console.log("lobby: ", lobbyCode, "is a", gameType, "game");
 
         const activeMenu = document.querySelector('.menu');
 		if (activeMenu && lobbyCode !== undefined)
 		{
+			//TODO: lobby code for normal/tournament
 			const codeText = activeMenu.querySelector('h4');
 			if (codeText)
 				codeText.innerText = lobbyCode;
@@ -192,36 +220,15 @@ export function ConnectWebsocket(type, username)
 				console.log("NO h4 in menu");
 
 		}
-
-		// can just check later if avatar[i] is undefined then default img
-		if (player1Info && user1 !== undefined && avatar1 !== undefined)
+		const playerInfoNormal = document.querySelectorAll('.button-vertical');
+		const playerInfoTournament = document.querySelectorAll('.button-horizontal');
+		console.log("playerInfoTournament:", playerInfoTournament);
+		for (let i = 0; i < maxLobbySize; i++)
 		{
-			const playerUsername = player1Info.querySelector('h4');
-			if (playerUsername) {
-				playerUsername.innerText = user1;
-			}
-			const playerImage = player1Info.querySelector('img');
-			if (playerImage) {
-				playerImage.src = avatar1;
-				playerImage.width = 200;
-				playerImage.height = 200;
-				playerImage.removeAttribute('style');
-			}
-		}
-
-		if (player2Info && user2 !== undefined && avatar2 !== undefined)
-		{
-			const playerUsername = player2Info.querySelector('h4');
-			if (playerUsername) {
-				playerUsername.innerText = user2;
-			}
-			const playerImage = player2Info.querySelector('img');
-			if (playerImage) {
-				playerImage.src = avatar2;
-				playerImage.width = 200;
-				playerImage.height = 200;
-				playerImage.removeAttribute('style');
-			}
+			if (gameType == TOURNAMENT_MODE)
+				UpdateLobbyTournament(data.users[i], data.avatars[i], playerInfoTournament[i]);
+			else
+				UpdateLobbyOnline(data.users[i], data.avatars[i], playerInfoNormal[i]);
 		}
 	});
 }
@@ -302,8 +309,8 @@ function StartGame()
 		{
 			ball.position.x = parseFloat(data.ballPosition[0]);
 			ball.position.y = parseFloat(data.ballPosition[1]);
-			ballSpeed.x = parseFloat(data.ballVelocity[0]);
-			ballSpeed.y = parseFloat(data.ballVelocity[1]);
+			ballSpeed.x = parseFloat(data.ballVelocity[0]); //not needed i think
+			ballSpeed.y = parseFloat(data.ballVelocity[1]); //not needed i think
 			leftPaddle.position.y = parseFloat(data.pos[0]);
 			rightPaddle.position.y = parseFloat(data.pos[1]);
 			gameOver = parseInt(data.game_over);
