@@ -44,8 +44,9 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
+        user.active_sessions += 1
         user.is_online = True
-        user.save(update_fields=['is_online'])
+        user.save(update_fields=['active_sessions', 'is_online'])
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
@@ -112,8 +113,11 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        request.user.is_online = False
-        request.user.save(update_fields=['is_online'])
+        user.active_sessions -= 1
+        # request.user.is_online = False
+        if user.active_sessions == 0:
+            user.is_online = False
+        user.save(update_fields=['is_online', 'active_sessions'])
         logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
@@ -157,6 +161,18 @@ def contact(request):
             offline_users.append(user_data)
 
     return JsonResponse({'online': online_users, 'offline': offline_users})
+
+@login_required
+def session_close(request):
+    user = request.user
+    user.active_sessions -= 1
+    
+    if user.active_sessions == 0:
+        user.is_online = False
+
+    user.save(update_fields=['active_sessions', 'is_online'])
+    
+    return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUESTS                                                                                     ===

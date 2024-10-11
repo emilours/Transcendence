@@ -40,6 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 	is_superuser = models.BooleanField(default=False)
 	is_online = models.BooleanField(default=True)
 	is_api_authenticated = models.BooleanField(default=False)
+	active_sessions = models.PositiveIntegerField(default=0)
 
 	victories = models.PositiveIntegerField(default=0)
 	defeats = models.PositiveIntegerField(default=0)
