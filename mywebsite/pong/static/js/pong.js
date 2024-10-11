@@ -15,6 +15,7 @@ const WAITING_FOR_PLAYER = 'Waiting for a player';
 const PLAYER_IMG_SIZE = 200;
 const LOADING_IMG_SIZE = 70;
 const TOURNAMENT_MODE = 'tournament';
+const NORMAL_MODE = 'normal';
 
 // standard global variables
 var scene, camera, renderer, controls, loader;
@@ -30,7 +31,7 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-    
+
 function UpdateLobbyOnline(user, avatar, playerInfo)
 {
 
@@ -64,6 +65,33 @@ function UpdateLobbyOnline(user, avatar, playerInfo)
 function UpdateLobbyTournament(user, avatar, playerInfo)
 {
 	console.log("UpdateLobbyTournament()");
+    if (user == undefined)
+        user = WAITING_FOR_PLAYER;
+    console.log("player info:", playerInfo);
+    if (playerInfo)
+    {
+        const playerUsername = playerInfo.querySelectorAll('h4');
+        if (playerUsername[1]) {
+            playerUsername[1].innerText = user;
+        }
+        const playerDiv = playerInfo.querySelector('div');
+        console.log("playerDiv:", playerDiv);
+        const loadingImg = playerDiv.querySelector('img');
+        console.log("loadingImg:", loadingImg);
+        if (loadingImg && user != WAITING_FOR_PLAYER)
+        {
+            playerDiv.removeChild(loadingImg);
+            loadingImg.remove();
+            let buttonReady = createButtonGreen('READY', () => {
+                buttonReady.style.backgroundColor = '#0ccf0c';
+                buttonReady.innerText = 'OK';
+                console.log("READY button clicked");
+                //HERE
+                // SendEvent('start_game');
+            });
+            playerDiv.appendChild(buttonReady);
+        }
+    }
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
@@ -199,17 +227,24 @@ export function ConnectWebsocket(type, username)
 		const lobbyCode = data.lobby_id;
 		const maxLobbySize = data.max_lobby_size;
 		const gameType = data.game_type;
-		console.log("lobby: ", lobbyCode, "is a", gameType, "game");
+		console.log("lobby:", lobbyCode, "is a", gameType, "game");
 
         const activeMenu = document.querySelector('.menu');
-		if (activeMenu && lobbyCode !== undefined)
+		if (activeMenu)
 		{
 			//TODO: lobby code for normal/tournament
-			const codeText = activeMenu.querySelector('h4');
-			if (codeText)
-				codeText.innerText = lobbyCode;
-			else
-				console.log("NO h4 in menu");
+            if (gameType == NORMAL_MODE)
+            {
+                const codeText = activeMenu.querySelector('h4');
+                if (codeText)
+                    codeText.innerText = lobbyCode;
+                else
+                    console.log("NO h4 in menu");
+            }
+            // else
+            // {
+            //     const codeText
+            // }
 
 		}
 		const playerInfoNormal = document.querySelectorAll('.button-vertical');

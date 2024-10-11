@@ -289,17 +289,19 @@ function drawLobbyTournament(mode) {
 		);
 		lobbyMenu.appendChild(playerInfo);
 	}
-	// else {
-	// 	var [user1, user2 ] = GetUsers();
-	// 	console.log('userName: ' + userName + ' | user1: ' + user1 + ' | user2: ' + user2);
-
-	// 	let playerInfo = createElement('div', { className: 'button-vertical', style: 'align-items: flex-start;' },
-	// 		player1Info = drawPlayerTournament(user1),
-	// 		createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
-	// 		player2Info = drawPlayerTournament(userName),
-	// 	);
-	// 	lobbyMenu.appendChild(playerInfo);
-	// }
+    if (mode === 'join')
+    {
+        let playerInfo = createElement('div', { className: 'button-vertical' },
+            player1Info = drawPlayerTournament('waiting', 1),
+			createElement('hr', { style: 'width: 100%;' }),
+			player2Info = drawPlayerTournament('waiting', 2),
+			createElement('hr', { style: 'width: 100%;' }),
+			player3Info = drawPlayerTournament('waiting', 3),
+			createElement('hr', { style: 'width: 100%;' }),
+			player4Info = drawPlayerTournament('waiting', 4),
+        );
+        lobbyMenu.appendChild(playerInfo);
+    }
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
@@ -333,7 +335,6 @@ function drawPlayerTournament(userName, position) {
 				buttonReady.style.backgroundColor = '#0ccf0c';
 				buttonReady.innerText = 'OK';
 				console.log("READY button clicked");
-				// SendEvent('start_game');
 			})
 		)
 	);
