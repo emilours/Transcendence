@@ -113,19 +113,11 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        # print les infos mais cause des soucis de signout
-        # with open('errors_signout.txt', 'a') as f:
-            # f.write('=== SIGNOUT === User display name: {}\n'.format(request.user.display_name))
-            # f.write('=== SIGNOUT === Active sessions before signout: {}\n'.format(request.user.active_sessions))
-            # f.write('=== SIGNOUT === User is online: {}\n'.format(request.user.is_online))
         request.user.active_sessions -= 1
         if request.user.active_sessions == 0:
             request.user.is_online = False
         request.user.save(update_fields=['is_online', 'active_sessions'])
         logout(request)
-        # with open('errors_signout.txt', 'a') as f:
-            # f.write('=== SIGNOUT === User is online: {}\n'.format(request.user.is_online))
-            # f.write('=== SIGNOUT === User logged out successfully.\n')
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -170,6 +162,7 @@ def contact(request):
     return JsonResponse({'online': online_users, 'offline': offline_users})
 
 @login_required
+@require_POST
 def session_close(request):
     user = request.user
     user.active_sessions -= 1
@@ -180,6 +173,16 @@ def session_close(request):
     user.save(update_fields=['active_sessions', 'is_online'])
     
     return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
+
+@login_required
+@require_POST
+def session_open(request):
+    user = request.user
+    user.active_sessions += 1
+
+    user.save(update_fields=['active_sessions', 'is_online'])
+    
+    return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUESTS                                                                                     ===
@@ -589,3 +592,10 @@ def check_friends_statuses_update(user):
 
     except FriendList.DoesNotExist:
         return []
+
+# Dictionnaire pour garder la trace des sessions de chaque utilisateur
+user_sessions = {}
+
+def check_window_update(user):
+    # Vérifie si l'utilisateur a une session active
+    return user_sessions.get(user.id, 0) > 0

@@ -6,12 +6,14 @@ import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
+
+
 	let eventSource = null;
 	function initSSE() {
 		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
 			eventSource = new EventSource('/auth/sse/');
 
-			eventSource.onmessage = function(event) {
+			eventSource.onmessage = function (event) {
 				const data = JSON.parse(event.data);
 				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
 					if (window.location.pathname === '/profile/') {
@@ -20,10 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			};
 
-			eventSource.onerror = function(error) {
+			eventSource.onerror = function (error) {
 				console.error('EventSource error:', error);
 				eventSource.close();
-				setTimeout(function() {
+				setTimeout(function () {
 					eventSource = new EventSource('/auth/sse/');
 				}, 5000);
 			};
@@ -52,9 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (type === 'script') {
 				element.type = "module";
 				element.src = url;
- 			} else if (type === 'link') {
-				 element.rel = "stylesheet";
-				 element.href = element.src = url
+			} else if (type === 'link') {
+				element.rel = "stylesheet";
+				element.href = element.src = url
 			}
 			element.onload = resolve;
 			element.onerror = reject;
@@ -148,14 +150,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		const rootElement = document.documentElement;
 		let currentFontSize = 100;
 
-		increaseFontBtn.addEventListener('click', function() {
+		increaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize < 150) {
 				currentFontSize += 10;
 				rootElement.style.fontSize = currentFontSize + '%';
 			}
 		});
 
-		decreaseFontBtn.addEventListener('click', function() {
+		decreaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize > 50) {
 				currentFontSize -= 10;
 				rootElement.style.fontSize = currentFontSize + '%';
@@ -324,7 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
-
 	function getCookie(name) {
 		let cookieValue = null;
 		if (document.cookie && document.cookie !== '') {
@@ -340,24 +341,91 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
-	window.addEventListener('beforeunload', () => {
-        navigator.sendBeacon('/auth/session-close/', {});
-    });
+	let isClosing = false;
+	let isPageLoaded = false; // Indicateur pour savoir si la page est chargée
+
+	// Événement de chargement de la page
+	window.addEventListener('load', () => {
+		isPageLoaded = true; // La page est chargée
+	});
+
+	// Gérer les changements de visibilité de l'onglet
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'hidden') {
+			isClosing = true; // L'onglet devient invisible
+		} else {
+			isClosing = false; // L'onglet redevient visible
+
+			// Si la page est chargée, envoyer une requête pour indiquer que la session est encore ouverte
+			if (isPageLoaded) {
+				const formData = new FormData();
+				formData.append('csrf_token', getCookie('csrftoken'));
+
+				fetch('/auth/session-open/', {
+					method: 'POST',
+					body: formData,
+					headers: {
+						'X-Requested-With': 'XMLHttpRequest',
+						'X-CSRFToken': getCookie('csrftoken')
+					},
+					keepalive: true
+				})
+					.then(response => {
+						if (!response.ok) {
+							throw new Error('Requête échouée avec le statut : ' + response.status);
+						}
+						return response.json();
+					})
+					.catch(error => {
+						console.error('Erreur lors de la requête :', error);
+					});
+			}
+		}
+	});
+
+	// Gérer l'événement de fermeture de l'onglet
+	window.addEventListener('beforeunload', (e) => {
+		// Si la page est chargée et que l'utilisateur est en train de quitter, envoyer une requête pour fermer la session
+		if (isPageLoaded) {
+			const formData = new FormData();
+			formData.append('csrf_token', getCookie('csrftoken'));
+
+			fetch('/auth/session-close/', {
+				method: 'POST',
+				body: formData,
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					'X-CSRFToken': getCookie('csrftoken')
+				},
+				keepalive: true
+			})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Requête échouée avec le statut : ' + response.status);
+					}
+					return response.json();
+				})
+				.catch(error => {
+					console.error('Erreur lors de la requête :', error);
+				});
+		}
+	});
+
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);
 	loadHeader();
 });
 
-	// // Manage alerts
-	// function showAlert(message) {
-	// 	const alertContainer = document.getElementById('alert-container');
-	// 	const alertMessage = document.getElementById('alert-message');
+// // Manage alerts
+// function showAlert(message) {
+// 	const alertContainer = document.getElementById('alert-container');
+// 	const alertMessage = document.getElementById('alert-message');
 
-	// 	alertMessage.textContent = message;
-	// 	alertContainer.classList.remove('d-none');
-	// }
+// 	alertMessage.textContent = message;
+// 	alertContainer.classList.remove('d-none');
+// }
 
-	// function closeAlert() {
-	// 	document.getElementById('alert-container').classList.add('d-none');
-	// }
+// function closeAlert() {
+// 	document.getElementById('alert-container').classList.add('d-none');
+// }
