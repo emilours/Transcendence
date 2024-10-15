@@ -10,10 +10,15 @@ const BALL_SPEED = 0.1; //not needed i think
 const BALL_SIZE = 0.2; // maybe a bit bigger
 const MAX_HEIGHT = 4.5; // idk how to name this
 const MIN_HEIGHT = -4.5;
-const LOADING_AVATAR = '/static/img/loading.gif';
+const LOADING_IMG = '/static/img/loading.gif';
+const READY_IMG = '/static/img/readyMark.png';
 const WAITING_FOR_PLAYER = 'Waiting for a player';
 const PLAYER_IMG_SIZE = 200;
 const LOADING_IMG_SIZE = 70;
+const TOURNAMENT_LOADING_IMG_SIZE = 30;
+const READY_IMG_SIZE = 100;
+const TOURNAMENT_READY_IMG_SIZE = 50;
+const PLAYER_READY = 1;
 const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
@@ -23,6 +28,7 @@ var scene, camera, renderer, controls, loader;
 // custom global variables
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 // var overlayText;
+var userName;
 var socket;
 var userName;
 var scoreGeometry, scoreFont, gameOver;
@@ -40,7 +46,7 @@ function UpdateLobbyOnline(user, avatar, playerInfo)
 		user = WAITING_FOR_PLAYER;
 	if (avatar == undefined)
 	{
-		avatar = LOADING_AVATAR;
+		avatar = LOADING_IMG;
 		img_size = LOADING_IMG_SIZE;
 	}
 	if (playerInfo)
@@ -62,12 +68,11 @@ function UpdateLobbyOnline(user, avatar, playerInfo)
 	}
 }
 
-function UpdateLobbyTournament(user, avatar, playerInfo)
+function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
-	console.log("UpdateLobbyTournament()");
+	console.log(userName, "update: ", user);
     if (user == undefined)
         user = WAITING_FOR_PLAYER;
-    console.log("player info:", playerInfo);
     if (playerInfo)
     {
         const playerUsername = playerInfo.querySelectorAll('h4');
@@ -75,21 +80,39 @@ function UpdateLobbyTournament(user, avatar, playerInfo)
             playerUsername[1].innerText = user;
         }
         const playerDiv = playerInfo.querySelector('div');
-        console.log("playerDiv:", playerDiv);
         const loadingImg = playerDiv.querySelector('img');
-        console.log("loadingImg:", loadingImg);
         if (loadingImg && user != WAITING_FOR_PLAYER)
         {
-            playerDiv.removeChild(loadingImg);
-            loadingImg.remove();
-            let buttonReady = createButtonGreen('READY', () => {
-                buttonReady.style.backgroundColor = '#0ccf0c';
-                buttonReady.innerText = 'OK';
-                console.log("READY button clicked");
-                //HERE
-                // SendEvent('start_game');
-            });
-            playerDiv.appendChild(buttonReady);
+            if (user == userName)
+            {
+                playerDiv.removeChild(loadingImg);
+                loadingImg.remove();
+                let readyElement = createButtonGreen('READY', () => {
+                    readyElement.style.backgroundColor = '#0ccf0c';
+                    readyElement.innerText = 'OK';
+                    console.log("READY button clicked");
+                    //HERE
+                    // SendEvent('start_game');
+                    playerDiv.appendChild(readyElement);
+                });
+            }
+            else if (user != userName && ready == PLAYER_READY)
+            {
+                loadingImg.src = READY_IMG;
+                loadingImg.width = TOURNAMENT_READY_IMG_SIZE;
+                loadingImg.height = TOURNAMENT_READY_IMG_SIZE;
+            }
+        }
+        if (!loadingImg && user == WAITING_FOR_PLAYER)
+        {
+            const readyButton = playerDiv.querySelector('button');
+            if (readyButton)
+            {
+                playerDiv.removeChild(readyButton);
+                readyButton.remove();
+                let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
+                playerDiv.appendChild(loading);
+            }
         }
     }
 }
@@ -97,6 +120,7 @@ function UpdateLobbyTournament(user, avatar, playerInfo)
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 export function SendEvent(event, username, data)
 {
+    userName = username;
 	console.log("Sending event:", event, "username:", username, "data:", data);
     try
     {
@@ -249,11 +273,10 @@ export function ConnectWebsocket(type, username)
 		}
 		const playerInfoNormal = document.querySelectorAll('.button-vertical');
 		const playerInfoTournament = document.querySelectorAll('.button-horizontal');
-		console.log("playerInfoTournament:", playerInfoTournament);
 		for (let i = 0; i < maxLobbySize; i++)
 		{
 			if (gameType == TOURNAMENT_MODE)
-				UpdateLobbyTournament(data.users[i], data.avatars[i], playerInfoTournament[i]);
+				UpdateLobbyTournament(data.users[i], data.avatars[i], data.ready[i], playerInfoTournament[i]);
 			else
 				UpdateLobbyOnline(data.users[i], data.avatars[i], playerInfoNormal[i]);
 		}

@@ -389,6 +389,7 @@ async def SendLobbyData(sid):
         'lobby_id': room_id[:8],
         'game_type': game_type,
         'max_lobby_size': max_lobby_size,
+        'ready': games[room_id]['ready'],
         'users': games[room_id]['players'],
         'avatars': await GetPlayersAvatar(room_id)
     }

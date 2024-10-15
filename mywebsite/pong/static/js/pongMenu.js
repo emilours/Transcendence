@@ -158,7 +158,7 @@ export function drawLobbyOnline(mode) {
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
-        SendEvent('leave_lobby', userName)
+        SendEvent('leave_lobby', userName);
 		drawOnlineMenu();
 	});
 	lobbyMenu.appendChild(backButton);
@@ -305,6 +305,7 @@ function drawLobbyTournament(mode) {
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
+        SendEvent('leave_lobby', userName)
 		drawTournament();
 	});
 	backButton.style.marginTop = '40px';
