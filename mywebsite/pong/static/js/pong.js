@@ -11,13 +11,10 @@ const BALL_SIZE = 0.2; // maybe a bit bigger
 const MAX_HEIGHT = 4.5; // idk how to name this
 const MIN_HEIGHT = -4.5;
 const LOADING_IMG = '/static/img/loading.gif';
-const READY_IMG = '/static/img/readyMark.png';
 const WAITING_FOR_PLAYER = 'Waiting for a player';
 const PLAYER_IMG_SIZE = 200;
 const LOADING_IMG_SIZE = 70;
 const TOURNAMENT_LOADING_IMG_SIZE = 30;
-const READY_IMG_SIZE = 100;
-const TOURNAMENT_READY_IMG_SIZE = 50;
 const PLAYER_READY = 1;
 const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
@@ -38,7 +35,33 @@ var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
 
-function UpdateLobbyOnline(user, avatar, playerInfo)
+//TODO: rework createElement in GameUtils.js so it works properly?!
+function createElement2(tag, attributes = {}, ...children) {
+    const element = document.createElement(tag);
+    for (let key in attributes) {
+        if (key === 'className') {
+            element.className = attributes[key];
+        } else if (key === 'innerHTML') {
+            element.innerHTML = attributes[key];
+        } else if (key.startsWith('on')) { // not needed
+            // Handle event listeners
+            element.addEventListener(key.slice(2).toLowerCase(), attributes[key]);
+        } else {
+            element.setAttribute(key, attributes[key]);
+        }
+    }
+    // Append children (if any)
+    children.forEach(child => {
+        if (typeof child === 'string') {
+            element.appendChild(document.createTextNode(child));
+        } else if (child instanceof Node) {
+            element.appendChild(child);
+        }
+    });
+    return element;
+}
+
+function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 {
 
 	let img_size = PLAYER_IMG_SIZE;
@@ -65,56 +88,98 @@ function UpdateLobbyOnline(user, avatar, playerInfo)
 			else
 				playerImage.style.margin = '65px';
 		}
+
+		const readyButton = playerInfo.querySelector('.button.green');
+		if (!readyButton)
+		{
+			// 'button' --> button type (same as 'div')
+			// '.button' --> button className
+			let readySquare;
+			readySquare = playerInfo.querySelector('.ready-square');
+			if (!readySquare)
+			{
+				// const readySquare = createElement2('div', {className: 'ready-square'});
+
+				// const readyCheckmark = createElement2('div', {className: 'ready-checkmark'});
+				
+				const svgElement = createElement2('svg', {xmlns: 'http://www.w3.org/2000/svg', width: '240', height: '240', viewBox: '0 0 24 24' });
+
+				const pathElement = createElement2('path', {d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z'});
+
+				svgElement.appendChild(pathElement);
+				// readyCheckmark.appendChild(svgElement);
+				// readySquare.appendChild(readyCheckmark);
+
+				// if (!readySquare)
+				// 	console.error("Error creating readySquare element");
+				playerInfo.appendChild(svgElement); //
+				console.log("checkmark created successfully");
+			}
+		}
 	}
 }
 
 function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
-	console.log(userName, "update: ", user);
-    if (user == undefined)
-        user = WAITING_FOR_PLAYER;
+/* 	console.log(userName, "update: ", user);
+	if (user == undefined)
+		user = WAITING_FOR_PLAYER;
     if (playerInfo)
     {
         const playerUsername = playerInfo.querySelectorAll('h4');
         if (playerUsername[1]) {
             playerUsername[1].innerText = user;
         }
+
         const playerDiv = playerInfo.querySelector('div');
         const loadingImg = playerDiv.querySelector('img');
-        if (loadingImg && user != WAITING_FOR_PLAYER)
-        {
-            if (user == userName)
-            {
-                playerDiv.removeChild(loadingImg);
-                loadingImg.remove();
-                let readyElement = createButtonGreen('READY', () => {
-                    readyElement.style.backgroundColor = '#0ccf0c';
-                    readyElement.innerText = 'OK';
-                    console.log("READY button clicked");
-                    //HERE
-                    // SendEvent('start_game');
-                    playerDiv.appendChild(readyElement);
-                });
-            }
-            else if (user != userName && ready == PLAYER_READY)
-            {
-                loadingImg.src = READY_IMG;
-                loadingImg.width = TOURNAMENT_READY_IMG_SIZE;
-                loadingImg.height = TOURNAMENT_READY_IMG_SIZE;
-            }
-        }
-        if (!loadingImg && user == WAITING_FOR_PLAYER)
-        {
-            const readyButton = playerDiv.querySelector('button');
-            if (readyButton)
-            {
-                playerDiv.removeChild(readyButton);
-                readyButton.remove();
-                let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
-                playerDiv.appendChild(loading);
-            }
-        }
-    }
+		// might have to remove readyButton in some cases
+		if (user == WAITING_FOR_PLAYER && !loadingImg)
+		{
+			const readyButton = playerDiv.querySelector('button');
+			if (readyButton)
+			{
+				playerDiv.removeChild(readyButton);
+				readyButton.remove();
+			}
+			let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
+			playerDiv.appendChild(loading);
+		}
+		else if (user == userName)
+		{
+			if (loadingImg)
+			{
+				playerDiv.removeChild(loadingImg);
+				loadingImg.remove();
+			}
+			let readyElement = createButtonGreen('READY', () => {
+				readyElement.style.backgroundColor = '#0ccf0c';
+				readyElement.innerText = 'OK';
+				console.log("READY button clicked");
+				//HERE
+				SendEvent('player_ready', userName, null);
+			});
+			playerDiv.appendChild(readyElement);
+		}
+		else
+		{
+			let readySquare = createElement('div', {className: 'ready-square'},
+				createElement('div', {className: 'ready-checkmark'},
+					createElement('svg', {xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24'},
+						createElement('path', {d: 'M9 16.2l-3.5-3.5-1.4 1.4 4.9 4.9 12-12-1.4-1.4z'})
+					)
+				)
+			);
+			if (!readySquare)
+				console.error("Error creating readySquare element");
+			playerDiv.appendChild(readySquare);
+			if (ready == 1)
+			{
+				// checkmark
+				toggleReady(readySquare);
+			}
+		}
+    } */
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
@@ -278,7 +343,7 @@ export function ConnectWebsocket(type, username)
 			if (gameType == TOURNAMENT_MODE)
 				UpdateLobbyTournament(data.users[i], data.avatars[i], data.ready[i], playerInfoTournament[i]);
 			else
-				UpdateLobbyOnline(data.users[i], data.avatars[i], playerInfoNormal[i]);
+				UpdateLobbyOnline(data.users[i], data.avatars[i], data.ready[i], playerInfoNormal[i]);
 		}
 	});
 }

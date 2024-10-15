@@ -373,6 +373,7 @@ async def PlayerReady(sid, username):
         await sio.emit('game_ready', room=room_id)
     else:
         log("SOMEONE IS NOT READY")
+    await SendLobbyData(sid)
 
 
 async def SendLobbyData(sid):
