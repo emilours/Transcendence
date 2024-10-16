@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
 					initSSE();
+					manageSession();
 				}
 			}
 			attachListeners();
@@ -341,52 +342,44 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
-	let isClosing = false;
-	let isPageLoaded = false; // Indicateur pour savoir si la page est chargée
+	//**************************************************************************************************************************************************** */
 
-	// Événement de chargement de la page
-	window.addEventListener('load', () => {
-		isPageLoaded = true; // La page est chargée
-	});
+	function manageSession() {
+		console.log('ManageSession initialized');
+		let isClosing = false;
+		let isPageLoaded = false;
+		let isSessionOpen = false;
 
-	// Gérer les changements de visibilité de l'onglet
-	document.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'hidden') {
-			isClosing = true; // L'onglet devient invisible
-		} else {
-			isClosing = false; // L'onglet redevient visible
+		function openSession() {
+			const formData = new FormData();
+			formData.append('csrf_token', getCookie('csrftoken'));
 
-			// Si la page est chargée, envoyer une requête pour indiquer que la session est encore ouverte
-			if (isPageLoaded) {
-				const formData = new FormData();
-				formData.append('csrf_token', getCookie('csrftoken'));
-
-				fetch('/auth/session-open/', {
-					method: 'POST',
-					body: formData,
-					headers: {
-						'X-Requested-With': 'XMLHttpRequest',
-						'X-CSRFToken': getCookie('csrftoken')
-					},
-					keepalive: true
+			fetch('/auth/session-open/', {
+				method: 'POST',
+				body: formData,
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					'X-CSRFToken': getCookie('csrftoken')
+				},
+				keepalive: true
+			})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Failed request with status : ' + response.status);
+					}
+					return response.json();
 				})
-					.then(response => {
-						if (!response.ok) {
-							throw new Error('Requête échouée avec le statut : ' + response.status);
-						}
-						return response.json();
-					})
-					.catch(error => {
-						console.error('Erreur lors de la requête :', error);
-					});
-			}
+				.then(data => {
+					isSessionOpen = true;
+					// console.log('Session ouverte:', data.message);
+				})
+				.catch(error => {
+					console.error('Error request when using openSession :', error);
+				});
 		}
-	});
 
-	// Gérer l'événement de fermeture de l'onglet
-	window.addEventListener('beforeunload', (e) => {
-		// Si la page est chargée et que l'utilisateur est en train de quitter, envoyer une requête pour fermer la session
-		if (isPageLoaded) {
+		function closeSession() {
+			// console.log('Appel de closeSession');
 			const formData = new FormData();
 			formData.append('csrf_token', getCookie('csrftoken'));
 
@@ -401,16 +394,62 @@ document.addEventListener("DOMContentLoaded", () => {
 			})
 				.then(response => {
 					if (!response.ok) {
-						throw new Error('Requête échouée avec le statut : ' + response.status);
+						throw new Error('Failed request with status : ' + response.status);
 					}
 					return response.json();
 				})
+				.then(data => {
+					isSessionOpen = false;
+					// console.log('Session closed:', data.message);
+				})
 				.catch(error => {
-					console.error('Erreur lors de la requête :', error);
+					console.error('Error request when using closeSession:', error);
 				});
 		}
-	});
 
+		function handleVisibilityChange() {
+			// console.log('État de visibilité:', document.visibilityState);
+			// console.log('isSessionOpen:', isSessionOpen);
+
+			if (document.visibilityState === 'hidden') {
+				isClosing = true;
+				// console.log('Appel de closeSession');
+				closeSession();
+			} else if (document.visibilityState === 'visible') {
+				isClosing = false;
+				if (!isPageLoaded) {
+					// console.log('Appel de openSession');
+					openSession();
+				}
+			}
+		}
+
+		function handleBeforeUnload() {
+			if (isPageLoaded && isClosing) {
+				setTimeout(() => {
+					closeSession();
+				}, 100);
+			}
+		}
+
+		window.addEventListener('load', () => {
+			isPageLoaded = true;
+			if (!isSessionOpen) {
+				openSession();
+			}
+		});
+
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+	}
+
+	if (checkLoginStatus()) {
+		console.log('User is logged in. initiating ManageSession after refresh...');
+		manageSession();
+	}
+
+	//**************************************************************************************************************************************************** */
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);

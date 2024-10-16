@@ -179,7 +179,7 @@ def session_close(request):
 def session_open(request):
     user = request.user
     user.active_sessions += 1
-
+    user.is_online = True
     user.save(update_fields=['active_sessions', 'is_online'])
     
     return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)
@@ -505,6 +505,49 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
+# @login_required
+# def sse(request):
+#     async def event_stream():
+#         last_status = []
+#         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
+#         last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
+
+#         # if not request.user.is_online:
+#         #     request.user.is_online = True
+#         #     await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+
+#         if request.user.active_sessions > 0 and not request.user.is_online:
+#             request.user.is_online = True
+#             await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+
+#         try:
+#             while True:
+#                 friend_statuses_update = await asyncio.to_thread(check_friends_statuses_update, request.user)
+#                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
+#                 number_update = await asyncio.to_thread(check_friendlist_update, request.user)
+
+#                 if status_update != last_status or last_number != number_update or last_friend_statuses != friend_statuses_update:
+#                     combined_update = {
+#                         "friend_requests": status_update,
+#                         "friend_count": number_update,
+#                         "friend_statuses": friend_statuses_update
+#                     }
+#                     yield f"data: {json.dumps(combined_update)}\n\n"
+
+#                     last_status = status_update
+#                     last_number = number_update
+#                     last_friend_statuses = friend_statuses_update
+
+#                 await asyncio.sleep(5)
+#         except asyncio.CancelledError:
+#             return
+#         finally:
+#             if request.user.active_sessions == 0:
+#                 request.user.is_online = False
+#                 await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+
+#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
 @login_required
 def sse(request):
     async def event_stream():
@@ -512,13 +555,9 @@ def sse(request):
         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
         last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
 
-        # if not request.user.is_online:
+        # if request.user.active_sessions > 0 and not request.user.is_online:
         #     request.user.is_online = True
         #     await asyncio.to_thread(request.user.save, update_fields=['is_online'])
-
-        if request.user.active_sessions > 0 and not request.user.is_online:
-            request.user.is_online = True
-            await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
         try:
             while True:
@@ -541,10 +580,10 @@ def sse(request):
                 await asyncio.sleep(5)
         except asyncio.CancelledError:
             return
-        finally:
-            if request.user.active_sessions == 0:
-                            request.user.is_online = False
-                            await asyncio.to_thread(request.user.save, update_fields=['is_online'])
+        # finally:
+        #     if request.user.active_sessions == 0:
+        #         request.user.is_online = False
+        #         await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
@@ -593,9 +632,9 @@ def check_friends_statuses_update(user):
     except FriendList.DoesNotExist:
         return []
 
-# Dictionnaire pour garder la trace des sessions de chaque utilisateur
-user_sessions = {}
+# # Dictionnaire pour garder la trace des sessions de chaque utilisateur
+# user_sessions = {}
 
-def check_window_update(user):
-    # Vérifie si l'utilisateur a une session active
-    return user_sessions.get(user.id, 0) > 0
+# def check_window_update(user):
+#     # Vérifie si l'utilisateur a une session active
+#     return user_sessions.get(user.id, 0) > 0
