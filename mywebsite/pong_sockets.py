@@ -162,6 +162,8 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     game_type = games[room_id]['game_type']
     sid1 = games[room_id]['sids'][player_1_index]
     sid2 = games[room_id]['sids'][player_2_index]
+    username1 = games[room_id]['players'][player_1_index]
+    username2 = games[room_id]['players'][player_2_index]
     delta_time = 0
     current_task = asyncio.current_task()
     while True:
@@ -223,9 +225,11 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             current_task = None
             if (game_type == NORMAL_GAME):
                 log(f"calling disconnect for {sid1}")
-                await sio.disconnect(sid1)
+                # await sio.disconnect(sid1)
+                await LeaveLobby(sid1, username1)
                 log(f"calling disconnect for {sid2}")
-                await sio.disconnect(sid2)
+                # await sio.disconnect(sid2)
+                await LeaveLobby(sid2, username2)
             return
 
 
@@ -626,6 +630,7 @@ async def DebugPrint(sid, username):
         color_print(BLUE, f"players: {game['players']}")
         color_print(BLUE, f"sids: {game['sids']}")
         color_print(BLUE, f"ready: {game['ready']}")
+        color_print(BLUE, f"ready: {game['scores']}")
         print("")
 
     color_print(DARK_GRAY, f"---------------------\n\n")
@@ -643,79 +648,3 @@ if __name__ == "__main__":
     # , ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile
     uvicorn.run(app, host='0.0.0.0', port=6789, ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile)
 
-
-# OTHER METHOD
-
-# import json, time, threading
-# import asyncio
-# import websockets
-
-# async def websocket_handler(websocket, path):
-#     print("Client connected!")
-#     try:
-
-#         async for message in websocket:
-#             print(f"Received message from client: {message}")
-#             await websocket.send(f"Server received: {message}")
-#     except websockets.ConnectionClosed:
-#         print("Client disconnected!")
-
-# # TODO: Needs to be async so it doesn't interupt the whole server
-# async def start_game():
-#     thread_id = threading.get_ident()
-#     print(f"[ID: {thread_id}] in start_game()")
-#     server = await websockets.serve(websocket_handler, "0.0.0.0", 6789)
-#     print("WebSocket server started at ws://127.0.0.1:6789")
-#     await server.wait_closed()
-
-# if __name__ == "__main__":
-#     asyncio.get_event_loop().run_until_complete(start_game())
-
-
-""" # SOCKETS can't connect to websocket
-import socket
-# from _thread import *
-import sys
-
-def main():
-	server = "0.0.0.0"
-	port = 6789
-
-	pongSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-	try:
-		pongSocket.bind((server, port))
-	except socket.error as e:
-		str(e)
-
-	# number of maximum connections: 2
-	# do this in loop so a new lobby is created if the previous one is full
-	pongSocket.listen(2)
-	print("Server started at 127.0.0.1:6789")
-
-	# currentPlayer = 0
-
-	while True:
-		conn, addr = pongSocket.accept()
-		# currentPlayer += 1
-		print("Connected to: ", addr)
-
-		# conn.send("Connection established!")
-		# conn.sendall(f"There is {currentPlayer} connected")
-
-		# Start thread when 2 are connected
-
-if __name__ == "__main__":
-	main() """
-
-
-# import websocket
-
-# def main():
-# 	server = "0.0.0.0"
-# 	port = 6789
-
-# 	socket = websocket
-
-# if __name__ == "__main__":
-# 	main()

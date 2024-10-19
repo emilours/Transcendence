@@ -35,30 +35,24 @@ var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
 
-//TODO: rework createElement in GameUtils.js so it works properly?!
-function createElement2(tag, attributes = {}, ...children) {
-    const element = document.createElement(tag);
-    for (let key in attributes) {
-        if (key === 'className') {
-            element.className = attributes[key];
-        } else if (key === 'innerHTML') {
-            element.innerHTML = attributes[key];
-        } else if (key.startsWith('on')) { // not needed
-            // Handle event listeners
-            element.addEventListener(key.slice(2).toLowerCase(), attributes[key]);
-        } else {
-            element.setAttribute(key, attributes[key]);
-        }
+function createElementNS(namespace, type, properties = {}, ...children) {
+	const element = document.createElementNS(namespace, type);
+
+	// Object.assign(element, properties);
+    //What it does: This method directly assigns properties to the element object. This works for standard DOM element properties (e.g., id, className, textContent, onclick, etc.).
+    //Behavior: Object.assign sets the properties of the element as object properties, not as attributes. This means it modifies the JavaScript object representation of the element rather than setting HTML attributes directly.
+    //Use Case: It's best for setting DOM object properties rather than attributes.
+
+    for (let property in properties)
+    {
+        element.setAttribute(property, properties[property]);
     }
-    // Append children (if any)
-    children.forEach(child => {
-        if (typeof child === 'string') {
-            element.appendChild(document.createTextNode(child));
-        } else if (child instanceof Node) {
-            element.appendChild(child);
-        }
-    });
-    return element;
+    //What it does: This method explicitly sets attributes on the DOM element. This is the way to add standard HTML attributes (like class, data-* attributes, etc.) to the element's markup.
+    //Use Case: Use this when you need to set HTML attributes that are visible in the markup, including custom or non-standard attributes (like data- attributes).
+    //Behavior: The setAttribute method sets an attribute directly on the HTML element itself, meaning the attribute will be visible in the HTML and DOM tree. It only applies to attributes, not properties.
+	
+	children.forEach(child => element.appendChild(child));
+	return element;
 }
 
 function UpdateLobbyOnline(user, avatar, ready, playerInfo)
@@ -90,7 +84,7 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 		}
 
 		const readyButton = playerInfo.querySelector('.button.green');
-		if (!readyButton)
+		if (!readyButton && ready == 1)
 		{
 			// 'button' --> button type (same as 'div')
 			// '.button' --> button className
@@ -98,22 +92,34 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 			readySquare = playerInfo.querySelector('.ready-square');
 			if (!readySquare)
 			{
-				// const readySquare = createElement2('div', {className: 'ready-square'});
+				const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
 
-				// const readyCheckmark = createElement2('div', {className: 'ready-checkmark'});
+				const readySquare = createElement('div', {className: 'ready-square'});
+
+				const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
 				
-				const svgElement = createElement2('svg', {xmlns: 'http://www.w3.org/2000/svg', width: '240', height: '240', viewBox: '0 0 24 24' });
+				// Create the SVG element with correct namespace
+				const svgElement = createElementNS(svgNS, 'svg', { 
+					width: '100',  // Adjust the size for debugging
+					height: '100', 
+					viewBox: '0 0 24 24',
+					style: 'border: 1px solid red;' // Add a border to visually debug
+				});
 
-				const pathElement = createElement2('path', {d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z'});
+				// Create the path element with correct namespace
+				const pathElement = createElementNS(svgNS, 'path', {
+					d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
+					fill: 'green'  // Ensure the path has a visible color
+				});
 
 				svgElement.appendChild(pathElement);
-				// readyCheckmark.appendChild(svgElement);
-				// readySquare.appendChild(readyCheckmark);
+				readyCheckmark.appendChild(svgElement);
+				readySquare.appendChild(readyCheckmark);
 
 				// if (!readySquare)
 				// 	console.error("Error creating readySquare element");
-				playerInfo.appendChild(svgElement); //
-				console.log("checkmark created successfully");
+				playerInfo.appendChild(readySquare);
+				console.log("checkmark created successfully:", readySquare);
 			}
 		}
 	}

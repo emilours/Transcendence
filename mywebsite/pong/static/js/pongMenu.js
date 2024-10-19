@@ -15,6 +15,7 @@ export function initPongMenu(username, userAvatar) {
 	    userName = username;
 	console.log('Pong game initialized - user:', userName);
 
+	//DEBUG
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
