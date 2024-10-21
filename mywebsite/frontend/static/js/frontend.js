@@ -8,6 +8,39 @@ import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	let eventSource = null;
+    function initStatusSockets()
+    {
+        console.log("INIT STATUS SOCKET");
+        // TODO: Change ws --> wss
+        const url = `ws://${window.location.host}/ws/status-socket/`;
+        var statusSocket = new WebSocket(url);
+
+        statusSocket.onopen = function(e) {
+            alert("[open] Connection established");
+            alert("Sending to server");
+            statusSocket.send("My name is John");
+          };
+
+          statusSocket.onmessage = function(event) {
+            alert(`[message] Data received from server: ${event.data}`);
+          };
+
+          statusSocket.onclose = function(event) {
+            if (event.wasClean) {
+              alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+            } else {
+              // par exemple : processus serveur arrêté ou réseau en panne
+              // event.code est généralement 1006 dans ce cas
+              alert('[close] Connection died');
+            }
+          };
+
+          statusSocket.onerror = function(error) {
+            alert(`[error]`);
+            console.warn("socket error:", error);
+          };
+    }
+
 	function initSSE() {
 		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
 			eventSource = new EventSource('/auth/sse/');
@@ -42,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (checkLoginStatus()) {
 		console.log('User is logged in. Initiating SSE after refresh...');
 		initSSE();
+        initStatusSockets();
 	}
 
 	// SPA - Single Page Application

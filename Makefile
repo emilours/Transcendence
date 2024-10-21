@@ -20,13 +20,13 @@ up:
 	@echo "\n$(BOLD)$(GREEN)Launched [ ✔ ]\n$(RESET)"
 
 # USED FOR TESTS
-malo: all
+daphne: all
+	@docker exec -it mywebsite tail -f /var/log/daphne.log
+
+socket: all
 	@docker exec -it mywebsite tail -f /var/log/socket.log
 
-socket:
-	@docker exec -it mywebsite tail -f /var/log/socket.log
-
-socket_err:
+socket_err: all
 	@docker exec -it mywebsite tail -f /var/log/socket.err.log
 #
 
