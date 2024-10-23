@@ -2,6 +2,9 @@ import json, time, asyncio, uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
+from frontend.models import CustomUser
+from .views import session_open, session_close
+
 
 
 # CONST VARIABLES
@@ -21,6 +24,39 @@ WINNING_SCORE = 5
 
 def log(message):
 	print(f"[PONG LOG] {message}")
+
+def StatusLog(message):
+	print(f"[STATUS LOG] {message}")
+
+
+class StatusConsumer(AsyncWebsocketConsumer):
+
+    async def connect(self):
+        try:
+            await self.accept()
+            # Any other setup logic
+            user = self.scope['user']
+			# INCREMENT
+            await session_open(user)
+
+        except Exception as e:
+            # If an exception occurs, log it and close the connection
+            StatusLog(f"Error during connection: {e}")
+            await self.close(code=1011)
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            StatusLog(f"Received: {data}")
+        except Exception as e:
+            StatusLog(f"Error during message handling: {e}")
+            await self.close(code=1011)
+
+    async def disconnect(self, close_code):
+        StatusLog(f"Disconnected with code {close_code}")
+        user = self.scope['user']
+        await session_close(user)
+		#DECREMENT
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 	games = {}

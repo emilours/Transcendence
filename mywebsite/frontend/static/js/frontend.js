@@ -4,39 +4,78 @@ import { CloseWebsocket } from '/static/js/pong.js';
 import { CleanupLocalPong } from '/static/js/pongLocal.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
+var statusSocket;
+
+
+export function DisconnectStatus()
+{
+	if 
+}
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	let eventSource = null;
+	var pongSocket;
+	
+	function ConnectStatus()
+	{
+		// WEBSOCKET
+		const url = `wss://${window.location.host}/ws/pong-socket-server/`;
+		console.log("Url: " + url);
+		pongSocket = new WebSocket(url);
+
+		pongSocket.onmessage = function(e){
+			let data = JSON.parse(e.data);
+			console.log('Data:', data);
+		};
+
+		pongSocket.onopen = function(e){
+			console.log('CLIENT Connected!');
+		}
+
+		pongSocket.onclose = function(e){
+			console.log('CLIENT Disconnect!');
+		}
+
+		// beforeunload or unload
+		window.addEventListener('beforeunload', function() {
+			if (pongSocket) {
+				pongSocket.close();
+			}
+		});	
+	}
+
+
     function initStatusSockets()
     {
         console.log("INIT STATUS SOCKET");
         // TODO: Change ws --> wss
-        const url = `ws://${window.location.host}/ws/status-socket/`;
-        var statusSocket = new WebSocket(url);
+        const url = `wss://${window.location.host}/ws/status-socket/`;
+        statusSocket = new WebSocket(url);
 
         statusSocket.onopen = function(e) {
-            alert("[open] Connection established");
-            alert("Sending to server");
-            statusSocket.send("My name is John");
+			console.log("[open] Connection established");
+			console.log("Sending to server");
+			statusSocket.send(JSON.stringify({
+				'message':'Hello from initStatusSockets()'
+			}))
           };
 
           statusSocket.onmessage = function(event) {
-            alert(`[message] Data received from server: ${event.data}`);
+            console.log(`[message] Data received from server: ${event.data}`);
           };
 
           statusSocket.onclose = function(event) {
             if (event.wasClean) {
-              alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
             } else {
               // par exemple : processus serveur arrêté ou réseau en panne
               // event.code est généralement 1006 dans ce cas
-              alert('[close] Connection died');
+			  console.log('[close] Connection died');
             }
           };
 
           statusSocket.onerror = function(error) {
-            alert(`[error]`);
             console.warn("socket error:", error);
           };
     }
@@ -75,8 +114,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (checkLoginStatus()) {
 		console.log('User is logged in. Initiating SSE after refresh...');
 		initSSE();
-        initStatusSockets();
+		initStatusSockets();
+        ConnectStatus();
 	}
+	// HERE
+	// else
+		// DisconnectStatus();
 
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
@@ -167,6 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
 					initSSE();
+					initPongMenu();
+					ConnectStatus();
 				}
 			}
 			attachListeners();
