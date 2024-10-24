@@ -17,39 +17,38 @@ document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	let eventSource = null;
 
-    function initStatusSockets()
-    {
-        console.log("INIT STATUS SOCKET");
-        const url = `wss://${window.location.host}/ws/status-socket/`;
-        statusSocket = new WebSocket(url);
+	function initStatusSockets() {
+		console.log("INIT STATUS SOCKET");
+		const url = `wss://${window.location.host}/ws/status-socket/`;
+		statusSocket = new WebSocket(url);
 
-        statusSocket.onopen = function(e) {
+		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
 
-          };
+		};
 
-          statusSocket.onmessage = function(event) {
-            console.log(`[message] Data received from server: ${event.data}`);
-          };
+		statusSocket.onmessage = function (event) {
+			console.log(`[message] Data received from server: ${event.data}`);
+		};
 
-          statusSocket.onclose = function(event) {
-            if (event.wasClean) {
+		statusSocket.onclose = function (event) {
+			if (event.wasClean) {
 				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-            } else {
-			  console.log('[close] Connection died');
-            }
-          };
+			} else {
+				console.log('[close] Connection died');
+			}
+		};
 
-          statusSocket.onerror = function(error) {
-            console.warn("socket error:", error);
-          };
-    }
+		statusSocket.onerror = function (error) {
+			console.warn("socket error:", error);
+		};
+	}
 
 	function initSSE() {
 		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
 			eventSource = new EventSource('/auth/sse/');
 
-			eventSource.onmessage = function(event) {
+			eventSource.onmessage = function (event) {
 				const data = JSON.parse(event.data);
 				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
 					if (window.location.pathname === '/profile/') {
@@ -58,10 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			};
 
-			eventSource.onerror = function(error) {
+			eventSource.onerror = function (error) {
 				console.error('EventSource error:', error);
 				eventSource.close();
-				setTimeout(function() {
+				setTimeout(function () {
 					eventSource = new EventSource('/auth/sse/');
 				}, 5000);
 			};
@@ -91,9 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (type === 'script') {
 				element.type = "module";
 				element.src = url;
- 			} else if (type === 'link') {
-				 element.rel = "stylesheet";
-				 element.href = element.src = url
+			} else if (type === 'link') {
+				element.rel = "stylesheet";
+				element.href = element.src = url
 			}
 			element.onload = resolve;
 			element.onerror = reject;
@@ -188,14 +187,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		const rootElement = document.documentElement;
 		let currentFontSize = 100;
 
-		increaseFontBtn.addEventListener('click', function() {
+		increaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize < 150) {
 				currentFontSize += 10;
 				rootElement.style.fontSize = currentFontSize + '%';
 			}
 		});
 
-		decreaseFontBtn.addEventListener('click', function() {
+		decreaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize > 50) {
 				currentFontSize -= 10;
 				rootElement.style.fontSize = currentFontSize + '%';
@@ -300,9 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
 								localStorage.removeItem('isLoggedIn');
 								if (eventSource) {
 									eventSource.close();
-									CloseStatusSocket();
 									console.log('SSE connection closed');
 								}
+								if (statusSocket)
+									CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'delete-account-form') {
@@ -387,15 +387,15 @@ document.addEventListener("DOMContentLoaded", () => {
 	loadHeader();
 });
 
-	// // Manage alerts
-	// function showAlert(message) {
-	// 	const alertContainer = document.getElementById('alert-container');
-	// 	const alertMessage = document.getElementById('alert-message');
+// // Manage alerts
+// function showAlert(message) {
+// 	const alertContainer = document.getElementById('alert-container');
+// 	const alertMessage = document.getElementById('alert-message');
 
-	// 	alertMessage.textContent = message;
-	// 	alertContainer.classList.remove('d-none');
-	// }
+// 	alertMessage.textContent = message;
+// 	alertContainer.classList.remove('d-none');
+// }
 
-	// function closeAlert() {
-	// 	document.getElementById('alert-container').classList.add('d-none');
-	// }
+// function closeAlert() {
+// 	document.getElementById('alert-container').classList.add('d-none');
+// }
