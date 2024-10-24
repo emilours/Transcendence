@@ -6,59 +6,26 @@ import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 var statusSocket;
 
-
-export function DisconnectStatus()
-{
-	if 
+export function CloseStatusSocket() {
+	if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
+		statusSocket.close(1000, "Closing normally");
+		console.log("Status socket closed");
+	}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	let eventSource = null;
-	var pongSocket;
-	
-	function ConnectStatus()
-	{
-		// WEBSOCKET
-		const url = `wss://${window.location.host}/ws/pong-socket-server/`;
-		console.log("Url: " + url);
-		pongSocket = new WebSocket(url);
-
-		pongSocket.onmessage = function(e){
-			let data = JSON.parse(e.data);
-			console.log('Data:', data);
-		};
-
-		pongSocket.onopen = function(e){
-			console.log('CLIENT Connected!');
-		}
-
-		pongSocket.onclose = function(e){
-			console.log('CLIENT Disconnect!');
-		}
-
-		// beforeunload or unload
-		window.addEventListener('beforeunload', function() {
-			if (pongSocket) {
-				pongSocket.close();
-			}
-		});	
-	}
-
 
     function initStatusSockets()
     {
         console.log("INIT STATUS SOCKET");
-        // TODO: Change ws --> wss
         const url = `wss://${window.location.host}/ws/status-socket/`;
         statusSocket = new WebSocket(url);
 
         statusSocket.onopen = function(e) {
-			console.log("[open] Connection established");
-			console.log("Sending to server");
-			statusSocket.send(JSON.stringify({
-				'message':'Hello from initStatusSockets()'
-			}))
+			console.log("[open] Status Connection established");
+
           };
 
           statusSocket.onmessage = function(event) {
@@ -69,8 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (event.wasClean) {
 				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
             } else {
-              // par exemple : processus serveur arrêté ou réseau en panne
-              // event.code est généralement 1006 dans ce cas
 			  console.log('[close] Connection died');
             }
           };
@@ -115,11 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		console.log('User is logged in. Initiating SSE after refresh...');
 		initSSE();
 		initStatusSockets();
-        ConnectStatus();
 	}
-	// HERE
-	// else
-		// DisconnectStatus();
 
 	// SPA - Single Page Application
 	const app = document.getElementById('app');
@@ -210,8 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
 					initSSE();
-					initPongMenu();
-					ConnectStatus();
+					initStatusSockets()
 				}
 			}
 			attachListeners();
@@ -340,6 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
 								localStorage.removeItem('isLoggedIn');
 								if (eventSource) {
 									eventSource.close();
+									CloseStatusSocket();
 									console.log('SSE connection closed');
 								}
 								loadContent('/home/', true);

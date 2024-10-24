@@ -44,8 +44,6 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
-        user.is_online = True
-        user.save(update_fields=['is_online'])
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
@@ -112,8 +110,6 @@ def signup(request):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        request.user.is_online = False
-        request.user.save(update_fields=['is_online'])
         logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
@@ -486,10 +482,6 @@ def sse(request):
         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
         last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
 
-        if not request.user.is_online:
-            request.user.is_online = True
-            await asyncio.to_thread(request.user.save, update_fields=['is_online'])
-
         try:
             while True:
                 friend_statuses_update = await asyncio.to_thread(check_friends_statuses_update, request.user)
@@ -511,10 +503,6 @@ def sse(request):
                 await asyncio.sleep(5)
         except asyncio.CancelledError:
             return
-        finally:
-            if request.user.is_online:
-                request.user.is_online = False
-                await asyncio.to_thread(request.user.save, update_fields=['is_online'])
 
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
@@ -552,7 +540,8 @@ def check_friends_statuses_update(user):
             {
                 "id": friend.id,
                 "display_name": friend.display_name,
-                "is_online": friend.is_online
+                "is_online": friend.is_online,
+                "avatar": friend.avatar.url
             }
             for friend in friends
         ]
@@ -561,10 +550,3 @@ def check_friends_statuses_update(user):
 
     except FriendList.DoesNotExist:
         return []
-
-# def sse_test(request):
-#     def event_stream():
-#         for i in range(5):
-#             time.sleep(1)
-#             yield f"data: Hello SSE {i}\n\n"
-#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')

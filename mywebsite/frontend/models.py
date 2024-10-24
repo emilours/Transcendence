@@ -45,7 +45,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 	victories = models.PositiveIntegerField(default=0)
 	defeats = models.PositiveIntegerField(default=0)
-	score_pong = models.PositiveIntegerField(default=0)
 
 	friends_count = models.PositiveIntegerField(default=0)
 	sent_requests_count = models.PositiveIntegerField(default=0)
