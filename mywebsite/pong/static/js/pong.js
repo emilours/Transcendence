@@ -100,10 +100,10 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				
 				// Create the SVG element with correct namespace
 				const svgElement = createElementNS(svgNS, 'svg', { 
-					width: '100',  // Adjust the size for debugging
-					height: '100', 
+					width: '50',  // Adjust the size for debugging
+					height: '50', 
 					viewBox: '0 0 24 24',
-					style: 'border: 1px solid red;' // Add a border to visually debug
+					// style: 'border: 1px solid red;' // Add a border to visually debug
 				});
 
 				// Create the path element with correct namespace
@@ -121,6 +121,12 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				playerInfo.appendChild(readySquare);
 				console.log("checkmark created successfully:", readySquare);
 			}
+		}
+		else if (ready != 1)
+		{
+			const readySquare = playerInfo.querySelector('.ready-square');
+			if (readySquare)
+				readySquare.remove();
 		}
 	}
 }

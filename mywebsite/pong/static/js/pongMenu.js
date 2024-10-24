@@ -182,8 +182,16 @@ function drawPlayerOnline(userName) {
 		createElement('img', { src: avatar, width: 200, height: 200 }),
 		createElement('h4', { innerText: userName }),
 		buttonReady = createButtonGreen('READY', () => {
-			buttonReady.style.backgroundColor = '#0ccf0c';
-			buttonReady.innerText = 'OK';
+			if (buttonReady.innerText == 'READY')
+			{
+				buttonReady.style.backgroundColor = '#0ccf0c';
+				buttonReady.innerText = 'UNREADY';
+			}
+			else
+			{
+				buttonReady.style.backgroundColor = '#5fbfff';
+				buttonReady.innerText = 'READY';
+			}
 			// UpdateMenu(lobbyMenu);
 			SendEvent('player_ready', userName, null);
 		})

@@ -630,7 +630,7 @@ async def DebugPrint(sid, username):
         color_print(BLUE, f"players: {game['players']}")
         color_print(BLUE, f"sids: {game['sids']}")
         color_print(BLUE, f"ready: {game['ready']}")
-        color_print(BLUE, f"ready: {game['scores']}")
+        color_print(BLUE, f"score: {game['scores']}")
         print("")
 
     color_print(DARK_GRAY, f"---------------------\n\n")
