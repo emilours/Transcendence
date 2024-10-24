@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
 					initSSE();
-					manageSession();
+					// manageSession();
 				}
 			}
 			attachListeners();
@@ -344,110 +344,109 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	//**************************************************************************************************************************************************** */
 
-	function manageSession() {
-		console.log('ManageSession initialized');
-		let isClosing = false;
-		let isPageLoaded = false;
-		let isSessionOpen = false;
+	// function manageSession() {
+	// 	console.log('ManageSession initialized');
+	// 	let isClosing = false;
+	// 	let isPageLoaded = false;
+	// 	let isSessionOpen = false;
 
-		function openSession() {
-			const formData = new FormData();
-			formData.append('csrf_token', getCookie('csrftoken'));
+	// 	function openSession() {
+	// 		const formData = new FormData();
+	// 		formData.append('csrf_token', getCookie('csrftoken'));
 
-			fetch('/auth/session-open/', {
-				method: 'POST',
-				body: formData,
-				headers: {
-					'X-Requested-With': 'XMLHttpRequest',
-					'X-CSRFToken': getCookie('csrftoken')
-				},
-				keepalive: true
-			})
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Failed request with status : ' + response.status);
-					}
-					return response.json();
-				})
-				.then(data => {
-					isSessionOpen = true;
-					// console.log('Session ouverte:', data.message);
-				})
-				.catch(error => {
-					console.error('Error request when using openSession :', error);
-				});
-		}
+	// 		fetch('/auth/session-open/', {
+	// 			method: 'POST',
+	// 			body: formData,
+	// 			headers: {
+	// 				'X-Requested-With': 'XMLHttpRequest',
+	// 				'X-CSRFToken': getCookie('csrftoken')
+	// 			},
+	// 			keepalive: true
+	// 		})
+	// 			.then(response => {
+	// 				if (!response.ok) {
+	// 					throw new Error('Failed request with status : ' + response.status);
+	// 				}
+	// 				return response.json();
+	// 			})
+	// 			.then(data => {
+	// 				isSessionOpen = true;
+	// 				console.log('Session ouverte:', data.message);
+	// 			})
+	// 			.catch(error => {
+	// 				console.error('Error request when using openSession :', error);
+	// 			});
+	// 	}
 
-		function closeSession() {
-			// console.log('Appel de closeSession');
-			const formData = new FormData();
-			formData.append('csrf_token', getCookie('csrftoken'));
+	// 	function closeSession() {
+	// 		// console.log('Appel de closeSession');
+	// 		const formData = new FormData();
+	// 		formData.append('csrf_token', getCookie('csrftoken'));
 
-			fetch('/auth/session-close/', {
-				method: 'POST',
-				body: formData,
-				headers: {
-					'X-Requested-With': 'XMLHttpRequest',
-					'X-CSRFToken': getCookie('csrftoken')
-				},
-				keepalive: true
-			})
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Failed request with status : ' + response.status);
-					}
-					return response.json();
-				})
-				.then(data => {
-					isSessionOpen = false;
-					// console.log('Session closed:', data.message);
-				})
-				.catch(error => {
-					console.error('Error request when using closeSession:', error);
-				});
-		}
+	// 		fetch('/auth/session-close/', {
+	// 			method: 'POST',
+	// 			body: formData,
+	// 			headers: {
+	// 				'X-Requested-With': 'XMLHttpRequest',
+	// 				'X-CSRFToken': getCookie('csrftoken')
+	// 			},
+	// 			keepalive: true
+	// 		})
+	// 			.then(response => {
+	// 				if (!response.ok) {
+	// 					throw new Error('Failed request with status : ' + response.status);
+	// 				}
+	// 				return response.json();
+	// 			})
+	// 			.then(data => {
+	// 				isSessionOpen = false;
+	// 				console.log('Session closed:', data.message);
+	// 			})
+	// 			.catch(error => {
+	// 				console.error('Error request when using closeSession:', error);
+	// 			});
+	// 	}
 
-		function handleVisibilityChange() {
-			// console.log('État de visibilité:', document.visibilityState);
-			// console.log('isSessionOpen:', isSessionOpen);
+	// 	function handleVisibilityChange() {
+	// 		console.log('État de visibilité:', document.visibilityState);
+	// 		console.log('isSessionOpen:', isSessionOpen);
 
-			if (document.visibilityState === 'hidden') {
-				isClosing = true;
-				// console.log('Appel de closeSession');
-				closeSession();
-			} else if (document.visibilityState === 'visible') {
-				isClosing = false;
-				if (!isPageLoaded) {
-					// console.log('Appel de openSession');
-					openSession();
-				}
-			}
-		}
+	// 		if (document.visibilityState === 'hidden') {
+	// 			isClosing = true;
+	// 			console.log('Appel de closeSession');
+	// 			closeSession();
+	// 		} else if (document.visibilityState === 'visible') {
+	// 			isClosing = false;
+	// 			if (!isPageLoaded) {
+	// 				console.log('Appel de openSession');
+	// 				openSession();
+	// 			}
+	// 		}
+	// 	}
 
-		function handleBeforeUnload() {
-			if (isPageLoaded && isClosing) {
-				setTimeout(() => {
-					closeSession();
-				}, 100);
-			}
-		}
+	// 	function handleBeforeUnload() {
+	// 		console.log('Appel de handleBeforeUnload', isPageLoaded, isClosing);
+	// 		if (isPageLoaded && isClosing) {
+	// 			closeSession();
+	// 		}
+	// 	}
 
-		window.addEventListener('load', () => {
-			isPageLoaded = true;
-			if (!isSessionOpen) {
-				openSession();
-			}
-		});
+	// 	window.addEventListener('load', () => {
+	// 		isPageLoaded = true;
+	// 		if (!isSessionOpen) {
+	// 			openSession();
+	// 		}
+	// 	});
 
-		document.addEventListener('visibilitychange', handleVisibilityChange);
+	// 	document.addEventListener('visibilitychange', handleVisibilityChange);
 
-		window.addEventListener('beforeunload', handleBeforeUnload);
-	}
+	// 	window.addEventListener('beforeunload', handleBeforeUnload);
+	// }
 
-	if (checkLoginStatus()) {
-		console.log('User is logged in. initiating ManageSession after refresh...');
-		manageSession();
-	}
+	// if (checkLoginStatus()) {
+	// 	console.log('User is logged in. initiating ManageSession after refresh...');
+	// 	manageSession();
+	// }
 
 	//**************************************************************************************************************************************************** */
 
