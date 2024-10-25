@@ -68,7 +68,7 @@ function createElementNS(namespace, type, properties = {}, ...children) {
     //What it does: This method explicitly sets attributes on the DOM element. This is the way to add standard HTML attributes (like class, data-* attributes, etc.) to the element's markup.
     //Use Case: Use this when you need to set HTML attributes that are visible in the markup, including custom or non-standard attributes (like data- attributes).
     //Behavior: The setAttribute method sets an attribute directly on the HTML element itself, meaning the attribute will be visible in the HTML and DOM tree. It only applies to attributes, not properties.
-	
+
 	children.forEach(child => element.appendChild(child));
 	return element;
 }
@@ -115,11 +115,11 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				const readySquare = createElement('div', {className: 'ready-square'});
 
 				const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
-				
+
 				// Create the SVG element with correct namespace
-				const svgElement = createElementNS(svgNS, 'svg', { 
+				const svgElement = createElementNS(svgNS, 'svg', {
 					width: '50',  // Adjust the size for debugging
-					height: '50', 
+					height: '50',
 					viewBox: '0 0 24 24',
 					// style: 'border: 1px solid red;' // Add a border to visually debug
 				});
@@ -167,6 +167,7 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 
 	const playerDiv = playerInfo.querySelector('div');
 	const loadingImg = playerDiv.querySelector('img');
+
 	const readyButton = playerDiv.querySelector('button');
 	if (user == WAITING_FOR_PLAYER) // 'Waiting for a player' + 'loading.gif'
 	{
