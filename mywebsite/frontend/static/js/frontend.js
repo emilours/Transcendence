@@ -15,8 +15,6 @@ export function CloseStatusSocket() {
 
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
-
-
 	let eventSource = null;
 
 	function initStatusSockets() {
@@ -60,10 +58,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			};
 
 			eventSource.onerror = function (error) {
-			eventSource.onerror = function (error) {
 				console.error('EventSource error:', error);
 				eventSource.close();
-				setTimeout(function () {
 				setTimeout(function () {
 					eventSource = new EventSource('/auth/sse/');
 				}, 5000);
@@ -94,9 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (type === 'script') {
 				element.type = "module";
 				element.src = url;
-			} else if (type === 'link') {
-				element.rel = "stylesheet";
-				element.href = element.src = url
 			} else if (type === 'link') {
 				element.rel = "stylesheet";
 				element.href = element.src = url
@@ -195,14 +188,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		let currentFontSize = 100;
 
 		increaseFontBtn.addEventListener('click', function () {
-		increaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize < 150) {
 				currentFontSize += 10;
 				rootElement.style.fontSize = currentFontSize + '%';
 			}
 		});
 
-		decreaseFontBtn.addEventListener('click', function () {
 		decreaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize > 50) {
 				currentFontSize -= 10;
@@ -374,6 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	};
 
+
 	function getCookie(name) {
 		let cookieValue = null;
 		if (document.cookie && document.cookie !== '') {
@@ -389,113 +381,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		return cookieValue;
 	}
 
-	//**************************************************************************************************************************************************** */
-
-	// function manageSession() {
-	// 	console.log('ManageSession initialized');
-	// 	let isClosing = false;
-	// 	let isPageLoaded = false;
-	// 	let isSessionOpen = false;
-
-	// 	function openSession() {
-	// 		const formData = new FormData();
-	// 		formData.append('csrf_token', getCookie('csrftoken'));
-
-	// 		fetch('/auth/session-open/', {
-	// 			method: 'POST',
-	// 			body: formData,
-	// 			headers: {
-	// 				'X-Requested-With': 'XMLHttpRequest',
-	// 				'X-CSRFToken': getCookie('csrftoken')
-	// 			},
-	// 			keepalive: true
-	// 		})
-	// 			.then(response => {
-	// 				if (!response.ok) {
-	// 					throw new Error('Failed request with status : ' + response.status);
-	// 				}
-	// 				return response.json();
-	// 			})
-	// 			.then(data => {
-	// 				isSessionOpen = true;
-	// 				console.log('Session ouverte:', data.message);
-	// 			})
-	// 			.catch(error => {
-	// 				console.error('Error request when using openSession :', error);
-	// 			});
-	// 	}
-
-	// 	function closeSession() {
-	// 		// console.log('Appel de closeSession');
-	// 		const formData = new FormData();
-	// 		formData.append('csrf_token', getCookie('csrftoken'));
-
-	// 		fetch('/auth/session-close/', {
-	// 			method: 'POST',
-	// 			body: formData,
-	// 			headers: {
-	// 				'X-Requested-With': 'XMLHttpRequest',
-	// 				'X-CSRFToken': getCookie('csrftoken')
-	// 			},
-	// 			keepalive: true
-	// 		})
-	// 			.then(response => {
-	// 				if (!response.ok) {
-	// 					throw new Error('Failed request with status : ' + response.status);
-	// 				}
-	// 				return response.json();
-	// 			})
-	// 			.then(data => {
-	// 				isSessionOpen = false;
-	// 				console.log('Session closed:', data.message);
-	// 			})
-	// 			.catch(error => {
-	// 				console.error('Error request when using closeSession:', error);
-	// 			});
-	// 	}
-
-	// 	function handleVisibilityChange() {
-	// 		console.log('État de visibilité:', document.visibilityState);
-	// 		console.log('isSessionOpen:', isSessionOpen);
-
-	// 		if (document.visibilityState === 'hidden') {
-	// 			isClosing = true;
-	// 			console.log('Appel de closeSession');
-	// 			closeSession();
-	// 		} else if (document.visibilityState === 'visible') {
-	// 			isClosing = false;
-	// 			if (!isPageLoaded) {
-	// 				console.log('Appel de openSession');
-	// 				openSession();
-	// 			}
-	// 		}
-	// 	}
-
-	// 	function handleBeforeUnload() {
-	// 		console.log('Appel de handleBeforeUnload', isPageLoaded, isClosing);
-	// 		if (isPageLoaded && isClosing) {
-	// 			closeSession();
-	// 		}
-	// 	}
-
-	// 	window.addEventListener('load', () => {
-	// 		isPageLoaded = true;
-	// 		if (!isSessionOpen) {
-	// 			openSession();
-	// 		}
-	// 	});
-
-	// 	document.addEventListener('visibilitychange', handleVisibilityChange);
-
-	// 	window.addEventListener('beforeunload', handleBeforeUnload);
-	// }
-
-	// if (checkLoginStatus()) {
-	// 	console.log('User is logged in. initiating ManageSession after refresh...');
-	// 	manageSession();
-	// }
-
-	//**************************************************************************************************************************************************** */
 
 	window.addEventListener('popstate', () => loadContent(window.location.pathname, false));
 	loadContent(window.location.pathname, false);

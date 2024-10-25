@@ -104,53 +104,10 @@ def signup(request):
     if user is not None:
         login(request, user)
         request.session.save()
-        # user.active_sessions = count_user_sessions(user)
         user.save(update_fields=['active_sessions'])
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)
-
-# @login_required
-# @require_POST
-# def signout(request):
-#     if request.user.is_authenticated:
-#         # request.user.active_sessions -= 1
-#         # if request.user.active_sessions == 0:
-#         #     request.user.is_online = False
-#         # request.user.save(update_fields=['is_online', 'active_sessions'])
-#         # request.user.active_sessions = count_user_sessions(request.user)
-#         # if request.user.active_sessions == 0:
-#         #     request.user.is_online = False
-#         # request.user.save(update_fields=['is_online', 'active_sessions'])
-#         logout(request)
-#         is_user_online(request)
-#         return JsonResponse({"message": "You have successfully logged out."}, status=200)
-#     else:
-#         return JsonResponse({"error": "You are not currently logged in."}, status=403)
-
-from django.contrib.auth import logout
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.contrib.sessions.models import Session
-from django.utils import timezone
-
-def is_user_online(user):
-    sessions = Session.objects.filter(expire_date__gte=timezone.now())
-    
-    user_is_online = False
-    for session in sessions:
-        session_data = session.get_decoded()
-        if session_data.get('_auth_user_id') == str(user.id):
-            user_is_online = True
-            break
-
-    # Mise à jour du statut de l'utilisateur si nécessaire
-    if user.is_online != user_is_online:
-        user.is_online = user_is_online
-        user.save(update_fields=['is_online'])
-
-    return user_is_online
 
 @login_required
 @require_POST
@@ -200,29 +157,6 @@ def contact(request):
             offline_users.append(user_data)
 
     return JsonResponse({'online': online_users, 'offline': offline_users})
-
-# @login_required
-# @require_POST
-# def session_close(request):
-#     user = request.user
-#     user.active_sessions -= 1
-    
-#     if user.active_sessions == 0:
-#         user.is_online = False
-
-#     user.save(update_fields=['active_sessions', 'is_online'])
-    
-#     return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
-
-# @login_required
-# @require_POST
-# def session_open(request):
-#     user = request.user
-#     user.active_sessions += 1
-#     user.is_online = True
-#     user.save(update_fields=['active_sessions', 'is_online'])
-    
-#     return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUESTS                                                                                     ===
@@ -545,49 +479,6 @@ def request_anonymization(request):
 # # ===                                                      SSE                                                                                                 ===
 # # ================================================================================================================================================================
 
-# @login_required
-# def sse(request):
-#     async def event_stream():
-#         last_status = []
-#         last_number = await asyncio.to_thread(check_friendlist_update, request.user)
-#         last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
-
-#         # if not request.user.is_online:
-#         #     request.user.is_online = True
-#         #     await asyncio.to_thread(request.user.save, update_fields=['is_online'])
-
-#         if request.user.active_sessions > 0 and not request.user.is_online:
-#             request.user.is_online = True
-#             await asyncio.to_thread(request.user.save, update_fields=['is_online'])
-
-#         try:
-#             while True:
-#                 friend_statuses_update = await asyncio.to_thread(check_friends_statuses_update, request.user)
-#                 status_update = await asyncio.to_thread(check_friend_request_update, request.user)
-#                 number_update = await asyncio.to_thread(check_friendlist_update, request.user)
-
-#                 if status_update != last_status or last_number != number_update or last_friend_statuses != friend_statuses_update:
-#                     combined_update = {
-#                         "friend_requests": status_update,
-#                         "friend_count": number_update,
-#                         "friend_statuses": friend_statuses_update
-#                     }
-#                     yield f"data: {json.dumps(combined_update)}\n\n"
-
-#                     last_status = status_update
-#                     last_number = number_update
-#                     last_friend_statuses = friend_statuses_update
-
-#                 await asyncio.sleep(5)
-#         except asyncio.CancelledError:
-#             return
-#         finally:
-#             if request.user.active_sessions == 0:
-#                 request.user.is_online = False
-#                 await asyncio.to_thread(request.user.save, update_fields=['is_online'])
-
-#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
 @login_required
 def sse(request):
     async def event_stream():
@@ -644,22 +535,6 @@ def check_friendlist_update(user):
     except FriendList.DoesNotExist:
         return 0
 
-def is_user_online(user):
-    sessions = Session.objects.filter(expire_date__gte=timezone.now())
-    
-    user_is_online = False
-    for session in sessions:
-        session_data = session.get_decoded()
-        if session_data.get('_auth_user_id') == str(user.id):
-            user_is_online = True
-            break
-
-    if user.is_online != user_is_online:
-        user.is_online = user_is_online
-        user.save(update_fields=['is_online'])
-
-    return user_is_online
-
 def check_friends_statuses_update(user):
     try:
         user_friend_list = user.friend_list
@@ -671,8 +546,6 @@ def check_friends_statuses_update(user):
                 "display_name": friend.display_name,
                 "is_online": friend.is_online,
                 "avatar": friend.avatar.url
-                "is_online": friend.is_online,
-                "avatar": friend.avatar.url
             }
             for friend in friends
         ]
@@ -681,10 +554,3 @@ def check_friends_statuses_update(user):
 
     except FriendList.DoesNotExist:
         return []
-
-# def sse_test(request):
-#     def event_stream():
-#         for i in range(5):
-#             time.sleep(1)
-#             yield f"data: Hello SSE {i}\n\n"
-#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
