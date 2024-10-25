@@ -315,7 +315,7 @@ function drawPlayerTournament(userName, position) {
 		const playerInfo = createElement('div', { className: 'button-horizontal', style: 'height: 50px;' },
 			createElement('h4', { innerText: 'Player' + position + ': ' }),
 			createElement('h4', { innerText: 'Waiting for a player', style: 'width: 300px;' }),
-			createElement('div', { style: 'width: 100px;' },
+			createElement('div', { style: 'width: 100px;' }, // HERE 
 				createElement('img', { src: '/static/img/loading.gif', width: 30, height: 30 })
 			)
 		);
