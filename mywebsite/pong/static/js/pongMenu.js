@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, createButtonReady } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 const NORMAL_MODE = 'normal';
@@ -181,20 +181,7 @@ function drawPlayerOnline(userName) {
 	const playerInfo = createElement('div', { className: 'button-vertical' },
 		createElement('img', { src: avatar, width: 200, height: 200 }),
 		createElement('h4', { innerText: userName }),
-		buttonReady = createButtonGreen('READY', () => {
-			if (buttonReady.innerText == 'READY')
-			{
-				buttonReady.style.backgroundColor = '#0ccf0c';
-				buttonReady.innerText = 'UNREADY';
-			}
-			else
-			{
-				buttonReady.style.backgroundColor = '#5fbfff';
-				buttonReady.innerText = 'READY';
-			}
-			// UpdateMenu(lobbyMenu);
-			SendEvent('player_ready', userName, null);
-		})
+		buttonReady = createButtonReady()
 	);
 	return playerInfo;
 }
@@ -338,14 +325,10 @@ function drawPlayerTournament(userName, position) {
 	let buttonReady;
 
 	const playerInfo = createElement('div', { className: 'button-horizontal', style: 'height: 50px;' },
-		createElement('h4', { innerText: 'Player' + position + ': ' }),
-		createElement('h4', { innerText: userName, style: 'width: 300px;' }),
-		createElement('div', { style: 'width: 100px;' },
-			buttonReady = createButtonGreen('READY', () => {
-				buttonReady.style.backgroundColor = '#0ccf0c';
-				buttonReady.innerText = 'OK';
-				console.log("READY button clicked");
-			})
+			createElement('h4', { innerText: 'Player' + position + ': ' }),
+			createElement('h4', { innerText: userName, style: 'width: 300px;' }),
+			createElement('div', { style: 'width: 100px;' },
+			buttonReady = createButtonReady()
 		)
 	);
 	return playerInfo;

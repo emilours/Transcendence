@@ -35,6 +35,24 @@ var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
 
+export function createButtonReady()
+{
+	let buttonReady = createButtonGreen('READY', () => {
+		if (buttonReady.innerText == 'READY')
+		{
+			buttonReady.style.backgroundColor = '#0ccf0c';
+			buttonReady.innerText = 'UNREADY';
+		}
+		else
+		{
+			buttonReady.style.backgroundColor = '#5fbfff';
+			buttonReady.innerText = 'READY';
+		}
+		SendEvent('player_ready', userName, null);
+	});
+	return (buttonReady);
+}
+
 function createElementNS(namespace, type, properties = {}, ...children) {
 	const element = document.createElementNS(namespace, type);
 
@@ -126,72 +144,56 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 		{
 			const readySquare = playerInfo.querySelector('.ready-square');
 			if (readySquare)
+			{
+				playerInfo.removeChild(readySquare);
 				readySquare.remove();
+			}
 		}
 	}
 }
 
 function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
-/* 	console.log(userName, "update: ", user);
+	console.log(userName, "update: ", user);
+	if (!playerInfo)
+		return;
 	if (user == undefined)
 		user = WAITING_FOR_PLAYER;
-    if (playerInfo)
-    {
-        const playerUsername = playerInfo.querySelectorAll('h4');
-        if (playerUsername[1]) {
-            playerUsername[1].innerText = user;
-        }
 
-        const playerDiv = playerInfo.querySelector('div');
-        const loadingImg = playerDiv.querySelector('img');
-		// might have to remove readyButton in some cases
-		if (user == WAITING_FOR_PLAYER && !loadingImg)
+	const playerUsername = playerInfo.querySelectorAll('h4');
+	if (playerUsername[1]) {
+		playerUsername[1].innerText = user;
+	}
+
+	const playerDiv = playerInfo.querySelector('div');
+	const loadingImg = playerDiv.querySelector('img');
+	const readyButton = playerDiv.querySelector('button');
+	if (user == WAITING_FOR_PLAYER) // 'Waiting for a player' + 'loading.gif'
+	{
+		if (readyButton)
 		{
-			const readyButton = playerDiv.querySelector('button');
-			if (readyButton)
-			{
-				playerDiv.removeChild(readyButton);
-				readyButton.remove();
-			}
+			playerDiv.removeChild(readyButton);
+			readyButton.remove();
+		}
+		if (!loadingImg)
+		{
 			let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
 			playerDiv.appendChild(loading);
 		}
-		else if (user == userName)
+	}
+	else // username + empty OU username + 'READY'
+	{
+		if (loadingImg)
 		{
-			if (loadingImg)
-			{
-				playerDiv.removeChild(loadingImg);
-				loadingImg.remove();
-			}
-			let readyElement = createButtonGreen('READY', () => {
-				readyElement.style.backgroundColor = '#0ccf0c';
-				readyElement.innerText = 'OK';
-				console.log("READY button clicked");
-				//HERE
-				SendEvent('player_ready', userName, null);
-			});
+			playerDiv.removeChild(loadingImg);
+			loadingImg.remove();
+		}
+		if (!readyButton && user == userName)
+		{
+			let readyElement = createButtonReady();
 			playerDiv.appendChild(readyElement);
 		}
-		else
-		{
-			let readySquare = createElement('div', {className: 'ready-square'},
-				createElement('div', {className: 'ready-checkmark'},
-					createElement('svg', {xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24'},
-						createElement('path', {d: 'M9 16.2l-3.5-3.5-1.4 1.4 4.9 4.9 12-12-1.4-1.4z'})
-					)
-				)
-			);
-			if (!readySquare)
-				console.error("Error creating readySquare element");
-			playerDiv.appendChild(readySquare);
-			if (ready == 1)
-			{
-				// checkmark
-				toggleReady(readySquare);
-			}
-		}
-    } */
+    }
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
