@@ -43,9 +43,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 	is_api_authenticated = models.BooleanField(default=False)
 	active_sessions = models.PositiveIntegerField(default=0)
 
+
 	victories = models.PositiveIntegerField(default=0)
 	defeats = models.PositiveIntegerField(default=0)
-	score_pong = models.PositiveIntegerField(default=0)
 
 	friends_count = models.PositiveIntegerField(default=0)
 	sent_requests_count = models.PositiveIntegerField(default=0)

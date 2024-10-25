@@ -12,7 +12,7 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 
 var overlayText;
 var scoreGeometry, scoreFont, gameOver;
-const PADDLE_SPEED = 10.0;
+const PADDLE_SPEED = 8.0;
 const PADDLE_WIDTH = 0.2;
 const BALL_SPEED = 2.0;
 const BALL_SIZE = 0.2; // maybe a bit bigger
@@ -22,7 +22,7 @@ var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var lastTime = 1;
+var lastTime = 0;
 var deltaTime = 0;
 
 
@@ -302,6 +302,8 @@ function Init()
 
 function Loop(timestamp)
 {
+	if (lastTime == 0)
+		lastTime = timestamp;
 	if (running == false)
 	{
 		console.log("Not running anymore!");
@@ -385,7 +387,7 @@ function Update(timestamp)
 	if ((ball.position.y - BALL_SIZE < MIN_HEIGHT && ballSpeed.y < 0)|| (ball.position.y + BALL_SIZE > MAX_HEIGHT && ballSpeed.y > 0))
 		ballSpeed.y = -ballSpeed.y;
 
-	// BALL-PADDLE COLLISIONS
+	// BALL10-PADDLE COLLISIONS
 	leftPaddleBB.copy(leftPaddle.geometry.boundingBox).applyMatrix4(leftPaddle.matrixWorld);
     rightPaddleBB.copy(rightPaddle.geometry.boundingBox).applyMatrix4(rightPaddle.matrixWorld);
 	if (ballBB.intersectsBox(rightPaddleBB) && ballSpeed.x > 0)
@@ -410,8 +412,6 @@ function Update(timestamp)
 	if (leftPlayerScore >= 5 || rightPlayerScore >= 5)
 	{
 		running = false;
-		// Need to removeEventListener when leaving game also
-		// or don't care because everybody scrolls with mouse wheel
 		document.body.removeEventListener("keydown", function(event) {});
 		if (overlayText.classList.contains('text-overlay'))
 		{

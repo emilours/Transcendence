@@ -45,10 +45,6 @@ def signin(request):
     user = authenticate(request, email=email, password=password)
     if user is not None:
         login(request, user)
-        # user.active_sessions += 1
-        # user.active_sessions = count_user_sessions(user)
-        user.is_online = True
-        user.save(update_fields=['active_sessions', 'is_online'])
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
@@ -160,11 +156,7 @@ def is_user_online(user):
 @require_POST
 def signout(request):
     if request.user.is_authenticated:
-        logout(request)  # Déconnexion de l'utilisateur
-        
-        # Met à jour le statut is_online après la déconnexion
-        is_user_online(request.user)  # Vérifie et met à jour l'état de l'utilisateur
-        
+        logout(request)
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
@@ -679,6 +671,8 @@ def check_friends_statuses_update(user):
                 "display_name": friend.display_name,
                 "is_online": friend.is_online,
                 "avatar": friend.avatar.url
+                "is_online": friend.is_online,
+                "avatar": friend.avatar.url
             }
             for friend in friends
         ]
@@ -687,3 +681,10 @@ def check_friends_statuses_update(user):
 
     except FriendList.DoesNotExist:
         return []
+
+# def sse_test(request):
+#     def event_stream():
+#         for i in range(5):
+#             time.sleep(1)
+#             yield f"data: Hello SSE {i}\n\n"
+#     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')

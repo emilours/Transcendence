@@ -3,8 +3,21 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyMenu, initPongMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, initPongMenu } from './pongMenu.js';
+import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
+const BALL_SPEED = 0.1; //not needed i think
+const BALL_SIZE = 0.2; // maybe a bit bigger
+const MAX_HEIGHT = 4.5; // idk how to name this
+const MIN_HEIGHT = -4.5;
+const LOADING_IMG = '/static/img/loading.gif';
+const WAITING_FOR_PLAYER = 'Waiting for a player';
+const PLAYER_IMG_SIZE = 200;
+const LOADING_IMG_SIZE = 70;
+const TOURNAMENT_LOADING_IMG_SIZE = 30;
+const PLAYER_READY = 1;
+const TOURNAMENT_MODE = 'tournament';
+const NORMAL_MODE = 'normal';
 
 // standard global variables
 var scene, camera, renderer, controls, loader;
@@ -12,43 +25,174 @@ var scene, camera, renderer, controls, loader;
 // custom global variables
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 // var overlayText;
-// TODO: when connecting (if thread created on server) get thread id and stop thread when disconnecting
-// OR just on thread starts a launch of server and handles everything -> connection, disconnection ...
-// var threadID;
-var gameType, socket;
-var userName, user1, user2, user3, user4, avatar1, avatar2, avatar3, avatar4;
+var userName;
+var socket;
+var userName;
 var scoreGeometry, scoreFont, gameOver;
-// const PADDLE_SPEED = 0.2;
-const BALL_SPEED = 0.1;
-const BALL_SIZE = 0.2; // maybe a bit bigger
-const MAX_HEIGHT = 4.5; // idk how to name this
-const MIN_HEIGHT = -4.5;
-var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
+
+var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
-var menu, player1Info, player2Info, player3Info, player4Info;
 
-export function UpdatePlayerInfo(player1, player2)
-{
-	// /!\ Those 2 lines are very different:
-	// console.log("player1: ", player1);
-	// console.log("player1: " + player1);
-	// /!\
-	player1Info = player1;
-	player2Info = player2;
+function createElementNS(namespace, type, properties = {}, ...children) {
+	const element = document.createElementNS(namespace, type);
+
+	// Object.assign(element, properties);
+    //What it does: This method directly assigns properties to the element object. This works for standard DOM element properties (e.g., id, className, textContent, onclick, etc.).
+    //Behavior: Object.assign sets the properties of the element as object properties, not as attributes. This means it modifies the JavaScript object representation of the element rather than setting HTML attributes directly.
+    //Use Case: It's best for setting DOM object properties rather than attributes.
+
+    for (let property in properties)
+    {
+        element.setAttribute(property, properties[property]);
+    }
+    //What it does: This method explicitly sets attributes on the DOM element. This is the way to add standard HTML attributes (like class, data-* attributes, etc.) to the element's markup.
+    //Use Case: Use this when you need to set HTML attributes that are visible in the markup, including custom or non-standard attributes (like data- attributes).
+    //Behavior: The setAttribute method sets an attribute directly on the HTML element itself, meaning the attribute will be visible in the HTML and DOM tree. It only applies to attributes, not properties.
+	
+	children.forEach(child => element.appendChild(child));
+	return element;
 }
 
-export function UpdateMenu(activeMenu)
+function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 {
-	menu = activeMenu;
-	console.log("Active menu: ", menu);
+
+	let img_size = PLAYER_IMG_SIZE;
+	if (user == undefined)
+		user = WAITING_FOR_PLAYER;
+	if (avatar == undefined)
+	{
+		avatar = LOADING_IMG;
+		img_size = LOADING_IMG_SIZE;
+	}
+	if (playerInfo)
+	{
+		const playerUsername = playerInfo.querySelector('h4');
+		if (playerUsername) {
+			playerUsername.innerText = user;
+		}
+		const playerImage = playerInfo.querySelector('img');
+		if (playerImage) {
+			playerImage.src = avatar;
+			playerImage.width = img_size;
+			playerImage.height = img_size;
+			if (img_size == PLAYER_IMG_SIZE)
+				playerImage.removeAttribute('style');
+			else
+				playerImage.style.margin = '65px';
+		}
+
+		const readyButton = playerInfo.querySelector('.button.green');
+		if (!readyButton && ready == 1)
+		{
+			// 'button' --> button type (same as 'div')
+			// '.button' --> button className
+			let readySquare;
+			readySquare = playerInfo.querySelector('.ready-square');
+			if (!readySquare)
+			{
+				const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
+
+				const readySquare = createElement('div', {className: 'ready-square'});
+
+				const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
+				
+				// Create the SVG element with correct namespace
+				const svgElement = createElementNS(svgNS, 'svg', { 
+					width: '100',  // Adjust the size for debugging
+					height: '100', 
+					viewBox: '0 0 24 24',
+					style: 'border: 1px solid red;' // Add a border to visually debug
+				});
+
+				// Create the path element with correct namespace
+				const pathElement = createElementNS(svgNS, 'path', {
+					d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
+					fill: 'green'  // Ensure the path has a visible color
+				});
+
+				svgElement.appendChild(pathElement);
+				readyCheckmark.appendChild(svgElement);
+				readySquare.appendChild(readyCheckmark);
+
+				// if (!readySquare)
+				// 	console.error("Error creating readySquare element");
+				playerInfo.appendChild(readySquare);
+				console.log("checkmark created successfully:", readySquare);
+			}
+		}
+	}
+}
+
+function UpdateLobbyTournament(user, avatar, ready, playerInfo)
+{
+/* 	console.log(userName, "update: ", user);
+	if (user == undefined)
+		user = WAITING_FOR_PLAYER;
+    if (playerInfo)
+    {
+        const playerUsername = playerInfo.querySelectorAll('h4');
+        if (playerUsername[1]) {
+            playerUsername[1].innerText = user;
+        }
+
+        const playerDiv = playerInfo.querySelector('div');
+        const loadingImg = playerDiv.querySelector('img');
+		// might have to remove readyButton in some cases
+		if (user == WAITING_FOR_PLAYER && !loadingImg)
+		{
+			const readyButton = playerDiv.querySelector('button');
+			if (readyButton)
+			{
+				playerDiv.removeChild(readyButton);
+				readyButton.remove();
+			}
+			let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
+			playerDiv.appendChild(loading);
+		}
+		else if (user == userName)
+		{
+			if (loadingImg)
+			{
+				playerDiv.removeChild(loadingImg);
+				loadingImg.remove();
+			}
+			let readyElement = createButtonGreen('READY', () => {
+				readyElement.style.backgroundColor = '#0ccf0c';
+				readyElement.innerText = 'OK';
+				console.log("READY button clicked");
+				//HERE
+				SendEvent('player_ready', userName, null);
+			});
+			playerDiv.appendChild(readyElement);
+		}
+		else
+		{
+			let readySquare = createElement('div', {className: 'ready-square'},
+				createElement('div', {className: 'ready-checkmark'},
+					createElement('svg', {xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24'},
+						createElement('path', {d: 'M9 16.2l-3.5-3.5-1.4 1.4 4.9 4.9 12-12-1.4-1.4z'})
+					)
+				)
+			);
+			if (!readySquare)
+				console.error("Error creating readySquare element");
+			playerDiv.appendChild(readySquare);
+			if (ready == 1)
+			{
+				// checkmark
+				toggleReady(readySquare);
+			}
+		}
+    } */
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
 export function SendEvent(event, username, data)
 {
-	console.log("SendEvent(), event:", event, "username:", username, "data:", data);
+    userName = username;
+	console.log("Sending event:", event, "username:", username, "data:", data);
     try
     {
         if (!socket || !socket.connected)
@@ -76,11 +220,11 @@ export function SendEvent(event, username, data)
 	return true;
 }
 
+
 export function ConnectWebsocket(type, username)
 {
 	// WEBSOCKET
 	running = true;
-	gameType = type;
 	userName = username;
 	InitCustomAlerts();
 	if (socket && socket.connected) {
@@ -95,7 +239,7 @@ export function ConnectWebsocket(type, username)
 		reconnection: false, // Disable reconnection to observe disconnection behavior
 		query: {
 			username: username,  // Pass username in the query string
-			gameType: gameType   // Pass game type in the query string
+			gameType: type   // Pass game type in the query string
 		}
 	});
 
@@ -136,103 +280,76 @@ export function ConnectWebsocket(type, username)
 
     });
 	socket.on('user_joined', function(user) {
-		console.log("User " + user + " has joined.");
+		console.log("User " + user + " has joined a lobby.");
 	});
 	socket.on('user_left', function(user) {
-		console.log("User " + user + " has left.");
+		console.log("User " + user + " has left a lobby.");
 	});
 	socket.on('game_ready', function() {
 		console.log("BOTH PLAYER READY");
-		if (menu)
-			menu.remove();
-		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?) 
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+			activeMenu.remove();
+		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		StartGame();
 		SendEvent('start_game', userName);
 	});
 	socket.on('invalid_lobby_code', function() {
-		if (menu)
-		{
-			console.log("restoring online menu");
-			menu.remove();
-			drawOnlineMenu();
-		}
+        const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
+            activeMenu.remove();
+        drawOnlineMenu();
 		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
 		console.log("player already in room, player index:", index);
-		if (menu)
+		const activeMenu = document.querySelector('.menu');
+        if (activeMenu)
 		{
 			let mode;
-			console.log("restoring online menu");
-			menu.remove();
+			activeMenu.remove();
 			if (index == 0)
 				mode = 'create';
 			else if (index == 1)
 				mode = 'join';
-			drawLobbyMenu(mode);
-			// drawLobbyMenu('create') or drawLobbyMenu('join'); modified
+			drawLobbyOnline(mode);
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});
 
 	socket.on('send_lobby_data', function(data) {
-		// TODO: Make this cleaner
-		console.log("Users received: user1 - " + data.users[0] + " | user2 - " + data.users[1]);
+		console.log("Received data from server..");
 		const lobbyCode = data.lobby_id;
-		user1 = data.users[0];
-		user2 = data.users[1];
-		user3 = data.users[2];
-		user4 = data.users[3];
-		avatar1 = data.avatars[0];
-		avatar2 = data.avatars[1];
-		avatar3 = data.avatars[2];
-		avatar4 = data.avatars[3];
+		const maxLobbySize = data.max_lobby_size;
+		const gameType = data.game_type;
+		console.log("lobby:", lobbyCode, "is a", gameType, "game");
 
-
-		console.log("lobbyCode: ", lobbyCode);
-		console.log("menu: ", menu);
-		if (menu && lobbyCode !== undefined)
+        const activeMenu = document.querySelector('.menu');
+		if (activeMenu)
 		{
-			console.log("updating menu");
-			const codeText = menu.querySelector('h4');
-			if (codeText)
-				codeText.innerText = lobbyCode;
+			//TODO: lobby code for normal/tournament
+            if (gameType == NORMAL_MODE)
+            {
+                const codeText = activeMenu.querySelector('h4');
+                if (codeText)
+                    codeText.innerText = lobbyCode;
+                else
+                    console.log("NO h4 in menu");
+            }
+            // else
+            // {
+            //     const codeText
+            // }
+
+		}
+		const playerInfoNormal = document.querySelectorAll('.button-vertical');
+		const playerInfoTournament = document.querySelectorAll('.button-horizontal');
+		for (let i = 0; i < maxLobbySize; i++)
+		{
+			if (gameType == TOURNAMENT_MODE)
+				UpdateLobbyTournament(data.users[i], data.avatars[i], data.ready[i], playerInfoTournament[i]);
 			else
-				console.log("NO h4 in menu");
-
-		}
-
-		// can just check later if avatar[i] is undefined then default img
-		if (player1Info && user1 !== undefined && avatar1 !== undefined)
-		{
-			console.log("updating player1info");
-			const playerUsername = player1Info.querySelector('h4');
-			if (playerUsername) {
-				playerUsername.innerText = user1;
-			}
-			const playerImage = player1Info.querySelector('img');
-			if (playerImage) {
-				playerImage.src = avatar1;
-				playerImage.width = 200;
-				playerImage.height = 200;
-				playerImage.removeAttribute('style');
-			}
-		}
-
-		if (player2Info && user2 !== undefined && avatar2 !== undefined)
-		{
-			console.log("updating player2info");
-			const playerUsername = player2Info.querySelector('h4');
-			if (playerUsername) {
-				playerUsername.innerText = user2;
-			}
-			const playerImage = player2Info.querySelector('img');
-			if (playerImage) {
-				playerImage.src = avatar2;
-				playerImage.width = 200;
-				playerImage.height = 200;
-				playerImage.removeAttribute('style');
-			}
+				UpdateLobbyOnline(data.users[i], data.avatars[i], data.ready[i], playerInfoNormal[i]);
 		}
 	});
 }
@@ -313,8 +430,8 @@ function StartGame()
 		{
 			ball.position.x = parseFloat(data.ballPosition[0]);
 			ball.position.y = parseFloat(data.ballPosition[1]);
-			ballSpeed.x = parseFloat(data.ballVelocity[0]);
-			ballSpeed.y = parseFloat(data.ballVelocity[1]);
+			ballSpeed.x = parseFloat(data.ballVelocity[0]); //not needed i think
+			ballSpeed.y = parseFloat(data.ballVelocity[1]); //not needed i think
 			leftPaddle.position.y = parseFloat(data.pos[0]);
 			rightPaddle.position.y = parseFloat(data.pos[1]);
 			gameOver = parseInt(data.game_over);

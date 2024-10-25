@@ -1,6 +1,7 @@
 export function createElement(type, properties = {}, ...children) {
 	const element = document.createElement(type);
 	Object.assign(element, properties);
+	// I wonder if this is correct:
 	children.forEach(child => element.appendChild(child));
 	return element;
 }

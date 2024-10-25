@@ -4,11 +4,48 @@ import { CloseWebsocket } from '/static/js/pong.js';
 import { CleanupLocalPong } from '/static/js/pongLocal.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
+var statusSocket;
+
+export function CloseStatusSocket() {
+	if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
+		statusSocket.close(1000, "Closing normally");
+		console.log("Status socket closed");
+	}
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 
 
 	let eventSource = null;
+
+	function initStatusSockets() {
+		console.log("INIT STATUS SOCKET");
+		const url = `wss://${window.location.host}/ws/status-socket/`;
+		statusSocket = new WebSocket(url);
+
+		statusSocket.onopen = function (e) {
+			console.log("[open] Status Connection established");
+
+		};
+
+		statusSocket.onmessage = function (event) {
+			console.log(`[message] Data received from server: ${event.data}`);
+		};
+
+		statusSocket.onclose = function (event) {
+			if (event.wasClean) {
+				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+			} else {
+				console.log('[close] Connection died');
+			}
+		};
+
+		statusSocket.onerror = function (error) {
+			console.warn("socket error:", error);
+		};
+	}
+
 	function initSSE() {
 		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
 			eventSource = new EventSource('/auth/sse/');
@@ -23,8 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			};
 
 			eventSource.onerror = function (error) {
+			eventSource.onerror = function (error) {
 				console.error('EventSource error:', error);
 				eventSource.close();
+				setTimeout(function () {
 				setTimeout(function () {
 					eventSource = new EventSource('/auth/sse/');
 				}, 5000);
@@ -43,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (checkLoginStatus()) {
 		console.log('User is logged in. Initiating SSE after refresh...');
 		initSSE();
+		initStatusSockets();
 	}
 
 	// SPA - Single Page Application
@@ -54,6 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (type === 'script') {
 				element.type = "module";
 				element.src = url;
+			} else if (type === 'link') {
+				element.rel = "stylesheet";
+				element.href = element.src = url
 			} else if (type === 'link') {
 				element.rel = "stylesheet";
 				element.href = element.src = url
@@ -134,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
 					initSSE();
-					// manageSession();
+					initStatusSockets()
 				}
 			}
 			attachListeners();
@@ -152,12 +195,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		let currentFontSize = 100;
 
 		increaseFontBtn.addEventListener('click', function () {
+		increaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize < 150) {
 				currentFontSize += 10;
 				rootElement.style.fontSize = currentFontSize + '%';
 			}
 		});
 
+		decreaseFontBtn.addEventListener('click', function () {
 		decreaseFontBtn.addEventListener('click', function () {
 			if (currentFontSize > 50) {
 				currentFontSize -= 10;
@@ -265,6 +310,8 @@ document.addEventListener("DOMContentLoaded", () => {
 									eventSource.close();
 									console.log('SSE connection closed');
 								}
+								if (statusSocket)
+									CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'delete-account-form') {

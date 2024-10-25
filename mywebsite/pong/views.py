@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from frontend.models import Game, Match, PlayerMatch
-from frontend.models import CustomUser
-import json
+from frontend.models import Game, Match, PlayerMatch, CustomUser
+import json, asyncio
+from asgiref.sync import sync_to_async
+
 
 @login_required
 def pong(request):
@@ -54,3 +56,22 @@ def SaveLocalPongMatch(request):
 			return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
+
+@sync_to_async
+def session_close(user):
+    user.active_sessions -= 1
+    
+    if user.active_sessions == 0:
+        user.is_online = False
+
+    user.save(update_fields=['active_sessions', 'is_online'])
+    
+    # return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
+
+@sync_to_async
+def session_open(user):
+    user.active_sessions += 1
+    user.is_online = True
+    user.save(update_fields=['active_sessions', 'is_online'])
+    
+    # return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)

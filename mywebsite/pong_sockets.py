@@ -29,7 +29,7 @@ RESET = "\033[1;0m"
 
 
 # CONST VARIABLES
-PADDLE_SPEED = 3.0
+PADDLE_SPEED = 8.0
 PADDLE_WIDTH = 0.2
 BALL_SPEED = 2.0
 BALL_SIZE = 0.2
@@ -48,6 +48,7 @@ MAX_PLAYER_TOURNAMENT = 4
 
 NORMAL_GAME = 'normal'
 TOURNAMENT_GAME = 'tournament'
+GAME_NAME = 'Pong'
 
 client_count = 0
 connected_users = {}
@@ -109,7 +110,7 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
     log("SAVING MATCH TO DB")
     # normal or tournament
 
-    game, _ = Game.objects.get_or_create(name='pong', description=game_type)
+    game, _ = Game.objects.get_or_create(name=GAME_NAME, description=game_type)
     match = Match.objects.create(game=game, status='completed', details=game_type)
 
     # player1
@@ -161,6 +162,8 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     game_type = games[room_id]['game_type']
     sid1 = games[room_id]['sids'][player_1_index]
     sid2 = games[room_id]['sids'][player_2_index]
+    username1 = games[room_id]['players'][player_1_index]
+    username2 = games[room_id]['players'][player_2_index]
     delta_time = 0
     current_task = asyncio.current_task()
     while True:
@@ -171,6 +174,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
         # Delta time
         current_time = time.time()
         delta_time = current_time - games[room_id]['last_time']
+        games[room_id]['delta_time'] = delta_time
         games[room_id]['last_time'] = current_time
 
         # Handle collisions with walls
@@ -221,9 +225,11 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             current_task = None
             if (game_type == NORMAL_GAME):
                 log(f"calling disconnect for {sid1}")
-                await sio.disconnect(sid1)
+                # await sio.disconnect(sid1)
+                await LeaveLobby(sid1, username1)
                 log(f"calling disconnect for {sid2}")
-                await sio.disconnect(sid2)
+                # await sio.disconnect(sid2)
+                await LeaveLobby(sid2, username2)
             return
 
 
@@ -280,6 +286,7 @@ def CreateRoom(game_type):
         'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
         'game_over': 0,
         'last_time': 0,
+        'delta_time': 0,
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
 	}
     log(f"Room {room_id} created")
@@ -338,6 +345,7 @@ async def LeaveRoom(sid, username, room_id):
         games[room_id] = {}
         del games[room_id]
     log(f"User [{username}] left room [{room_id}]")
+    await sio.emit('user_left', username)
 
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
@@ -369,6 +377,7 @@ async def PlayerReady(sid, username):
         await sio.emit('game_ready', room=room_id)
     else:
         log("SOMEONE IS NOT READY")
+    await SendLobbyData(sid)
 
 
 async def SendLobbyData(sid):
@@ -376,9 +385,16 @@ async def SendLobbyData(sid):
 
     session = await sio.get_session(sid)
     room_id = session.get('room_id')
-
+    game_type = games[room_id]['game_type']
+    if game_type == NORMAL_GAME:
+        max_lobby_size = MAX_PLAYER_NORMAL
+    else:
+        max_lobby_size = MAX_PLAYER_TOURNAMENT
     data = {
         'lobby_id': room_id[:8],
+        'game_type': game_type,
+        'max_lobby_size': max_lobby_size,
+        'ready': games[room_id]['ready'],
         'users': games[room_id]['players'],
         'avatars': await GetPlayersAvatar(room_id)
     }
@@ -398,22 +414,23 @@ async def PongInput(sid, text_data):
     room_id = session.get('room_id')
     log(f"room: {room_id}")
 
+    delta_time = games[room_id]['delta_time']
     if username == games[room_id]['players'][0]:
         if action == 'up':
-            games[room_id]['pos'][0] += PADDLE_SPEED
+            games[room_id]['pos'][0] += PADDLE_SPEED * delta_time
             if games[room_id]['pos'][0] + PADDLE_HEIGHT / 2 > TOP_WALL:
                 games[room_id]['pos'][0] = TOP_WALL - PADDLE_HEIGHT / 2
         elif action == 'down':
-            games[room_id]['pos'][0] -= PADDLE_SPEED
+            games[room_id]['pos'][0] -= PADDLE_SPEED * delta_time
             if games[room_id]['pos'][0] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
                 games[room_id]['pos'][0] = BOTTOM_WALL + PADDLE_HEIGHT / 2
     else:
         if action == 'up':
-            games[room_id]['pos'][1] += PADDLE_SPEED
+            games[room_id]['pos'][1] += PADDLE_SPEED * delta_time
             if games[room_id]['pos'][1] + PADDLE_HEIGHT / 2 > TOP_WALL:
                 games[room_id]['pos'][1] = TOP_WALL - PADDLE_HEIGHT / 2
         elif action == 'down':
-            games[room_id]['pos'][1] -= PADDLE_SPEED
+            games[room_id]['pos'][1] -= PADDLE_SPEED * delta_time
             if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
                 games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
@@ -476,7 +493,7 @@ async def JoinLobby(sid, username, room_key):
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
-        await sio.emit('player_already_in_room', games[room_id]['players'].index(username))
+        await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sidz)
         await SendLobbyData(sid)
         return
 
@@ -486,11 +503,11 @@ async def JoinLobby(sid, username, room_key):
     if room_id is None:
         log(f"invalid_lobby_code")
         # need and send an error event if room doesn't exist or full already
-        await sio.emit('invalid_lobby_code')
+        await sio.emit('invalid_lobby_code', to=sid)
         return
 
     if IsRoomFull(room_id):
-        await sio.emit('room_already_full')
+        await sio.emit('room_already_full', to=sid)
         return
 
     log("JOIN SUCCESSFULL")
@@ -613,6 +630,7 @@ async def DebugPrint(sid, username):
         color_print(BLUE, f"players: {game['players']}")
         color_print(BLUE, f"sids: {game['sids']}")
         color_print(BLUE, f"ready: {game['ready']}")
+        color_print(BLUE, f"ready: {game['scores']}")
         print("")
 
     color_print(DARK_GRAY, f"---------------------\n\n")
@@ -630,79 +648,3 @@ if __name__ == "__main__":
     # , ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile
     uvicorn.run(app, host='0.0.0.0', port=6789, ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile)
 
-
-# OTHER METHOD
-
-# import json, time, threading
-# import asyncio
-# import websockets
-
-# async def websocket_handler(websocket, path):
-#     print("Client connected!")
-#     try:
-
-#         async for message in websocket:
-#             print(f"Received message from client: {message}")
-#             await websocket.send(f"Server received: {message}")
-#     except websockets.ConnectionClosed:
-#         print("Client disconnected!")
-
-# # TODO: Needs to be async so it doesn't interupt the whole server
-# async def start_game():
-#     thread_id = threading.get_ident()
-#     print(f"[ID: {thread_id}] in start_game()")
-#     server = await websockets.serve(websocket_handler, "0.0.0.0", 6789)
-#     print("WebSocket server started at ws://127.0.0.1:6789")
-#     await server.wait_closed()
-
-# if __name__ == "__main__":
-#     asyncio.get_event_loop().run_until_complete(start_game())
-
-
-""" # SOCKETS can't connect to websocket
-import socket
-# from _thread import *
-import sys
-
-def main():
-	server = "0.0.0.0"
-	port = 6789
-
-	pongSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-	try:
-		pongSocket.bind((server, port))
-	except socket.error as e:
-		str(e)
-
-	# number of maximum connections: 2
-	# do this in loop so a new lobby is created if the previous one is full
-	pongSocket.listen(2)
-	print("Server started at 127.0.0.1:6789")
-
-	# currentPlayer = 0
-
-	while True:
-		conn, addr = pongSocket.accept()
-		# currentPlayer += 1
-		print("Connected to: ", addr)
-
-		# conn.send("Connection established!")
-		# conn.sendall(f"There is {currentPlayer} connected")
-
-		# Start thread when 2 are connected
-
-if __name__ == "__main__":
-	main() """
-
-
-# import websocket
-
-# def main():
-# 	server = "0.0.0.0"
-# 	port = 6789
-
-# 	socket = websocket
-
-# if __name__ == "__main__":
-# 	main()
