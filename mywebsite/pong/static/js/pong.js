@@ -429,7 +429,7 @@ function StartGame()
 	Load();
 	Init();
 	socket.on('game_update', function(data) {
-		console.log(data);
+		// console.log(data);
 		// let data = JSON.parse(e.data);
 		// console.log('Data:', data);
 
@@ -719,6 +719,7 @@ function Inputs()
 	//CLIENT SIDE PADDLE INPUTS
 	if (keys.w)
 	{
+		console.log('WWWW');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
