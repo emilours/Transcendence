@@ -68,11 +68,15 @@ export function drawOnlineMenu() {
 		createElement('h2', { innerText: 'ONLINE MATCH' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
 		createElement('div', { className: 'button-vertical' },
+			createButton('FAST SEARCH', () => {
+				onlineMenu.remove();
+				SendEvent('find_lobby', userName, NORMAL_MODE);
+				drawLobbyOnline('create'); // I think it doesn't matter but need to test !
+			}),
 			createButton('CREATE LOBBY', () => {
 				onlineMenu.remove();
 				SendEvent('create_lobby', userName, NORMAL_MODE);
 				drawLobbyOnline('create');
-				// UpdateMenu(lobbyMenu);
 			}),
 			createButton('JOIN LOBBY', () => {
 				onlineMenu.remove();
@@ -121,7 +125,7 @@ export function drawLobbyOnline(mode) {
 	let lobbyCode = createElement('h4', {innerText: '', style: 'co'});
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'ONLINE MATCH' }),
-		createElement('h3', { innerText: 'LOBBY CODE', style: 'margin-bottom: 20px;' }),
+		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
 		createElement('div', {
 			style: `
 				font-size: 1em;
@@ -239,12 +243,16 @@ function drawTournament() {
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
 		createElement('div', { className: 'button-vertical' },
+			createButton('FAST SEARCH', () => {
+				onlineMenu.remove();
+				SendEvent('find_lobby', userName, TOURNAMENT_MODE);
+				drawLobbyTournament('create'); // I think it doesn't matter but need to test !
+			}),
 			createButton('CREATE TOURNAMENT', () => {
 				onlineMenu.remove();
 				console.log("CREATE TOURNAMENT button clicked")
 				SendEvent('create_lobby', userName, TOURNAMENT_MODE);
 				drawLobbyTournament('create');
-				// TODO: rework UpdateMenu();
 			}),
 			createButton('JOIN TOURNAMENT', () => {
 				onlineMenu.remove();

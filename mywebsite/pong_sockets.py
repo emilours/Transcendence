@@ -159,6 +159,7 @@ def GetPlayersAvatar(room_id):
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
+    games[room_id]['status'] = "running"
     game_type = games[room_id]['game_type']
     sid1 = games[room_id]['sids'][player_1_index]
     sid2 = games[room_id]['sids'][player_2_index]
@@ -519,6 +520,19 @@ async def JoinLobby(sid, username, room_key):
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
+@sio.on('find_lobby')
+async def FindLobby(sid, username, game_type):
+    room_id = GetAvailableRoom(game_type)
+    if room_id is None:
+        log("No available lobby, creating a new one")
+        room_id = CreateRoom(game_type)
+    await JoinRoom(sid, username, room_id)
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+        })
+    await sio.emit('user_joined', username)
+    await SendLobbyData(sid)
 
 @sio.on('create_lobby')
 async def CreateLobby(sid, username, game_type):
@@ -586,15 +600,20 @@ async def disconnect(sid):
         log(f"session in disconnect: {session}")
         room_id = session.get('room_id')
         username = session.get('username')
+        if games[room_id]['status'] == "running":
+            log("game paused")
+            games[room_id]['status'] = "paused"
+
         if await LeaveRoom(sid, username, room_id) == False:
             log(f"User {username} disconnected ({sid})")
             return
 
         if sid in connected_users:
             del connected_users[sid]
-        if games[room_id]['player_count'] == 0:
-            games[room_id] = {}
-            del games[room_id]
+        # if games[room_id]['player_count'] == 0:
+        #     games[room_id] = {}
+        #     del games[room_id]
+
         await sio.emit('user_left', username)
         log(f"User {username} disconnected ({sid})")
     except KeyError:

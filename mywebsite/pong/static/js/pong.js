@@ -16,6 +16,8 @@ const PLAYER_IMG_SIZE = 200;
 const LOADING_IMG_SIZE = 70;
 const TOURNAMENT_LOADING_IMG_SIZE = 30;
 const PLAYER_READY = 1;
+const NORMAL_CHECKMARK_SIZE = 50;
+const TOURNAMENT_CHECKMARK_SIZE = 30;
 const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
@@ -53,6 +55,35 @@ export function createButtonReady()
 	return (buttonReady);
 }
 
+function createReadyCheckmark(size)
+{
+	const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
+
+	const readySquare = createElement('div', {className: 'ready-square'});
+
+	const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
+
+	// Create the SVG element with correct namespace
+	const svgElement = createElementNS(svgNS, 'svg', {
+		width: size,  // Adjust the size for debugging
+		height: size,
+		viewBox: '0 0 24 24',
+		// style: 'border: 1px solid red;' // Add a border to visually debug
+	});
+
+	// Create the path element with correct namespace
+	const pathElement = createElementNS(svgNS, 'path', {
+		d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
+		fill: 'green'  // Ensure the path has a visible color
+	});
+
+	svgElement.appendChild(pathElement);
+	readyCheckmark.appendChild(svgElement);
+	readySquare.appendChild(readyCheckmark);
+	return (readySquare);
+
+}
+
 function createElementNS(namespace, type, properties = {}, ...children) {
 	const element = document.createElementNS(namespace, type);
 
@@ -73,6 +104,9 @@ function createElementNS(namespace, type, properties = {}, ...children) {
 	return element;
 }
 
+
+// 'button' --> button type (same as 'div')
+// '.button' --> button className
 function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 {
 
@@ -101,52 +135,30 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				playerImage.style.margin = '65px';
 		}
 
-		const readyButton = playerInfo.querySelector('.button.green');
-		if (!readyButton && ready == 1)
+		let readyCheckmark = playerInfo.querySelector('.ready-square');
+		if (readyCheckmark)
 		{
-			// 'button' --> button type (same as 'div')
-			// '.button' --> button className
-			let readySquare;
-			readySquare = playerInfo.querySelector('.ready-square');
-			if (!readySquare)
-			{
-				const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
-
-				const readySquare = createElement('div', {className: 'ready-square'});
-
-				const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
-
-				// Create the SVG element with correct namespace
-				const svgElement = createElementNS(svgNS, 'svg', {
-					width: '50',  // Adjust the size for debugging
-					height: '50',
-					viewBox: '0 0 24 24',
-					// style: 'border: 1px solid red;' // Add a border to visually debug
-				});
-
-				// Create the path element with correct namespace
-				const pathElement = createElementNS(svgNS, 'path', {
-					d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
-					fill: 'green'  // Ensure the path has a visible color
-				});
-
-				svgElement.appendChild(pathElement);
-				readyCheckmark.appendChild(svgElement);
-				readySquare.appendChild(readyCheckmark);
-
-				// if (!readySquare)
-				// 	console.error("Error creating readySquare element");
-				playerInfo.appendChild(readySquare);
-				console.log("checkmark created successfully:", readySquare);
-			}
+			playerInfo.removeChild(readyCheckmark);
+			readyCheckmark.remove();
 		}
-		else if (ready != 1)
+		4
+		let readyButton = playerInfo.querySelector('.button.green');
+		if (!readyButton && user == userName)
 		{
-			const readySquare = playerInfo.querySelector('.ready-square');
-			if (readySquare)
+			readyButton = createButtonReady();
+			playerInfo.appendChild(readyButton);
+		}
+		else if (user != userName)
+		{
+			if (readyButton)
 			{
-				playerInfo.removeChild(readySquare);
-				readySquare.remove();
+				playerInfo.removeChild(readyButton);
+				readyButton.remove();
+			}
+			else if (ready == 1)
+			{
+				const readyCheckmark = createReadyCheckmark(NORMAL_CHECKMARK_SIZE);
+				playerInfo.appendChild(readyCheckmark);
 			}
 		}
 	}
@@ -166,9 +178,16 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 	}
 
 	const playerDiv = playerInfo.querySelector('div');
-	const loadingImg = playerDiv.querySelector('img');
+	let readyButton = playerDiv.querySelector('button');
 
-	const readyButton = playerDiv.querySelector('button');
+	let loadingImg = playerDiv.querySelector('img');
+	let readyCheckmark = playerDiv.querySelector('.ready-square');
+	if (readyCheckmark)
+	{
+		playerDiv.removeChild(readyCheckmark);
+		readyCheckmark.remove();
+	}
+
 	if (user == WAITING_FOR_PLAYER) // 'Waiting for a player' + 'loading.gif'
 	{
 		if (readyButton)
@@ -178,11 +197,11 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 		}
 		if (!loadingImg)
 		{
-			let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
-			playerDiv.appendChild(loading);
+			loadingImg = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
+			playerDiv.appendChild(loadingImg);
 		}
 	}
-	else // username + empty OU username + 'READY'
+	else // username + empty OU username + 'READY' OU username + checkmark
 	{
 		if (loadingImg)
 		{
@@ -191,10 +210,20 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 		}
 		if (!readyButton && user == userName)
 		{
-			let readyElement = createButtonReady();
-			playerDiv.appendChild(readyElement);
+			readyButton = createButtonReady();
+			playerDiv.appendChild(readyButton);
 		}
-    }
+		else if (readyButton && user != userName)
+		{
+			playerDiv.removeChild(readyButton);
+			readyButton.remove();
+		}
+		if (!readyButton && ready == 1)
+		{
+			readyCheckmark = createReadyCheckmark(TOURNAMENT_CHECKMARK_SIZE);
+			playerDiv.appendChild(readyCheckmark);
+		}
+	}
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
