@@ -269,7 +269,7 @@ function drawTournament() {
 	document.querySelector('.pong-container').appendChild(onlineMenu);
 }
 
-function drawLobbyTournament(mode) {
+export function drawLobbyTournament(mode) {
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),

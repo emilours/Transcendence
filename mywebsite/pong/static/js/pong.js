@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, initPongMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament,initPongMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
 const BALL_SPEED = 0.1; //not needed i think
@@ -141,7 +141,6 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 			playerInfo.removeChild(readyCheckmark);
 			readyCheckmark.remove();
 		}
-		4
 		let readyButton = playerInfo.querySelector('.button.green');
 		if (!readyButton && user == userName)
 		{
@@ -155,7 +154,7 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				playerInfo.removeChild(readyButton);
 				readyButton.remove();
 			}
-			else if (ready == 1)
+			if (ready == 1)
 			{
 				const readyCheckmark = createReadyCheckmark(NORMAL_CHECKMARK_SIZE);
 				playerInfo.appendChild(readyCheckmark);
@@ -390,6 +389,20 @@ export function ConnectWebsocket(type, username)
 				UpdateLobbyOnline(data.users[i], data.avatars[i], data.ready[i], playerInfoNormal[i]);
 		}
 	});
+
+    socket.on('player_reconnect', function(data) {
+        const user = data.username;
+        const lobbyId = data.lobby_id;
+        const gameType = data.game_type;
+
+        let menu = document.querySelector('.menu');
+        if (menu)
+            menu.remove(); // removeChild ?
+        if (gameType == NORMAL_MODE)
+            drawLobbyOnline('create');
+        else if (game_type == TOURNAMENT_MODE)
+            drawLobbyTournament('create');
+    });
 }
 
 export function CloseWebsocket() {

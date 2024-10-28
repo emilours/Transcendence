@@ -166,11 +166,17 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     username1 = games[room_id]['players'][player_1_index]
     username2 = games[room_id]['players'][player_2_index]
     delta_time = 0
+    paused = 0
     current_task = asyncio.current_task()
     while True:
+        if games[room_id]['status'] == "paused":
+            log(f"Game {games[room_id]['room_id']} is paused!")
+            paused = 1
         while games[room_id]['status'] == "paused":
             await asyncio.sleep(1 / 2)
-            log("GAME IS PAUSE, SLEEPING!")
+        if paused == 1:
+            paused = 0
+            log(f"Game {games[room_id]['room_id']} is resuming")
 
         # Delta time
         current_time = time.time()
@@ -293,18 +299,30 @@ def CreateRoom(game_type):
     log(f"Room {room_id} created")
     return room_id
 
-async def JoinRoom(sid, username, room_id):
+async def JoinRoom(sid, username, room_id, new):
     global games
     if room_id not in games:
         log(f"[Error] Can't join room {room_id}")
         return
-    index = games[room_id]['player_count']
-    games[room_id]['players'].insert(index, username)
-    games[room_id]['sids'].insert(index, sid)
-    games[room_id]['scores'].insert(index, 0)
-    games[room_id]['pos'].insert(index, 0)
-    games[room_id]['ready'].insert(index, 0)
-    games[room_id]['player_count'] += 1
+    if (new == -1):
+        index = games[room_id]['players'].index(username)
+        games[room_id]['players'].pop(index)
+        games[room_id]['sids'].insert(index, sid)
+        data = {
+            'lobby_id': room_id[:8],
+            'game_type': games[room_id]['game_type'],
+            'username': username
+        }
+        await sio.emit('player_reconnect', data, to=sid)
+    else:
+        index = games[room_id]['player_count']
+        games[room_id]['sids'].insert(index, sid)
+        games[room_id]['players'].insert(index, username)
+        games[room_id]['scores'].insert(index, 0)
+        games[room_id]['pos'].insert(index, 0)
+        games[room_id]['ready'].insert(index, 0)
+        games[room_id]['player_count'] += 1
+
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
 
@@ -447,6 +465,12 @@ async def StartTournament(sid, room_id):
     asyncio.create_task(StartGameLoop(sid, room_id), player_index_list[0], player_index_list[1])
     color_print(RED, "TEST")
 
+async def SaveSession(sid, username, room_id):
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+    })
+
 @sio.on('start_game')
 async def StartGame(sid, username):
     global games
@@ -487,10 +511,7 @@ async def JoinLobby(sid, username, room_key):
     log(f"JoinLobby() username: {username}, room_key: {room_key}")
     room_id = GetUserRoom(username)
     if room_id is not None:
-        await sio.save_session(sid, {
-            'username': username,
-            'room_id': room_id
-            })
+        await SaveSession(sid, username, room_id)
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
@@ -512,11 +533,8 @@ async def JoinLobby(sid, username, room_key):
         return
 
     log("JOIN SUCCESSFULL")
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
-    await JoinRoom(sid, username, room_id)
+    await SaveSession(sid, username, room_id)
+    await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
@@ -526,11 +544,8 @@ async def FindLobby(sid, username, game_type):
     if room_id is None:
         log("No available lobby, creating a new one")
         room_id = CreateRoom(game_type)
-    await JoinRoom(sid, username, room_id)
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
+    await JoinRoom(sid, username, room_id, 0)
+    await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
@@ -547,13 +562,10 @@ async def CreateLobby(sid, username, game_type):
         log(f"User [{username}] joined room [{room_id}]")
     else:
         room_id = CreateRoom(game_type)
-        await JoinRoom(sid, username, room_id)
+        await JoinRoom(sid, username, room_id, 0)
     # room_id = GetAvailableRoom(game_type)
     # if room_id is None:
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
+    await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
@@ -580,6 +592,11 @@ async def Connect(sid, environ):
         return False
     connected_users[sid] = username
     log(f"User {username} connected ({sid})")
+    room_id = GetUserRoom(username)
+    if room_id is not None:
+        await SaveSession(sid, username, room_id)
+        await JoinRoom(sid, username, room_id, -1)
+        await SendLobbyData(sid)
 
 
 @sio.on('message')
@@ -592,6 +609,10 @@ async def Message(sid, data):
 async def disconnect(sid):
     global games, client_count, connected_users
 
+
+    if sid in connected_users:
+        del connected_users[sid]
+
     client_count -= 1
     await sio.emit('client_count', client_count)
 
@@ -603,16 +624,14 @@ async def disconnect(sid):
         if games[room_id]['status'] == "running":
             log("game paused")
             games[room_id]['status'] = "paused"
+            await sio.leave_room(sid, room_id)
+            await sio.emit('user_left', username)
+            log(f"User {username} disconnected ({sid})")
+            return
 
         if await LeaveRoom(sid, username, room_id) == False:
             log(f"User {username} disconnected ({sid})")
             return
-
-        if sid in connected_users:
-            del connected_users[sid]
-        # if games[room_id]['player_count'] == 0:
-        #     games[room_id] = {}
-        #     del games[room_id]
 
         await sio.emit('user_left', username)
         log(f"User {username} disconnected ({sid})")
@@ -646,6 +665,7 @@ async def DebugPrint(sid, username):
         color_print(BLUE, f"id: {game['room_id']}")
         color_print(BLUE, f"type: {game['game_type']}")
         color_print(BLUE, f"status: {game['status']}")
+        color_print(BLUE, f"player_count: {game['player_count']}")
         color_print(BLUE, f"players: {game['players']}")
         color_print(BLUE, f"sids: {game['sids']}")
         color_print(BLUE, f"ready: {game['ready']}")
