@@ -19,12 +19,6 @@ export function initPongMenu(username, userAvatar) {
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
-	// else if (event.key === 'c')
-	// 	SendEvent('create_lobby', userName, TOURNAMENT_MODE);
-	// else if (event.key === 'j')
-	// 	SendEvent('join_lobby', userName, 'admin');
-	// else if (event.key === 'k')
-	// 	SendEvent('player_ready', userName, null);
 	});
 
 	drawMainMenu();
@@ -39,7 +33,7 @@ export function cleanupPongMenu()
     userName = null;
 }
 
-function drawMainMenu() {
+export function drawMainMenu() {
 	const mainMenu = createElement('div', { className: 'menu' },
 		createElement('h1', { innerText: 'PUSHEEN\nPONG' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),

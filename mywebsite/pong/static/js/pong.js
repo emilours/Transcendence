@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament,initPongMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, drawMainMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
 const BALL_SPEED = 0.1; //not needed i think
@@ -30,12 +30,55 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 var userName;
 var socket;
 var userName;
-var scoreGeometry, scoreFont, gameOver;
-
-var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
+var scoreGeometry, scoreFont;
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+
+function CreateGameOverlay()
+{
+	const gameOverlay = createElement('div', {className: 'overlay' },
+		createElement('h3', { innerText: ""})
+	);
+	document.querySelector('.pong-container').appendChild(gameOverlay);
+}
+
+function UpdateGameOverlay(gameText, gameOver)
+{
+	const gameOverlay = document.querySelector('.overlay');
+	if (gameOverlay)
+	{
+		const overlayText = gameOverlay.querySelector('h3');
+		if (overlayText)
+		{
+			overlayText.innerText = gameText;
+		}
+
+		if (gameOver == 1)
+		{
+			const quitButton = createButton('QUIT', () => {
+				gameOverlay.remove();
+				Cleanup();
+				CloseWebsocket();
+				window.location.href = window.location;
+				// drawMainMenu();
+			});
+
+			gameOverlay.appendChild(quitButton);
+		}
+
+	}
+}
+
+function RemoveGameOverlay()
+{
+	const gameOverlay = document.querySelector('.overlay');
+	if (gameOverlay)
+	{
+		document.querySelector('.pong-container').removeChild(gameOverlay);
+		gameOverlay.remove();
+	}
+}
 
 export function createButtonReady()
 {
@@ -263,6 +306,8 @@ export function ConnectWebsocket(type, username)
 	// WEBSOCKET
 	running = true;
 	userName = username;
+	leftPlayerScore = 0;
+	rightPlayerScore = 0;
 	InitCustomAlerts();
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
@@ -402,6 +447,7 @@ export function ConnectWebsocket(type, username)
             drawLobbyOnline('create');
         else if (game_type == TOURNAMENT_MODE)
             drawLobbyTournament('create');
+		CustomAlert("You were in a game, joining lobby...");
     });
 }
 
@@ -468,24 +514,29 @@ function onWindowResize()
 
 function StartGame()
 {
-// TODO: I think i should load everything (all font, textures...) before initializing the rest
 	Load();
 	Init();
 	socket.on('game_update', function(data) {
-		// console.log(data);
-		// let data = JSON.parse(e.data);
-		// console.log('Data:', data);
 
 		if (data.ballPosition && data.ballVelocity && data.pos
 			&& data.players && data.scores && typeof data.game_over !== 'undefined')
 		{
 			ball.position.x = parseFloat(data.ballPosition[0]);
 			ball.position.y = parseFloat(data.ballPosition[1]);
-			ballSpeed.x = parseFloat(data.ballVelocity[0]); //not needed i think
-			ballSpeed.y = parseFloat(data.ballVelocity[1]); //not needed i think
 			leftPaddle.position.y = parseFloat(data.pos[0]);
 			rightPaddle.position.y = parseFloat(data.pos[1]);
-			gameOver = parseInt(data.game_over);
+			const gameOver = parseInt(data.game_over);
+			const gameText = data.text;
+			if (gameText != '')
+			{
+				if (!document.querySelector('.overlay'))
+					CreateGameOverlay();
+				console.log("text:", gameText);
+				UpdateGameOverlay(gameText, gameOver);
+			}	
+			else
+				RemoveGameOverlay();
+
 			let player1Score = parseFloat(data.scores[0]);
 			let player2Score = parseFloat(data.scores[1]);
 
@@ -500,7 +551,6 @@ function StartGame()
 
 	});
 	Loop();
-	//Cleanup();
 }
 
 function Load()
@@ -542,36 +592,6 @@ function createScoreText()
 	const scoreMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 	scoreMesh = new THREE.Mesh(scoreGeometry, scoreMaterial);
 
-	if (gameOver == 1)
-	{
-		const gameOverGeometry = new TextGeometry ("GAME OVER", {
-			font: scoreFont,
-			size: 1.5,
-			// !!!! Use height and not depth
-			height: 0.2,
-			curveSegments: 12,
-			bevelEnabled: true,
-			bevelThickness: 0.03,
-			bevelSize: 0.02,
-			bevelOffset: 0,
-			bevelSegments: 5
-		});
-
-		const gameOverMaterial = new THREE.MeshBasicMaterial({color: 0xbd4500});
-		const gameOverMesh = new THREE.Mesh(gameOverGeometry, gameOverMaterial);
-
-
-		gameOverGeometry.computeBoundingBox();
-		const gameOverBB = gameOverGeometry.boundingBox;
-		const gameOverSize = new THREE.Vector3();
-		gameOverBB.getSize(gameOverSize);
-		gameOverMesh.position.x = -gameOverSize.x / 2;
-		gameOverMesh.position.y = -gameOverSize.y / 2;
-		gameOverMesh.position.z = -gameOverSize.z / 2;
-		gameOverMesh.position.z += 3;
-		scene.add(gameOverMesh);
-
-	}
 
 	// Compute the bounding box and center the score
 	scoreGeometry.computeBoundingBox();
@@ -750,7 +770,8 @@ function Loop()
 function Inputs()
 {
 	const inputEvent = 'pong_input'
-	// Info
+
+	//DEBUG
 	if (keys.i)
 	{
 		console.log("[INFO]");
@@ -760,9 +781,9 @@ function Inputs()
 	}
 
 	//CLIENT SIDE PADDLE INPUTS
+	// Maybe could rework that so it's faster (less event send) ?
 	if (keys.w)
 	{
-		console.log('WWWW');
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
 			'action':'up'
@@ -799,4 +820,32 @@ function Update()
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
+}
+
+function Cleanup()
+{
+	console.warn("CLEANING UP THREEJS");
+	while (scene.children.length > 0)
+	{
+        const child = scene.children[0];
+
+        // If the child is a mesh, dispose of its geometry and material
+        if (child instanceof THREE.Mesh) {
+            if (child.geometry) {
+                child.geometry.dispose(); // Dispose geometry
+            }
+            if (child.material) {
+                // If the material is an array (multiple materials), dispose each one
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => material.dispose());
+                } else {
+                    child.material.dispose(); // Dispose single material
+                }
+            }
+        }
+
+        // Remove the child from the scene
+        scene.remove(child);
+    }
+
 }

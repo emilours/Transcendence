@@ -10,8 +10,7 @@ requests==2.28.1
 django-password-validators==1.7.3
 python-socketio==5.11.4
 uvicorn==0.30.6
-
-Twisted[tls,http2]
+Twisted[tls,http2]==22.4.0
 
 # djangorestframework-simplejwt==5.3.1
 # pillow==10.4.0
