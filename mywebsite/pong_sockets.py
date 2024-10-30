@@ -67,13 +67,15 @@ games = {}
 #     'https://localhost:8080',
 #     'https://admin.socket.io',
 # ])
+
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
     ssl_verify=False,  # Disable SSL verification if self-signed
-    logger=True,
-    engineio_logger=True
+    # logger=True, # Additional logs
+    # engineio_logger=True # Additional logs
     )
+
 # if instrument:
 #     sio.instrument(auth=admin_login)
 
@@ -155,15 +157,15 @@ def GetPlayersAvatar(room_id):
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
+    games[room_id]['last_time'] = time.time()
     color_print(RED, f"ball pos: {games[room_id]['ballPosition']}")
-    await GameCountDown(sid, room_id, "Game Starting")
-    color_print(GREEN, "line 160")
     game = games[room_id]
+    sid1 = game['sids'][player_1_index]
+    sid2 = game['sids'][player_2_index]
     game['status'] = "running"
     game_type = game['game_type']
+    await GameCountDown(room_id, "Game Starting", sid1, sid2)
     # REWORK: needed only if i disconnect immediately
-    # sid1 = game['sids'][player_1_index]
-    # sid2 = game['sids'][player_2_index]
     # username1 = game['players'][player_1_index]
     # username2 = game['players'][player_2_index]
     delta_time = 0
@@ -177,7 +179,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             await asyncio.sleep(1 / 2)
         if paused == 1:
             paused = 0
-            await GameCountDown(sid, room_id, "Game Restarting")
+            await GameCountDown(room_id, "Game Restarting", sid1, sid2)
             log(f"Game {game['room_id']} is resuming")
 
         # Delta time
@@ -221,8 +223,14 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
         game['ballPosition'][1] += game['ballVelocity'][1] * BALL_SPEED * delta_time
 
 
-        # Broadcast the updated game state to all clients
-        await sio.emit('game_update', game, room=room_id)
+        # Broadcast the updated game state to both players
+        data = {
+            'ballPosition': game['ballPosition'],
+            'pos': [game['pos'][player_1_index], game['pos'][player_2_index]],
+            'scores': [game['scores'][player_1_index], game['scores'][player_2_index]]
+        }
+        await sio.emit('game_update', data, to=[sid1, sid2])
+
 
 
         # Check if game is over
@@ -233,21 +241,23 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
                 winner = game['players'][player_1_index]
             else:
                 winner = game['players'][player_2_index] 
-            game['text'] = "Winner: " + winner
-            await sio.emit('game_update', game, room=room_id)
+            data = {
+                'text': winner,
+                'game_over': game['game_over']
+            }
+            await sio.emit('update_overlay', data, to=[sid1, sid2])
 
-            # TODO: don't disconnect if game_type == TOURNAMENT && cancel task
-            # REWORK HERE
-            current_task.cancel()
-            current_task = None
-            # if (game_type == NORMAL_GAME):
-                # log(f"calling disconnect for {sid1}")
-                # await sio.disconnect(sid1)
-                # await LeaveLobby(sid1, username1)
-                # log(f"calling disconnect for {sid2}")
-                # await sio.disconnect(sid2)
-                # await LeaveLobby(sid2, username2)
-            return
+            # IMPORTANT: if you cancel the task it doesn't finish properly and so the await keeps awaiting
+            # current_task.cancel()
+            # current_task = None
+            # Reset data for next matches (tournament)
+            for i in range(len(game['scores'])):
+                game['scores'][i] = 0
+            for i in range(len(game['pos'])):
+                game['pos'][i] = 0
+            reset_ball(room_id)
+            game['game_over'] = 0
+            return winner
 
 
         # Control the game loop speed
@@ -305,7 +315,6 @@ def CreateRoom(game_type):
         'last_time': 0,
         'delta_time': 0,
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
-        'text': '',
     }
     log(f"Room {room_id} created")
     return room_id
@@ -469,12 +478,27 @@ async def StartTournament(sid, room_id):
 
     # TODO: MAKE IT so one of the players playing the tournament runs the game loop!
     log(f"Starting Tournament")
+    # NOTE: THIS WILL BE AN ISSUE IF A PLAYER LEAVE (after his game) maybe need to play with status
     player_index_list = [0, 1, 2, 3]
     random.shuffle(player_index_list)
     log(f"index list: {player_index_list}")
-    games[room_id]['last_time'] = time.time()
-    asyncio.create_task(StartGameLoop(sid, room_id), player_index_list[0], player_index_list[1])
-    color_print(RED, "TEST")
+
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[0], player_index_list[1]))
+    winner1 = await game_task
+    color_print(BLUE, f"Game 1 finished: {winner1}")
+    winner1_index = games[room_id]['players'].index(winner1)
+    
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[2], player_index_list[3]))
+    winner2 = await game_task
+    color_print(BLUE, f"Game 2 finished: {winner2}")
+    winner2_index = games[room_id]['players'].index(winner2)
+
+
+    color_print(GREEN, f"Final game will oppose '{games[room_id]['players'][winner1_index]}' to '{games[room_id]['players'][winner2_index]}'")
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, winner1_index, winner2_index))
+    winner = await game_task
+    color_print(RED, f"Final game finished: {winner}, GG!")
+
 
 async def SaveSession(sid, username, room_id):
     await sio.save_session(sid, {
@@ -483,22 +507,24 @@ async def SaveSession(sid, username, room_id):
     })
 
 
-async def GameCountDown(sid, room_id, message):
+async def GameCountDown(room_id, message, sid1, sid2):
     global games
 
-    games[room_id]['text'] = message + ": 3"
-    await sio.emit('game_update', games[room_id], room=room_id)
-    await asyncio.sleep(1)
+    game_over = games[room_id]['game_over']
+    for i in range(3):
+        data = {
+            'text': message + ": " + str(3 - i),
+            'game_over': game_over 
+        }
+        await sio.emit('update_overlay', data, to=[sid1, sid2])
+        await asyncio.sleep(1)
 
-    games[room_id]['text'] = message + ": 2"
-    await sio.emit('game_update', games[room_id], room=room_id)
-    await asyncio.sleep(1)
+    data = {
+        'text': "",
+        'game_over': game_over
+    }
+    await sio.emit('update_overlay', data, to=[sid1, sid2])
 
-    games[room_id]['text'] = message + ": 1"
-    await sio.emit('game_update', games[room_id], room=room_id)
-    await asyncio.sleep(1)
-    games[room_id]['text'] = ''
-    color_print(GREEN, "line 159")
 
 @sio.on('start_game')
 async def StartGame(sid, username):

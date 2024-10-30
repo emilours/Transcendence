@@ -38,6 +38,7 @@ var running = true;
 function CreateGameOverlay()
 {
 	const gameOverlay = createElement('div', {className: 'overlay' },
+		createElement('h2', { innerText: ""}),
 		createElement('h3', { innerText: ""})
 	);
 	document.querySelector('.pong-container').appendChild(gameOverlay);
@@ -48,21 +49,29 @@ function UpdateGameOverlay(gameText, gameOver)
 	const gameOverlay = document.querySelector('.overlay');
 	if (gameOverlay)
 	{
-		const overlayText = gameOverlay.querySelector('h3');
-		if (overlayText)
-		{
-			overlayText.innerText = gameText;
-		}
+		const overlayH2 = gameOverlay.querySelector('h2');
+		if (overlayH2)
+			overlayH2.innerText = "";
+
+		const overlayH3 = gameOverlay.querySelector('h3');
+		if (overlayH3)
+			overlayH3.innerText = gameText;
 
 		if (gameOver == 1)
 		{
-			const quitButton = createButton('QUIT', () => {
-				gameOverlay.remove();
-				Cleanup();
-				CloseWebsocket();
-				window.location.href = window.location;
-				// drawMainMenu();
-			});
+			if (overlayH2)
+				overlayH2.innerText = "WINNER";
+			let quitButton = gameOverlay.querySelector('button');
+			if (!quitButton)
+			{
+				quitButton = createButton('QUIT', () => {
+					gameOverlay.remove();
+					Cleanup();
+					CloseWebsocket();
+					window.location.href = window.location;
+					// drawMainMenu();
+				});
+			}
 
 			gameOverlay.appendChild(quitButton);
 		}
@@ -449,6 +458,21 @@ export function ConnectWebsocket(type, username)
             drawLobbyTournament('create');
 		CustomAlert("You were in a game, joining lobby...");
     });
+	//HERE
+	socket.on('update_overlay', function(data) {
+		const gameText = data.text;
+		const gameOver = data.game_over;
+		if (gameText != '')
+		{
+			if (!document.querySelector('.overlay'))
+				CreateGameOverlay();
+			console.log("text:", gameText);
+			UpdateGameOverlay(gameText, gameOver);
+		}	
+		else
+			RemoveGameOverlay();
+
+	});
 }
 
 export function CloseWebsocket() {
@@ -518,37 +542,20 @@ function StartGame()
 	Init();
 	socket.on('game_update', function(data) {
 
-		if (data.ballPosition && data.ballVelocity && data.pos
-			&& data.players && data.scores && typeof data.game_over !== 'undefined')
+		ball.position.x = parseFloat(data.ballPosition[0]);
+		ball.position.y = parseFloat(data.ballPosition[1]);
+		leftPaddle.position.y = parseFloat(data.pos[0]);
+		rightPaddle.position.y = parseFloat(data.pos[1]);
+		let player1Score = parseFloat(data.scores[0]);
+		let player2Score = parseFloat(data.scores[1]);
+
+		if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
 		{
-			ball.position.x = parseFloat(data.ballPosition[0]);
-			ball.position.y = parseFloat(data.ballPosition[1]);
-			leftPaddle.position.y = parseFloat(data.pos[0]);
-			rightPaddle.position.y = parseFloat(data.pos[1]);
-			const gameOver = parseInt(data.game_over);
-			const gameText = data.text;
-			if (gameText != '')
-			{
-				if (!document.querySelector('.overlay'))
-					CreateGameOverlay();
-				console.log("text:", gameText);
-				UpdateGameOverlay(gameText, gameOver);
-			}	
-			else
-				RemoveGameOverlay();
-
-			let player1Score = parseFloat(data.scores[0]);
-			let player2Score = parseFloat(data.scores[1]);
-
-			if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
-			{
-				leftPlayerScore = player1Score;
-				rightPlayerScore = player2Score;
-				createScoreText();
-			}
+			leftPlayerScore = player1Score;
+			rightPlayerScore = player2Score;
+			createScoreText();
 		}
 		// overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
-
 	});
 	Loop();
 }
