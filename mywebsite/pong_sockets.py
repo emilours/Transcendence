@@ -157,8 +157,6 @@ def GetPlayersAvatar(room_id):
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
-    games[room_id]['last_time'] = time.time()
-    color_print(RED, f"ball pos: {games[room_id]['ballPosition']}")
     game = games[room_id]
     sid1 = game['sids'][player_1_index]
     sid2 = game['sids'][player_2_index]
@@ -168,10 +166,10 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     # REWORK: needed only if i disconnect immediately
     # username1 = game['players'][player_1_index]
     # username2 = game['players'][player_2_index]
+    games[room_id]['last_time'] = time.time()
     delta_time = 0
     paused = 0
-    current_task = asyncio.current_task()
-    while True:
+    while True:        
         if game['status'] == "paused":
             log(f"Game {game['room_id']} is paused!")
             paused = 1
@@ -234,7 +232,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
 
 
         # Check if game is over
-        if game['game_over'] == 1 and current_task:
+        if game['game_over'] == 1:
             await SaveMatch(room_id, game_type, player_1_index, player_2_index)
             game['status'] = "completed"
             if game['scores'][player_1_index] >= 5:
@@ -296,7 +294,6 @@ def GetAvailableRoom(game_type):
                 return game['room_id']
     return None
 
-
 def CreateRoom(game_type):
     global games
     room_id = str(uuid.uuid4())
@@ -339,7 +336,7 @@ async def JoinRoom(sid, username, room_id, new):
         games[room_id]['sids'].insert(index, sid)
         games[room_id]['players'].insert(index, username)
         games[room_id]['scores'].insert(index, 0)
-        games[room_id]['pos'].insert(index, 0)
+        games[room_id]['pos'].insert(index, 0.0)
         games[room_id]['ready'].insert(index, 0)
         games[room_id]['player_count'] += 1
 
@@ -453,25 +450,21 @@ async def PongInput(sid, text_data):
     room_id = session.get('room_id')
     log(f"room: {room_id}")
 
-    delta_time = games[room_id]['delta_time']
-    if username == games[room_id]['players'][0]:
-        if action == 'up':
-            games[room_id]['pos'][0] += PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][0] + PADDLE_HEIGHT / 2 > TOP_WALL:
-                games[room_id]['pos'][0] = TOP_WALL - PADDLE_HEIGHT / 2
-        elif action == 'down':
-            games[room_id]['pos'][0] -= PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][0] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-                games[room_id]['pos'][0] = BOTTOM_WALL + PADDLE_HEIGHT / 2
-    else:
-        if action == 'up':
-            games[room_id]['pos'][1] += PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][1] + PADDLE_HEIGHT / 2 > TOP_WALL:
-                games[room_id]['pos'][1] = TOP_WALL - PADDLE_HEIGHT / 2
-        elif action == 'down':
-            games[room_id]['pos'][1] -= PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-                games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+    game = games[room_id]
+
+    player_index = game['players'].index(username)
+
+
+    delta_time = game['delta_time']
+
+    if action == 'up':
+        game['pos'][player_index] += PADDLE_SPEED * delta_time
+        if game['pos'][player_index] + PADDLE_HEIGHT / 2 > TOP_WALL:
+            game['pos'][player_index] = TOP_WALL - PADDLE_HEIGHT / 2
+    elif action == 'down':
+        game['pos'][player_index] -= PADDLE_SPEED * delta_time
+        if game['pos'][player_index] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+            game['pos'][player_index] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
 async def StartTournament(sid, room_id):
     global games
