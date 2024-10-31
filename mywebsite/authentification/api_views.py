@@ -32,8 +32,6 @@ def callback_42(request):
     if not code:
         return Response({'error': 'Code not provided'}, status=400)
         # return redirect('/error_api/')
-        return Response({'error': 'Code not provided'}, status=400)
-        # return redirect('/error_api/')
 
     token_data = {
         'grant_type': 'authorization_code',
@@ -48,15 +46,11 @@ def callback_42(request):
     if token_response.status_code != 200:
         return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
         # return redirect('/error_api/')
-        return Response({'error': 'Failed to obtain access token'}, status=token_response.status_code)
-        # return redirect('/error_api/')
 
     token_json = token_response.json()
     access_token = token_json.get('access_token')
 
     if not access_token:
-        return Response({'error': 'Access token not provided'}, status=400)
-        # return redirect('/error_api/')
         return Response({'error': 'Access token not provided'}, status=400)
         # return redirect('/error_api/')
 
@@ -65,8 +59,6 @@ def callback_42(request):
     })
 
     if user_info_response.status_code != 200:
-        return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
-        # return redirect('/error_api/')
         return Response({'error': 'Failed to obtain user info'}, status=user_info_response.status_code)
         # return redirect('/error_api/')
 
@@ -80,8 +72,6 @@ def callback_42(request):
     avatar_url = user_info.get('image', {}).get('link')
 
     if not email or not display_name:
-        return Response({'error': 'Incomplete user info'}, status=400)
-        # return redirect('/error_api/')
         return Response({'error': 'Incomplete user info'}, status=400)
         # return redirect('/error_api/')
 
@@ -114,8 +104,6 @@ def callback_42(request):
         else:
             return Response(user_serializer.errors, status=400)
             # return redirect('/error_api/')
-            return Response(user_serializer.errors, status=400)
-            # return redirect('/error_api/')
 
         if avatar_url:
             avatar_response = requests.get(avatar_url, verify=False)
@@ -125,7 +113,8 @@ def callback_42(request):
                 user.avatar.save(avatar_name, avatar_content, save=False)
             else:
                 return Response({'error': f'Failed to download avatar from {avatar_url}. Status code: {avatar_response.status_code}'}, status=avatar_response.status_code)
-                # return redirect('/error_api/')
+
+
 
     token, _ = Token.objects.get_or_create(user=user)
 
@@ -136,4 +125,3 @@ def callback_42(request):
     user.save(update_fields=['is_online'])
 
     return redirect('/profile/')
-

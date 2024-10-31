@@ -3,7 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 from frontend.models import CustomUser
-from .views import session_open, session_close
+from .views import session_open, session_close, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
 
 
 
@@ -31,32 +31,120 @@ def StatusLog(message):
 
 class StatusConsumer(AsyncWebsocketConsumer):
 
-    async def connect(self):
-        try:
-            await self.accept()
-            # Any other setup logic
-            user = self.scope['user']
-			# INCREMENT
-            await session_open(user)
+    # async def connect(self):
+    #     try:
+    #         await self.accept()
+    #         # Any other setup logic
+    #         user = self.scope['user']
+	# 		# INCREMENT
+    #         await session_open(user)
+    #         await check_friend_request_update(user)
+    #         await check_friendlist_update(user)
+    #         await check_friends_statuses_update(user)
 
-        except Exception as e:
-            # If an exception occurs, log it and close the connection
-            StatusLog(f"Error during connection: {e}")
-            await self.close(code=1011)
+    #     except Exception as e:
+    #         # If an exception occurs, log it and close the connection
+    #         StatusLog(f"Error during connection: {e}")
+    #         await self.close(code=1011)
 
-    async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-            StatusLog(f"Received: {data}")
-        except Exception as e:
-            StatusLog(f"Error during message handling: {e}")
-            await self.close(code=1011)
+    # async def receive(self, text_data):
+    #     try:
+    #         data = json.loads(text_data)
+    #         StatusLog(f"Received: {data}")
+    #     except Exception as e:
+    #         StatusLog(f"Error during message handling: {e}")
+    #         await self.close(code=1011)
 
-    async def disconnect(self, close_code):
-        StatusLog(f"Disconnected with code {close_code}")
-        user = self.scope['user']
-        await session_close(user)
-		#DECREMENT
+	async def get_all_friend_data(self):
+		user = self.scope['user']
+		friend_requests = await check_friend_request_update(user)
+		friend_count = await check_friendlist_update(user)
+		friend_statuses = await check_friends_statuses_update(user)
+		return {
+			"friend_requests": friend_requests,
+			"friend_count": friend_count,
+			"friend_statuses": friend_statuses
+		}
+
+	# async def connect(self):
+	# 	try:
+	# 		await self.accept()
+	# 		user = self.scope['user']
+	# 		await session_open(user)
+
+	# 		friend_requests = await check_friend_request_update(user)
+	# 		friend_count = await check_friendlist_update(user)
+	# 		friend_statuses = await check_friends_statuses_update(user)
+
+	# 		await self.send(text_data=json.dumps({
+	# 			"friend_requests": friend_requests,
+	# 			"friend_count": friend_count,
+	# 			"friend_statuses": friend_statuses
+	# 		}))
+
+	# 	except Exception as e:
+	# 		StatusLog(f"Error during connection: {e}")
+	# 		await self.close(code=1011)
+
+	async def connect(self):
+		try:
+			await self.accept()
+			user = self.scope['user']
+			await session_open(user)
+
+			data = await self.get_all_friend_data()
+			await self.send(text_data=json.dumps(data))
+
+		except Exception as e:
+			StatusLog(f"Error during connection: {e}")
+			await self.close(code=1011)
+
+	# async def receive(self, text_data):
+	# 	try:
+	# 		data = json.loads(text_data)
+	# 		StatusLog(f"Received: {data}")
+
+	# 		if 'actions' in data:
+	# 			for action in data['actions']:
+	# 				if action == 'check_friend_requests':
+	# 					friend_requests = await check_friend_request_update(self.scope['user'])
+	# 					await self.send(text_data=json.dumps({"friend_requests": friend_requests}))
+
+	# 				elif action == 'check_friend_list':
+	# 					friend_count = await check_friendlist_update(self.scope['user'])
+	# 					await self.send(text_data=json.dumps({"friend_count": friend_count}))
+
+	# 				elif action == 'check_friends_statuses':
+	# 					friend_statuses = await check_friends_statuses_update(self.scope['user'])
+	# 					await self.send(text_data=json.dumps({"friend_statuses": friend_statuses}))
+	# 		else:
+	# 			StatusLog("No action specified in the received data.")
+	# 			await self.send(text_data=json.dumps({"error": "No action specified"}))
+
+	# 	except json.JSONDecodeError:
+	# 		StatusLog("Invalid JSON format received.")
+	# 		await self.close(code=4000)
+	# 	except Exception as e:
+	# 		StatusLog(f"Error during message handling: {e}")
+	# 		await self.close(code=1011)
+
+	# async def disconnect(self, close_code):
+	# 	StatusLog(f"Disconnected with code {close_code}")
+	# 	user = self.scope['user']
+	# 	await session_close(user)
+
+	async def receive(self, text_data):
+		try:
+			data = json.loads(text_data)
+			StatusLog(f"Received: {data}")
+
+		except json.JSONDecodeError:
+			StatusLog("Invalid JSON format received.")
+			await self.close(code=4000)
+		except Exception as e:
+			StatusLog(f"Error during message handling: {e}")
+			await self.close(code=1011)
+
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 	games = {}

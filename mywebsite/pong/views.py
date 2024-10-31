@@ -56,7 +56,6 @@ def SaveLocalPongMatch(request):
 			return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-
 @sync_to_async
 def session_close(user):
     user.active_sessions -= 1
@@ -66,12 +65,56 @@ def session_close(user):
 
     user.save(update_fields=['active_sessions', 'is_online'])
     
-    # return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
-
 @sync_to_async
 def session_open(user):
     user.active_sessions += 1
     user.is_online = True
     user.save(update_fields=['active_sessions', 'is_online'])
     
-    # return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)
+@sync_to_async
+def check_friend_request_update(user):
+    pending_requests = FriendRequest.objects.filter(
+        Q(sender=user) | Q(receiver=user),
+        status__in=['accepted', 'declined', 'pending']
+    )
+
+    if pending_requests.exists():
+        return [
+            {
+                "id": friend_request.id,
+                "sender": friend_request.sender.display_name,
+                "receiver": friend_request.receiver.display_name,
+                "status": friend_request.status
+            }
+            for friend_request in pending_requests
+        ]
+    return []
+
+@sync_to_async
+def check_friendlist_update(user):
+    try:
+        friendlist = FriendList.objects.get(user=user)
+        return friendlist.friend_count()
+    except FriendList.DoesNotExist:
+        return 0
+
+@sync_to_async
+def check_friends_statuses_update(user):
+    try:
+        user_friend_list = user.friend_list
+        friends = user_friend_list.friends.all()
+
+        friend_statuses = [
+            {
+                "id": friend.id,
+                "display_name": friend.display_name,
+                "is_online": friend.is_online,
+                "avatar": friend.avatar.url
+            }
+            for friend in friends
+        ]
+        
+        return friend_statuses
+
+    except FriendList.DoesNotExist:
+        return []

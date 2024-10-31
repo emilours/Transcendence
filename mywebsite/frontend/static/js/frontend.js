@@ -17,59 +17,112 @@ document.addEventListener("DOMContentLoaded", () => {
 	// SSE - Server-Sent Events
 	let eventSource = null;
 
+	// function initStatusSockets() {
+	// 	console.log("INIT STATUS SOCKET");
+	// 	const url = `wss://${window.location.host}/ws/status-socket/`;
+	// 	statusSocket = new WebSocket(url);
+
+	// 	statusSocket.onopen = function (e) {
+	// 		console.log("[open] Status Connection established");
+
+	// 	};
+
+	// 	statusSocket.onmessage = function (event) {
+	// 		console.log(`[message] Data received from server: ${event.data}`);
+	// 	};
+
+	// 	statusSocket.onclose = function (event) {
+	// 		if (event.wasClean) {
+	// 			console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+	// 		} else {
+	// 			console.log('[close] Connection died');
+	// 		}
+	// 	};
+
+	// 	statusSocket.onerror = function (error) {
+	// 		console.warn("socket error:", error);
+	// 	};
+	// }
+
 	function initStatusSockets() {
 		console.log("INIT STATUS SOCKET");
 		const url = `wss://${window.location.host}/ws/status-socket/`;
-		statusSocket = new WebSocket(url);
-
+		const statusSocket = new WebSocket(url);
+	
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
-
+			console.log('WebSocket connection opened:', event);
+	
+			const message = JSON.stringify({
+				actions: [
+					'check_friend_requests',
+					'check_friend_list',
+					'check_friends_statuses'
+				]
+			});
+			statusSocket.send(message);
+			
+			console.log(`[send] Message sent to server: ${message}`);
 		};
-
+	
 		statusSocket.onmessage = function (event) {
 			console.log(`[message] Data received from server: ${event.data}`);
+			
+			const data = JSON.parse(event.data);
+	
+			if (data.friend_requests) {
+				console.log('Friend request:', data.friend_requests);
+			} else if (data.friend_count) {
+				console.log('Friend list:', data.friend_count);
+			} else if (data.friend_statuses) {
+				console.log('Online status:', data.friend_statuses);
+			} else if (data.error) {
+				console.log('Erreur:', data.error);
+			} else {
+				console.log('Aucune information pertinente reçue.');
+			}
 		};
-
+	
 		statusSocket.onclose = function (event) {
+			console.log('WebSocket connection closed:', event);
 			if (event.wasClean) {
 				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
 			} else {
 				console.log('[close] Connection died');
 			}
 		};
-
+	
 		statusSocket.onerror = function (error) {
 			console.warn("socket error:", error);
 		};
-	}
+	}	
 
-	function initSSE() {
-		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
-			eventSource = new EventSource('/auth/sse/');
+	// function initSSE() {
+	// 	if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
+	// 		eventSource = new EventSource('/auth/sse/');
 
-			eventSource.onmessage = function (event) {
-				const data = JSON.parse(event.data);
-				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
-					if (window.location.pathname === '/profile/') {
-						loadContent('/profile/', false);
-					}
-				}
-			};
+	// 		eventSource.onmessage = function (event) {
+	// 			const data = JSON.parse(event.data);
+	// 			if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
+	// 				if (window.location.pathname === '/profile/') {
+	// 					loadContent('/profile/', false);
+	// 				}
+	// 			}
+	// 		};
 
-			eventSource.onerror = function (error) {
-				console.error('EventSource error:', error);
-				eventSource.close();
-				setTimeout(function () {
-					eventSource = new EventSource('/auth/sse/');
-				}, 5000);
-			};
+	// 		eventSource.onerror = function (error) {
+	// 			console.error('EventSource error:', error);
+	// 			eventSource.close();
+	// 			setTimeout(function () {
+	// 				eventSource = new EventSource('/auth/sse/');
+	// 			}, 5000);
+	// 		};
 
-			console.log('SSE connection initialized');
-		} else {
-			console.log('SSE connection already active');
-		}
-	}
+	// 		console.log('SSE connection initialized');
+	// 	} else {
+	// 		console.log('SSE connection already active');
+	// 	}
+	// }
 
 	function checkLoginStatus() {
 		return localStorage.getItem('isLoggedIn') === 'true';
@@ -77,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	if (checkLoginStatus()) {
 		console.log('User is logged in. Initiating SSE after refresh...');
-		initSSE();
+		// initSSE();
 		initStatusSockets();
 	}
 
@@ -169,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			} else if (url.includes('profile')) {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
-					initSSE();
+					// initSSE();
 					initStatusSockets()
 				}
 			}
