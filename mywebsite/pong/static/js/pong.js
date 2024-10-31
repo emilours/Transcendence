@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, initPongMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, drawMainMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
 const BALL_SPEED = 0.1; //not needed i think
@@ -16,6 +16,8 @@ const PLAYER_IMG_SIZE = 200;
 const LOADING_IMG_SIZE = 70;
 const TOURNAMENT_LOADING_IMG_SIZE = 30;
 const PLAYER_READY = 1;
+const NORMAL_CHECKMARK_SIZE = 50;
+const TOURNAMENT_CHECKMARK_SIZE = 30;
 const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
@@ -28,12 +30,111 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 var userName;
 var socket;
 var userName;
-var scoreGeometry, scoreFont, gameOver;
-
-var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED}; //not needed i think
+var scoreGeometry, scoreFont;
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+
+function CreateGameOverlay()
+{
+	const gameOverlay = createElement('div', {className: 'overlay' },
+		createElement('h2', { innerText: ""}),
+		createElement('h3', { innerText: ""})
+	);
+	document.querySelector('.pong-container').appendChild(gameOverlay);
+}
+
+function UpdateGameOverlay(gameText, gameOver)
+{
+	const gameOverlay = document.querySelector('.overlay');
+	if (gameOverlay)
+	{
+		const overlayH2 = gameOverlay.querySelector('h2');
+		if (overlayH2)
+			overlayH2.innerText = "";
+
+		const overlayH3 = gameOverlay.querySelector('h3');
+		if (overlayH3)
+			overlayH3.innerText = gameText;
+
+		if (gameOver == 1)
+		{
+			if (overlayH2)
+				overlayH2.innerText = "WINNER";
+			let quitButton = gameOverlay.querySelector('button');
+			if (!quitButton)
+			{
+				quitButton = createButton('QUIT', () => {
+					gameOverlay.remove();
+					Cleanup();
+					CloseWebsocket();
+					window.location.href = window.location;
+					// drawMainMenu();
+				});
+			}
+
+			gameOverlay.appendChild(quitButton);
+		}
+
+	}
+}
+
+function RemoveGameOverlay()
+{
+	const gameOverlay = document.querySelector('.overlay');
+	if (gameOverlay)
+	{
+		document.querySelector('.pong-container').removeChild(gameOverlay);
+		gameOverlay.remove();
+	}
+}
+
+export function createButtonReady()
+{
+	let buttonReady = createButtonGreen('READY', () => {
+		if (buttonReady.innerText == 'READY')
+		{
+			buttonReady.style.backgroundColor = '#0ccf0c';
+			buttonReady.innerText = 'UNREADY';
+		}
+		else
+		{
+			buttonReady.style.backgroundColor = '#5fbfff';
+			buttonReady.innerText = 'READY';
+		}
+		SendEvent('player_ready', userName, null);
+	});
+	return (buttonReady);
+}
+
+function createReadyCheckmark(size)
+{
+	const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
+
+	const readySquare = createElement('div', {className: 'ready-square'});
+
+	const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
+
+	// Create the SVG element with correct namespace
+	const svgElement = createElementNS(svgNS, 'svg', {
+		width: size,  // Adjust the size for debugging
+		height: size,
+		viewBox: '0 0 24 24',
+		// style: 'border: 1px solid red;' // Add a border to visually debug
+	});
+
+	// Create the path element with correct namespace
+	const pathElement = createElementNS(svgNS, 'path', {
+		d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
+		fill: 'green'  // Ensure the path has a visible color
+	});
+
+	svgElement.appendChild(pathElement);
+	readyCheckmark.appendChild(svgElement);
+	readySquare.appendChild(readyCheckmark);
+	return (readySquare);
+
+}
 
 function createElementNS(namespace, type, properties = {}, ...children) {
 	const element = document.createElementNS(namespace, type);
@@ -50,11 +151,14 @@ function createElementNS(namespace, type, properties = {}, ...children) {
     //What it does: This method explicitly sets attributes on the DOM element. This is the way to add standard HTML attributes (like class, data-* attributes, etc.) to the element's markup.
     //Use Case: Use this when you need to set HTML attributes that are visible in the markup, including custom or non-standard attributes (like data- attributes).
     //Behavior: The setAttribute method sets an attribute directly on the HTML element itself, meaning the attribute will be visible in the HTML and DOM tree. It only applies to attributes, not properties.
-	
+
 	children.forEach(child => element.appendChild(child));
 	return element;
 }
 
+
+// 'button' --> button type (same as 'div')
+// '.button' --> button className
 function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 {
 
@@ -83,43 +187,29 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				playerImage.style.margin = '65px';
 		}
 
-		const readyButton = playerInfo.querySelector('.button.green');
-		if (!readyButton && ready == 1)
+		let readyCheckmark = playerInfo.querySelector('.ready-square');
+		if (readyCheckmark)
 		{
-			// 'button' --> button type (same as 'div')
-			// '.button' --> button className
-			let readySquare;
-			readySquare = playerInfo.querySelector('.ready-square');
-			if (!readySquare)
+			playerInfo.removeChild(readyCheckmark);
+			readyCheckmark.remove();
+		}
+		let readyButton = playerInfo.querySelector('.button.green');
+		if (!readyButton && user == userName)
+		{
+			readyButton = createButtonReady();
+			playerInfo.appendChild(readyButton);
+		}
+		else if (user != userName)
+		{
+			if (readyButton)
 			{
-				const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
-
-				const readySquare = createElement('div', {className: 'ready-square'});
-
-				const readyCheckmark = createElement('div', {className: 'ready-checkmark'});
-				
-				// Create the SVG element with correct namespace
-				const svgElement = createElementNS(svgNS, 'svg', { 
-					width: '100',  // Adjust the size for debugging
-					height: '100', 
-					viewBox: '0 0 24 24',
-					style: 'border: 1px solid red;' // Add a border to visually debug
-				});
-
-				// Create the path element with correct namespace
-				const pathElement = createElementNS(svgNS, 'path', {
-					d: 'M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z',
-					fill: 'green'  // Ensure the path has a visible color
-				});
-
-				svgElement.appendChild(pathElement);
-				readyCheckmark.appendChild(svgElement);
-				readySquare.appendChild(readyCheckmark);
-
-				// if (!readySquare)
-				// 	console.error("Error creating readySquare element");
-				playerInfo.appendChild(readySquare);
-				console.log("checkmark created successfully:", readySquare);
+				playerInfo.removeChild(readyButton);
+				readyButton.remove();
+			}
+			if (ready == 1)
+			{
+				const readyCheckmark = createReadyCheckmark(NORMAL_CHECKMARK_SIZE);
+				playerInfo.appendChild(readyCheckmark);
 			}
 		}
 	}
@@ -127,65 +217,64 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 
 function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
-/* 	console.log(userName, "update: ", user);
+	console.log(userName, "update: ", user);
+	if (!playerInfo)
+		return;
 	if (user == undefined)
 		user = WAITING_FOR_PLAYER;
-    if (playerInfo)
-    {
-        const playerUsername = playerInfo.querySelectorAll('h4');
-        if (playerUsername[1]) {
-            playerUsername[1].innerText = user;
-        }
 
-        const playerDiv = playerInfo.querySelector('div');
-        const loadingImg = playerDiv.querySelector('img');
-		// might have to remove readyButton in some cases
-		if (user == WAITING_FOR_PLAYER && !loadingImg)
+	const playerUsername = playerInfo.querySelectorAll('h4');
+	if (playerUsername[1]) {
+		playerUsername[1].innerText = user;
+	}
+
+	const playerDiv = playerInfo.querySelector('div');
+	let readyButton = playerDiv.querySelector('button');
+
+	let loadingImg = playerDiv.querySelector('img');
+	let readyCheckmark = playerDiv.querySelector('.ready-square');
+	if (readyCheckmark)
+	{
+		playerDiv.removeChild(readyCheckmark);
+		readyCheckmark.remove();
+	}
+
+	if (user == WAITING_FOR_PLAYER) // 'Waiting for a player' + 'loading.gif'
+	{
+		if (readyButton)
 		{
-			const readyButton = playerDiv.querySelector('button');
-			if (readyButton)
-			{
-				playerDiv.removeChild(readyButton);
-				readyButton.remove();
-			}
-			let loading = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
-			playerDiv.appendChild(loading);
+			playerDiv.removeChild(readyButton);
+			readyButton.remove();
 		}
-		else if (user == userName)
+		if (!loadingImg)
 		{
-			if (loadingImg)
-			{
-				playerDiv.removeChild(loadingImg);
-				loadingImg.remove();
-			}
-			let readyElement = createButtonGreen('READY', () => {
-				readyElement.style.backgroundColor = '#0ccf0c';
-				readyElement.innerText = 'OK';
-				console.log("READY button clicked");
-				//HERE
-				SendEvent('player_ready', userName, null);
-			});
-			playerDiv.appendChild(readyElement);
+			loadingImg = createElement('img', { src: LOADING_IMG, width: TOURNAMENT_LOADING_IMG_SIZE, height: TOURNAMENT_LOADING_IMG_SIZE});
+			playerDiv.appendChild(loadingImg);
 		}
-		else
+	}
+	else // username + empty OU username + 'READY' OU username + checkmark
+	{
+		if (loadingImg)
 		{
-			let readySquare = createElement('div', {className: 'ready-square'},
-				createElement('div', {className: 'ready-checkmark'},
-					createElement('svg', {xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24'},
-						createElement('path', {d: 'M9 16.2l-3.5-3.5-1.4 1.4 4.9 4.9 12-12-1.4-1.4z'})
-					)
-				)
-			);
-			if (!readySquare)
-				console.error("Error creating readySquare element");
-			playerDiv.appendChild(readySquare);
-			if (ready == 1)
-			{
-				// checkmark
-				toggleReady(readySquare);
-			}
+			playerDiv.removeChild(loadingImg);
+			loadingImg.remove();
 		}
-    } */
+		if (!readyButton && user == userName)
+		{
+			readyButton = createButtonReady();
+			playerDiv.appendChild(readyButton);
+		}
+		else if (readyButton && user != userName)
+		{
+			playerDiv.removeChild(readyButton);
+			readyButton.remove();
+		}
+		if (!readyButton && ready == 1)
+		{
+			readyCheckmark = createReadyCheckmark(TOURNAMENT_CHECKMARK_SIZE);
+			playerDiv.appendChild(readyCheckmark);
+		}
+	}
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
@@ -226,6 +315,8 @@ export function ConnectWebsocket(type, username)
 	// WEBSOCKET
 	running = true;
 	userName = username;
+	leftPlayerScore = 0;
+	rightPlayerScore = 0;
 	InitCustomAlerts();
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
@@ -352,6 +443,36 @@ export function ConnectWebsocket(type, username)
 				UpdateLobbyOnline(data.users[i], data.avatars[i], data.ready[i], playerInfoNormal[i]);
 		}
 	});
+
+    socket.on('player_reconnect', function(data) {
+        const user = data.username;
+        const lobbyId = data.lobby_id;
+        const gameType = data.game_type;
+
+        let menu = document.querySelector('.menu');
+        if (menu)
+            menu.remove(); // removeChild ?
+        if (gameType == NORMAL_MODE)
+            drawLobbyOnline('create');
+        else if (game_type == TOURNAMENT_MODE)
+            drawLobbyTournament('create');
+		CustomAlert("You were in a game, joining lobby...");
+    });
+	//HERE
+	socket.on('update_overlay', function(data) {
+		const gameText = data.text;
+		const gameOver = data.game_over;
+		if (gameText != '')
+		{
+			if (!document.querySelector('.overlay'))
+				CreateGameOverlay();
+			console.log("text:", gameText);
+			UpdateGameOverlay(gameText, gameOver);
+		}	
+		else
+			RemoveGameOverlay();
+
+	});
 }
 
 export function CloseWebsocket() {
@@ -417,39 +538,26 @@ function onWindowResize()
 
 function StartGame()
 {
-// TODO: I think i should load everything (all font, textures...) before initializing the rest
 	Load();
 	Init();
 	socket.on('game_update', function(data) {
-		console.log(data);
-		// let data = JSON.parse(e.data);
-		// console.log('Data:', data);
 
-		if (data.ballPosition && data.ballVelocity && data.pos
-			&& data.players && data.scores && typeof data.game_over !== 'undefined')
+		ball.position.x = parseFloat(data.ballPosition[0]);
+		ball.position.y = parseFloat(data.ballPosition[1]);
+		leftPaddle.position.y = parseFloat(data.pos[0]);
+		rightPaddle.position.y = parseFloat(data.pos[1]);
+		let player1Score = parseFloat(data.scores[0]);
+		let player2Score = parseFloat(data.scores[1]);
+
+		if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
 		{
-			ball.position.x = parseFloat(data.ballPosition[0]);
-			ball.position.y = parseFloat(data.ballPosition[1]);
-			ballSpeed.x = parseFloat(data.ballVelocity[0]); //not needed i think
-			ballSpeed.y = parseFloat(data.ballVelocity[1]); //not needed i think
-			leftPaddle.position.y = parseFloat(data.pos[0]);
-			rightPaddle.position.y = parseFloat(data.pos[1]);
-			gameOver = parseInt(data.game_over);
-			let player1Score = parseFloat(data.scores[0]);
-			let player2Score = parseFloat(data.scores[1]);
-
-			if (player1Score != leftPlayerScore || player2Score != rightPlayerScore)
-			{
-				leftPlayerScore = player1Score;
-				rightPlayerScore = player2Score;
-				createScoreText();
-			}
+			leftPlayerScore = player1Score;
+			rightPlayerScore = player2Score;
+			createScoreText();
 		}
 		// overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
-
 	});
 	Loop();
-	//Cleanup();
 }
 
 function Load()
@@ -491,36 +599,6 @@ function createScoreText()
 	const scoreMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 	scoreMesh = new THREE.Mesh(scoreGeometry, scoreMaterial);
 
-	if (gameOver == 1)
-	{
-		const gameOverGeometry = new TextGeometry ("GAME OVER", {
-			font: scoreFont,
-			size: 1.5,
-			// !!!! Use height and not depth
-			height: 0.2,
-			curveSegments: 12,
-			bevelEnabled: true,
-			bevelThickness: 0.03,
-			bevelSize: 0.02,
-			bevelOffset: 0,
-			bevelSegments: 5
-		});
-
-		const gameOverMaterial = new THREE.MeshBasicMaterial({color: 0xbd4500});
-		const gameOverMesh = new THREE.Mesh(gameOverGeometry, gameOverMaterial);
-
-
-		gameOverGeometry.computeBoundingBox();
-		const gameOverBB = gameOverGeometry.boundingBox;
-		const gameOverSize = new THREE.Vector3();
-		gameOverBB.getSize(gameOverSize);
-		gameOverMesh.position.x = -gameOverSize.x / 2;
-		gameOverMesh.position.y = -gameOverSize.y / 2;
-		gameOverMesh.position.z = -gameOverSize.z / 2;
-		gameOverMesh.position.z += 3;
-		scene.add(gameOverMesh);
-
-	}
 
 	// Compute the bounding box and center the score
 	scoreGeometry.computeBoundingBox();
@@ -699,7 +777,8 @@ function Loop()
 function Inputs()
 {
 	const inputEvent = 'pong_input'
-	// Info
+
+	//DEBUG
 	if (keys.i)
 	{
 		console.log("[INFO]");
@@ -709,6 +788,7 @@ function Inputs()
 	}
 
 	//CLIENT SIDE PADDLE INPUTS
+	// Maybe could rework that so it's faster (less event send) ?
 	if (keys.w)
 	{
 		socket.emit(inputEvent, JSON.stringify({
@@ -747,4 +827,32 @@ function Update()
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
+}
+
+function Cleanup()
+{
+	console.warn("CLEANING UP THREEJS");
+	while (scene.children.length > 0)
+	{
+        const child = scene.children[0];
+
+        // If the child is a mesh, dispose of its geometry and material
+        if (child instanceof THREE.Mesh) {
+            if (child.geometry) {
+                child.geometry.dispose(); // Dispose geometry
+            }
+            if (child.material) {
+                // If the material is an array (multiple materials), dispose each one
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => material.dispose());
+                } else {
+                    child.material.dispose(); // Dispose single material
+                }
+            }
+        }
+
+        // Remove the child from the scene
+        scene.remove(child);
+    }
+
 }

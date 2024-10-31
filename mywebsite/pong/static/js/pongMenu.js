@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent, createButtonReady } from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 const NORMAL_MODE = 'normal';
@@ -19,12 +19,6 @@ export function initPongMenu(username, userAvatar) {
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
-	// else if (event.key === 'c')
-	// 	SendEvent('create_lobby', userName, TOURNAMENT_MODE);
-	// else if (event.key === 'j')
-	// 	SendEvent('join_lobby', userName, 'admin');
-	// else if (event.key === 'k')
-	// 	SendEvent('player_ready', userName, null);
 	});
 
 	drawMainMenu();
@@ -39,7 +33,7 @@ export function cleanupPongMenu()
     userName = null;
 }
 
-function drawMainMenu() {
+export function drawMainMenu() {
 	const mainMenu = createElement('div', { className: 'menu' },
 		createElement('h1', { innerText: 'PUSHEEN\nPONG' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
@@ -68,11 +62,15 @@ export function drawOnlineMenu() {
 		createElement('h2', { innerText: 'ONLINE MATCH' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
 		createElement('div', { className: 'button-vertical' },
+			createButton('FAST SEARCH', () => {
+				onlineMenu.remove();
+				SendEvent('find_lobby', userName, NORMAL_MODE);
+				drawLobbyOnline('create'); // I think it doesn't matter but need to test !
+			}),
 			createButton('CREATE LOBBY', () => {
 				onlineMenu.remove();
 				SendEvent('create_lobby', userName, NORMAL_MODE);
 				drawLobbyOnline('create');
-				// UpdateMenu(lobbyMenu);
 			}),
 			createButton('JOIN LOBBY', () => {
 				onlineMenu.remove();
@@ -121,7 +119,7 @@ export function drawLobbyOnline(mode) {
 	let lobbyCode = createElement('h4', {innerText: '', style: 'co'});
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'ONLINE MATCH' }),
-		createElement('h3', { innerText: 'LOBBY CODE', style: 'margin-bottom: 20px;' }),
+		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
 		createElement('div', {
 			style: `
 				font-size: 1em;
@@ -181,12 +179,7 @@ function drawPlayerOnline(userName) {
 	const playerInfo = createElement('div', { className: 'button-vertical' },
 		createElement('img', { src: avatar, width: 200, height: 200 }),
 		createElement('h4', { innerText: userName }),
-		buttonReady = createButtonGreen('READY', () => {
-			buttonReady.style.backgroundColor = '#0ccf0c';
-			buttonReady.innerText = 'OK';
-			// UpdateMenu(lobbyMenu);
-			SendEvent('player_ready', userName, null);
-		})
+		buttonReady = createButtonReady()
 	);
 	return playerInfo;
 }
@@ -244,12 +237,16 @@ function drawTournament() {
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
 		createElement('div', { className: 'button-vertical' },
+			createButton('FAST SEARCH', () => {
+				onlineMenu.remove();
+				SendEvent('find_lobby', userName, TOURNAMENT_MODE);
+				drawLobbyTournament('create'); // I think it doesn't matter but need to test !
+			}),
 			createButton('CREATE TOURNAMENT', () => {
 				onlineMenu.remove();
 				console.log("CREATE TOURNAMENT button clicked")
 				SendEvent('create_lobby', userName, TOURNAMENT_MODE);
 				drawLobbyTournament('create');
-				// TODO: rework UpdateMenu();
 			}),
 			createButton('JOIN TOURNAMENT', () => {
 				onlineMenu.remove();
@@ -266,7 +263,7 @@ function drawTournament() {
 	document.querySelector('.pong-container').appendChild(onlineMenu);
 }
 
-function drawLobbyTournament(mode) {
+export function drawLobbyTournament(mode) {
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
@@ -320,7 +317,7 @@ function drawPlayerTournament(userName, position) {
 		const playerInfo = createElement('div', { className: 'button-horizontal', style: 'height: 50px;' },
 			createElement('h4', { innerText: 'Player' + position + ': ' }),
 			createElement('h4', { innerText: 'Waiting for a player', style: 'width: 300px;' }),
-			createElement('div', { style: 'width: 100px;' },
+			createElement('div', { style: 'width: 100px;' }, // HERE
 				createElement('img', { src: '/static/img/loading.gif', width: 30, height: 30 })
 			)
 		);
@@ -330,14 +327,10 @@ function drawPlayerTournament(userName, position) {
 	let buttonReady;
 
 	const playerInfo = createElement('div', { className: 'button-horizontal', style: 'height: 50px;' },
-		createElement('h4', { innerText: 'Player' + position + ': ' }),
-		createElement('h4', { innerText: userName, style: 'width: 300px;' }),
-		createElement('div', { style: 'width: 100px;' },
-			buttonReady = createButtonGreen('READY', () => {
-				buttonReady.style.backgroundColor = '#0ccf0c';
-				buttonReady.innerText = 'OK';
-				console.log("READY button clicked");
-			})
+			createElement('h4', { innerText: 'Player' + position + ': ' }),
+			createElement('h4', { innerText: userName, style: 'width: 300px;' }),
+			createElement('div', { style: 'width: 100px;' },
+			buttonReady = createButtonReady()
 		)
 	);
 	return playerInfo;

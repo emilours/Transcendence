@@ -67,13 +67,15 @@ games = {}
 #     'https://localhost:8080',
 #     'https://admin.socket.io',
 # ])
+
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
     ssl_verify=False,  # Disable SSL verification if self-signed
-    logger=True,
-    engineio_logger=True
+    # logger=True, # Additional logs
+    # engineio_logger=True # Additional logs
     )
+
 # if instrument:
 #     sio.instrument(auth=admin_login)
 
@@ -117,7 +119,6 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
     player1 = CustomUser.objects.filter(display_name=games[room_id]['players'][player_1_index])
     if player1.exists():
         player1 = player1.first()
-        log(player1)
 
     score1 = games[room_id]['scores'][player_1_index]
     if score1 >= WINNING_SCORE :
@@ -131,7 +132,7 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
     player2 = CustomUser.objects.filter(display_name=games[room_id]['players'][player_2_index])
     if player2.exists():
         player2 = player2.first()
-        log(player2)
+
     score2 = games[room_id]['scores'][player_2_index]
     if score2 >= WINNING_SCORE :
         is_player_winner = True
@@ -147,90 +148,114 @@ def GetPlayersAvatar(room_id):
     avatars = []
     for i in range (0, 4):
         if i < len(games[room_id]['players']) and games[room_id]['players'][i] is not None:
-            # log(f"{i} initialized: {games[room_id]['players']}")
             player = CustomUser.objects.filter(display_name=games[room_id]['players'][i])
             if player.exists():
                 player = player.first()
                 avatars.append(player.avatar.url)
-        # else:
-        #   log(f"{i} not initialized!")
     return (avatars)
 
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
-    game_type = games[room_id]['game_type']
-    sid1 = games[room_id]['sids'][player_1_index]
-    sid2 = games[room_id]['sids'][player_2_index]
-    username1 = games[room_id]['players'][player_1_index]
-    username2 = games[room_id]['players'][player_2_index]
+    game = games[room_id]
+    sid1 = game['sids'][player_1_index]
+    sid2 = game['sids'][player_2_index]
+    game['status'] = "running"
+    game_type = game['game_type']
+    await GameCountDown(room_id, "Game Starting", sid1, sid2)
+    # REWORK: needed only if i disconnect immediately
+    # username1 = game['players'][player_1_index]
+    # username2 = game['players'][player_2_index]
+    games[room_id]['last_time'] = time.time()
     delta_time = 0
-    current_task = asyncio.current_task()
-    while True:
-        while games[room_id]['status'] == "paused":
+    paused = 0
+    while True:        
+        if game['status'] == "paused":
+            log(f"Game {game['room_id']} is paused!")
+            paused = 1
+        while game['status'] == "paused":
             await asyncio.sleep(1 / 2)
-            log("GAME IS PAUSE, SLEEPING!")
+        if paused == 1:
+            paused = 0
+            await GameCountDown(room_id, "Game Restarting", sid1, sid2)
+            log(f"Game {game['room_id']} is resuming")
 
         # Delta time
         current_time = time.time()
-        delta_time = current_time - games[room_id]['last_time']
-        games[room_id]['delta_time'] = delta_time
-        games[room_id]['last_time'] = current_time
+        delta_time = current_time - game['last_time']
+        game['delta_time'] = delta_time
+        game['last_time'] = current_time
 
         # Handle collisions with walls
-        if games[room_id]['ballPosition'][1] <= BOTTOM_WALL or games[room_id]['ballPosition'][1] >= TOP_WALL:
-            games[room_id]['ballVelocity'][1] *= -1
+        if game['ballPosition'][1] <= BOTTOM_WALL or game['ballPosition'][1] >= TOP_WALL:
+            game['ballVelocity'][1] *= -1
 
         # Handle paddle collisions
-        if (abs(games[room_id]['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][player_1_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
-            games[room_id]['ballVelocity'][0] *= -1
-            games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * PADDLE_WIDTH
-        if (abs(games[room_id]['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
-            abs(games[room_id]['ballPosition'][1] - games[room_id]['pos'][player_2_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
-            games[room_id]['ballVelocity'][0] *= -1
-            games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * PADDLE_WIDTH
+        if (abs(game['ballPosition'][0] - PLAYER1_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+            abs(game['ballPosition'][1] - game['pos'][player_1_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            game['ballVelocity'][0] *= -1
+            game['ballPosition'][0] += game['ballVelocity'][0] * PADDLE_WIDTH
+        if (abs(game['ballPosition'][0] - PLAYER2_X) <= PADDLE_WIDTH / 2 + BALL_SIZE / 2 and
+            abs(game['ballPosition'][1] - game['pos'][player_2_index]) <= PADDLE_HEIGHT / 2 + BALL_SIZE / 2): #
+            game['ballVelocity'][0] *= -1
+            game['ballPosition'][0] += game['ballVelocity'][0] * PADDLE_WIDTH
 
         # Handle scoring
-        if games[room_id]['ballPosition'][0] >= RIGHT_WALL:
-            games[room_id]['scores'][player_1_index] += 1 #
+        if game['ballPosition'][0] >= RIGHT_WALL:
+            game['scores'][player_1_index] += 1 #
             reset_ball(room_id)
-        elif games[room_id]['ballPosition'][0] <= LEFT_WALL:
-            games[room_id]['scores'][player_2_index] += 1 #
+        elif game['ballPosition'][0] <= LEFT_WALL:
+            game['scores'][player_2_index] += 1 #
             reset_ball(room_id)
 
-        if games[room_id]['scores'][player_1_index] >= WINNING_SCORE: #
-            log(f"player 1 {games[room_id]['players'][player_1_index]} won the game")
-            games[room_id]['game_over'] = 1
-        elif games[room_id]['scores'][player_2_index] >= WINNING_SCORE: #
-            log(f"player 2 {games[room_id]['players'][player_2_index]} won the game")
-            games[room_id]['game_over'] = 1
-
+        if game['scores'][player_1_index] >= WINNING_SCORE: #
+            log(f"player 1 {game['players'][player_1_index]} won the game")
+            game['game_over'] = 1
+        elif game['scores'][player_2_index] >= WINNING_SCORE: #
+            log(f"player 2 {game['players'][player_2_index]} won the game")
+            game['game_over'] = 1
 
 
         # Update the ball position
-        games[room_id]['ballPosition'][0] += games[room_id]['ballVelocity'][0] * BALL_SPEED * delta_time
-        games[room_id]['ballPosition'][1] += games[room_id]['ballVelocity'][1] * BALL_SPEED * delta_time
+        game['ballPosition'][0] += game['ballVelocity'][0] * BALL_SPEED * delta_time
+        game['ballPosition'][1] += game['ballVelocity'][1] * BALL_SPEED * delta_time
 
 
-        # Broadcast the updated game state to all clients
-        await sio.emit('game_update', games[room_id], room=room_id)
+        # Broadcast the updated game state to both players
+        data = {
+            'ballPosition': game['ballPosition'],
+            'pos': [game['pos'][player_1_index], game['pos'][player_2_index]],
+            'scores': [game['scores'][player_1_index], game['scores'][player_2_index]]
+        }
+        await sio.emit('game_update', data, to=[sid1, sid2])
+
 
 
         # Check if game is over
-        if games[room_id]['game_over'] == 1 and current_task:
+        if game['game_over'] == 1:
             await SaveMatch(room_id, game_type, player_1_index, player_2_index)
-            # TODO: don't disconnect if game_type == TOURNAMENT
-            current_task.cancel()
-            current_task = None
-            if (game_type == NORMAL_GAME):
-                log(f"calling disconnect for {sid1}")
-                # await sio.disconnect(sid1)
-                await LeaveLobby(sid1, username1)
-                log(f"calling disconnect for {sid2}")
-                # await sio.disconnect(sid2)
-                await LeaveLobby(sid2, username2)
-            return
+            game['status'] = "completed"
+            if game['scores'][player_1_index] >= 5:
+                winner = game['players'][player_1_index]
+            else:
+                winner = game['players'][player_2_index] 
+            data = {
+                'text': winner,
+                'game_over': game['game_over']
+            }
+            await sio.emit('update_overlay', data, to=[sid1, sid2])
+
+            # IMPORTANT: if you cancel the task it doesn't finish properly and so the await keeps awaiting
+            # current_task.cancel()
+            # current_task = None
+            # Reset data for next matches (tournament)
+            for i in range(len(game['scores'])):
+                game['scores'][i] = 0
+            for i in range(len(game['pos'])):
+                game['pos'][i] = 0
+            reset_ball(room_id)
+            game['game_over'] = 0
+            return winner
 
 
         # Control the game loop speed
@@ -269,7 +294,6 @@ def GetAvailableRoom(game_type):
                 return game['room_id']
     return None
 
-
 def CreateRoom(game_type):
     global games
     room_id = str(uuid.uuid4())
@@ -288,22 +312,34 @@ def CreateRoom(game_type):
         'last_time': 0,
         'delta_time': 0,
         'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
-	}
+    }
     log(f"Room {room_id} created")
     return room_id
 
-async def JoinRoom(sid, username, room_id):
+async def JoinRoom(sid, username, room_id, new):
     global games
     if room_id not in games:
         log(f"[Error] Can't join room {room_id}")
         return
-    index = games[room_id]['player_count']
-    games[room_id]['players'].insert(index, username)
-    games[room_id]['sids'].insert(index, sid)
-    games[room_id]['scores'].insert(index, 0)
-    games[room_id]['pos'].insert(index, 0)
-    games[room_id]['ready'].insert(index, 0)
-    games[room_id]['player_count'] += 1
+    if (new == -1):
+        index = games[room_id]['players'].index(username)
+        games[room_id]['sids'][index] = sid
+        games[room_id]['ready'][index] = 0
+        data = {
+            'lobby_id': room_id[:8],
+            'game_type': games[room_id]['game_type'],
+            'username': username
+        }
+        await sio.emit('player_reconnect', data, to=sid)
+    else:
+        index = games[room_id]['player_count']
+        games[room_id]['sids'].insert(index, sid)
+        games[room_id]['players'].insert(index, username)
+        games[room_id]['scores'].insert(index, 0)
+        games[room_id]['pos'].insert(index, 0.0)
+        games[room_id]['ready'].insert(index, 0)
+        games[room_id]['player_count'] += 1
+
     await sio.enter_room(sid, room_id)
     log(f"User [{username}] joined room [{room_id}]")
 
@@ -414,47 +450,84 @@ async def PongInput(sid, text_data):
     room_id = session.get('room_id')
     log(f"room: {room_id}")
 
-    delta_time = games[room_id]['delta_time']
-    if username == games[room_id]['players'][0]:
-        if action == 'up':
-            games[room_id]['pos'][0] += PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][0] + PADDLE_HEIGHT / 2 > TOP_WALL:
-                games[room_id]['pos'][0] = TOP_WALL - PADDLE_HEIGHT / 2
-        elif action == 'down':
-            games[room_id]['pos'][0] -= PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][0] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-                games[room_id]['pos'][0] = BOTTOM_WALL + PADDLE_HEIGHT / 2
-    else:
-        if action == 'up':
-            games[room_id]['pos'][1] += PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][1] + PADDLE_HEIGHT / 2 > TOP_WALL:
-                games[room_id]['pos'][1] = TOP_WALL - PADDLE_HEIGHT / 2
-        elif action == 'down':
-            games[room_id]['pos'][1] -= PADDLE_SPEED * delta_time
-            if games[room_id]['pos'][1] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
-                games[room_id]['pos'][1] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+    game = games[room_id]
+
+    player_index = game['players'].index(username)
+
+
+    delta_time = game['delta_time']
+
+    if action == 'up':
+        game['pos'][player_index] += PADDLE_SPEED * delta_time
+        if game['pos'][player_index] + PADDLE_HEIGHT / 2 > TOP_WALL:
+            game['pos'][player_index] = TOP_WALL - PADDLE_HEIGHT / 2
+    elif action == 'down':
+        game['pos'][player_index] -= PADDLE_SPEED * delta_time
+        if game['pos'][player_index] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
+            game['pos'][player_index] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
 async def StartTournament(sid, room_id):
     global games
 
     # TODO: MAKE IT so one of the players playing the tournament runs the game loop!
     log(f"Starting Tournament")
+    # NOTE: THIS WILL BE AN ISSUE IF A PLAYER LEAVE (after his game) maybe need to play with status
     player_index_list = [0, 1, 2, 3]
     random.shuffle(player_index_list)
     log(f"index list: {player_index_list}")
-    games[room_id]['last_time'] = time.time()
-    asyncio.create_task(StartGameLoop(sid, room_id), player_index_list[0], player_index_list[1])
-    color_print(RED, "TEST")
+
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[0], player_index_list[1]))
+    winner1 = await game_task
+    color_print(BLUE, f"Game 1 finished: {winner1}")
+    winner1_index = games[room_id]['players'].index(winner1)
+    
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[2], player_index_list[3]))
+    winner2 = await game_task
+    color_print(BLUE, f"Game 2 finished: {winner2}")
+    winner2_index = games[room_id]['players'].index(winner2)
+
+
+    color_print(GREEN, f"Final game will oppose '{games[room_id]['players'][winner1_index]}' to '{games[room_id]['players'][winner2_index]}'")
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, winner1_index, winner2_index))
+    winner = await game_task
+    color_print(RED, f"Final game finished: {winner}, GG!")
+
+
+async def SaveSession(sid, username, room_id):
+    await sio.save_session(sid, {
+        'username': username,
+        'room_id': room_id
+    })
+
+
+async def GameCountDown(room_id, message, sid1, sid2):
+    global games
+
+    game_over = games[room_id]['game_over']
+    for i in range(3):
+        data = {
+            'text': message + ": " + str(3 - i),
+            'game_over': game_over 
+        }
+        await sio.emit('update_overlay', data, to=[sid1, sid2])
+        await asyncio.sleep(1)
+
+    data = {
+        'text': "",
+        'game_over': game_over
+    }
+    await sio.emit('update_overlay', data, to=[sid1, sid2])
+
 
 @sio.on('start_game')
 async def StartGame(sid, username):
     global games
 
-    log('StartGame()')
     room_id = GetUserRoom(username)
-    # Used so only one socketio connection runs the game loop
-    # TODO: change this for tournament (index of player that runs loop)
     if (username != games[room_id]['players'][0]):
+        return
+    if (games[room_id]['status'] == "paused"):
+        games[room_id]['status'] = 'running'
         return
     room_full = IsRoomFull(room_id)
     log(f"room_full: {room_full}")
@@ -486,10 +559,7 @@ async def JoinLobby(sid, username, room_key):
     log(f"JoinLobby() username: {username}, room_key: {room_key}")
     room_id = GetUserRoom(username)
     if room_id is not None:
-        await sio.save_session(sid, {
-            'username': username,
-            'room_id': room_id
-            })
+        await SaveSession(sid, username, room_id)
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
@@ -511,14 +581,21 @@ async def JoinLobby(sid, username, room_key):
         return
 
     log("JOIN SUCCESSFULL")
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
-    await JoinRoom(sid, username, room_id)
+    await SaveSession(sid, username, room_id)
+    await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
+@sio.on('find_lobby')
+async def FindLobby(sid, username, game_type):
+    room_id = GetAvailableRoom(game_type)
+    if room_id is None:
+        log("No available lobby, creating a new one")
+        room_id = CreateRoom(game_type)
+    await JoinRoom(sid, username, room_id, 0)
+    await SaveSession(sid, username, room_id)
+    await sio.emit('user_joined', username)
+    await SendLobbyData(sid)
 
 @sio.on('create_lobby')
 async def CreateLobby(sid, username, game_type):
@@ -533,13 +610,10 @@ async def CreateLobby(sid, username, game_type):
         log(f"User [{username}] joined room [{room_id}]")
     else:
         room_id = CreateRoom(game_type)
-        await JoinRoom(sid, username, room_id)
+        await JoinRoom(sid, username, room_id, 0)
     # room_id = GetAvailableRoom(game_type)
     # if room_id is None:
-    await sio.save_session(sid, {
-        'username': username,
-        'room_id': room_id
-        })
+    await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid)
 
@@ -566,6 +640,11 @@ async def Connect(sid, environ):
         return False
     connected_users[sid] = username
     log(f"User {username} connected ({sid})")
+    room_id = GetUserRoom(username)
+    if room_id is not None:
+        await SaveSession(sid, username, room_id)
+        await JoinRoom(sid, username, room_id, -1)
+        await SendLobbyData(sid)
 
 
 @sio.on('message')
@@ -578,6 +657,10 @@ async def Message(sid, data):
 async def disconnect(sid):
     global games, client_count, connected_users
 
+
+    if sid in connected_users:
+        del connected_users[sid]
+
     client_count -= 1
     await sio.emit('client_count', client_count)
 
@@ -586,17 +669,20 @@ async def disconnect(sid):
         log(f"session in disconnect: {session}")
         room_id = session.get('room_id')
         username = session.get('username')
-        if await LeaveRoom(sid, username, room_id) == False:
+        if games[room_id]['status'] == "running":
+            log("game paused")
+            games[room_id]['status'] = "paused"
+            await PlayerReady(sid, username)
+            await sio.leave_room(sid, room_id)
+            await sio.emit('user_left', username)
             log(f"User {username} disconnected ({sid})")
             return
 
-        if sid in connected_users:
-            del connected_users[sid]
-        if games[room_id]['player_count'] == 0:
-            games[room_id] = {}
-            del games[room_id]
+        await LeaveRoom(sid, username, room_id)
         await sio.emit('user_left', username)
         log(f"User {username} disconnected ({sid})")
+        # TEST
+        await DebugPrint(sid, username)
     except KeyError:
         log(f"No session found for {sid}")
 
@@ -627,10 +713,11 @@ async def DebugPrint(sid, username):
         color_print(BLUE, f"id: {game['room_id']}")
         color_print(BLUE, f"type: {game['game_type']}")
         color_print(BLUE, f"status: {game['status']}")
+        color_print(BLUE, f"player_count: {game['player_count']}")
         color_print(BLUE, f"players: {game['players']}")
         color_print(BLUE, f"sids: {game['sids']}")
         color_print(BLUE, f"ready: {game['ready']}")
-        color_print(BLUE, f"ready: {game['scores']}")
+        color_print(BLUE, f"score: {game['scores']}")
         print("")
 
     color_print(DARK_GRAY, f"---------------------\n\n")
