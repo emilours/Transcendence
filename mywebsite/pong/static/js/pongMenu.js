@@ -101,14 +101,17 @@ function drawJoinMenu(mode) {
 			if (mode === NORMAL_MODE)
 				drawLobbyOnline('join');
 			else
-				drawLobbyTournament('join');
+				drawLobbyTournament();
 			// UpdateMenu(lobbyMenu);
 		}),
 	);
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
-		drawOnlineMenu();
+		if (mode === NORMAL_MODE)
+			drawOnlineMenu();
+		else
+			drawTournament();
 	});
 	lobbyMenu.appendChild(backButton);
 
@@ -240,18 +243,18 @@ function drawTournament() {
 			createButton('FAST SEARCH', () => {
 				onlineMenu.remove();
 				SendEvent('find_lobby', userName, TOURNAMENT_MODE);
-				drawLobbyTournament('create'); // I think it doesn't matter but need to test !
+				drawLobbyTournament(); // I think it doesn't matter but need to test !
 			}),
 			createButton('CREATE TOURNAMENT', () => {
 				onlineMenu.remove();
 				console.log("CREATE TOURNAMENT button clicked")
 				SendEvent('create_lobby', userName, TOURNAMENT_MODE);
-				drawLobbyTournament('create');
+				drawLobbyTournament();
 			}),
 			createButton('JOIN TOURNAMENT', () => {
 				onlineMenu.remove();
 				drawJoinMenu(TOURNAMENT_MODE);
-				// drawLobbyTournament('join');
+
 			}),
 			createButton('BACK', () => {
 				onlineMenu.remove();
@@ -263,7 +266,7 @@ function drawTournament() {
 	document.querySelector('.pong-container').appendChild(onlineMenu);
 }
 
-export function drawLobbyTournament(mode) {
+export function drawLobbyTournament() {
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
@@ -274,32 +277,17 @@ export function drawLobbyTournament(mode) {
 	let player3Info;
 	let player4Info;
 
-	if (mode === 'create') {
-		let playerInfo = createElement('div', { className: 'button-vertical' },
-			player1Info = drawPlayerTournament(userName, 1),
-			createElement('hr', { style: 'width: 100%;' }),
-			player2Info = drawPlayerTournament('waiting', 2),
-			createElement('hr', { style: 'width: 100%;' }),
-			player3Info = drawPlayerTournament('waiting', 3),
-			createElement('hr', { style: 'width: 100%;' }),
-			player4Info = drawPlayerTournament('waiting', 4),
 
-		);
-		lobbyMenu.appendChild(playerInfo);
-	}
-    if (mode === 'join')
-    {
-        let playerInfo = createElement('div', { className: 'button-vertical' },
-            player1Info = drawPlayerTournament('waiting', 1),
-			createElement('hr', { style: 'width: 100%;' }),
-			player2Info = drawPlayerTournament('waiting', 2),
-			createElement('hr', { style: 'width: 100%;' }),
-			player3Info = drawPlayerTournament('waiting', 3),
-			createElement('hr', { style: 'width: 100%;' }),
-			player4Info = drawPlayerTournament('waiting', 4),
-        );
-        lobbyMenu.appendChild(playerInfo);
-    }
+	let playerInfo = createElement('div', { className: 'button-vertical' },
+		player1Info = drawPlayerTournament('waiting', 1),
+		createElement('hr', { style: 'width: 100%;' }),
+		player2Info = drawPlayerTournament('waiting', 2),
+		createElement('hr', { style: 'width: 100%;' }),
+		player3Info = drawPlayerTournament('waiting', 3),
+		createElement('hr', { style: 'width: 100%;' }),
+		player4Info = drawPlayerTournament('waiting', 4),
+	);
+	lobbyMenu.appendChild(playerInfo);
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
@@ -317,7 +305,7 @@ function drawPlayerTournament(userName, position) {
 		const playerInfo = createElement('div', { className: 'button-horizontal', style: 'height: 50px;' },
 			createElement('h4', { innerText: 'Player' + position + ': ' }),
 			createElement('h4', { innerText: 'Waiting for a player', style: 'width: 300px;' }),
-			createElement('div', { style: 'width: 100px;' }, // HERE
+			createElement('div', { style: 'width: 100px;' },
 				createElement('img', { src: '/static/img/loading.gif', width: 30, height: 30 })
 			)
 		);
@@ -330,8 +318,8 @@ function drawPlayerTournament(userName, position) {
 			createElement('h4', { innerText: 'Player' + position + ': ' }),
 			createElement('h4', { innerText: userName, style: 'width: 300px;' }),
 			createElement('div', { style: 'width: 100px;' },
-			buttonReady = createButtonReady()
-		)
+				buttonReady = createButtonReady()
+			)
 	);
 	return playerInfo;
 }

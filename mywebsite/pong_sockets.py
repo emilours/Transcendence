@@ -43,9 +43,12 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
+
 MAX_PLAYER_NORMAL = 2
 MAX_PLAYER_TOURNAMENT = 4
 
+PRIVATE_LOBBY = 1
+PUBLIC_LOBBY = 0
 NORMAL_GAME = 'normal'
 TOURNAMENT_GAME = 'tournament'
 GAME_NAME = 'Pong'
@@ -89,11 +92,17 @@ def log(message):
 def color_print(color, message):
     print(color + message + RESET)
 
+def random_ball_vel():
+    x = random.choice([-BALL_SPEED, BALL_SPEED])
+    y = random.choice([-BALL_SPEED, BALL_SPEED])
+    return [x, y]
+
 def reset_ball(room_id):
 
     # Reset the ball position and velocity after scoring
     games[room_id]['ballPosition'] = [0, 0]
-    games[room_id]['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
+    # games[room_id]['ballVelocity'] = [-BALL_SPEED, -BALL_SPEED]
+    games[room_id]['ballVelocity'] = random_ball_vel()
 
 # HERE adjust the code so it works with new games {}
 # 'player1'
@@ -287,19 +296,20 @@ def GetAvailableRoom(game_type):
     global games
 
     for game in games.values():
-        if 'game_type' in game and game['game_type'] == game_type:
+        if 'game_type' in game and game['game_type'] == game_type and game['status'] != "completed" and game['private'] != PRIVATE_LOBBY:
             if game_type == NORMAL_GAME and game['player_count'] < MAX_PLAYER_NORMAL:
                 return game['room_id']
             elif game_type == TOURNAMENT_GAME and game['player_count'] < MAX_PLAYER_TOURNAMENT:
                 return game['room_id']
     return None
 
-def CreateRoom(game_type):
+def CreateRoom(game_type, private):
     global games
     room_id = str(uuid.uuid4())
     games[room_id] = {
         'room_id': room_id,
         'game_type': game_type,
+        'private': private,
         'player_count': 0,
         'players': [],
         'sids': [],
@@ -307,7 +317,7 @@ def CreateRoom(game_type):
         'scores': [],
         'pos': [],
         'ballPosition': [0, 0],
-        'ballVelocity': [-BALL_SPEED, -BALL_SPEED],
+        'ballVelocity': random_ball_vel(), #here
         'game_over': 0,
         'last_time': 0,
         'delta_time': 0,
@@ -588,10 +598,12 @@ async def JoinLobby(sid, username, room_key):
 
 @sio.on('find_lobby')
 async def FindLobby(sid, username, game_type):
+    global games
+
     room_id = GetAvailableRoom(game_type)
     if room_id is None:
         log("No available lobby, creating a new one")
-        room_id = CreateRoom(game_type)
+        room_id = CreateRoom(game_type, PUBLIC_LOBBY)
     await JoinRoom(sid, username, room_id, 0)
     await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
@@ -609,7 +621,7 @@ async def CreateLobby(sid, username, game_type):
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
     else:
-        room_id = CreateRoom(game_type)
+        room_id = CreateRoom(game_type, PRIVATE_LOBBY)
         await JoinRoom(sid, username, room_id, 0)
     # room_id = GetAvailableRoom(game_type)
     # if room_id is None:
@@ -712,6 +724,7 @@ async def DebugPrint(sid, username):
     for game in games.values():
         color_print(BLUE, f"id: {game['room_id']}")
         color_print(BLUE, f"type: {game['game_type']}")
+        color_print(BLUE, f"private: {game['private']}")
         color_print(BLUE, f"status: {game['status']}")
         color_print(BLUE, f"player_count: {game['player_count']}")
         color_print(BLUE, f"players: {game['players']}")

@@ -44,6 +44,17 @@ function CreateGameOverlay()
 	document.querySelector('.pong-container').appendChild(gameOverlay);
 }
 
+function ResetGameCanvas()
+{
+	const canvas = document.querySelector('canvas');
+	if (canvas)
+	{
+		canvas.remove();
+		const newCanvas = createElement('canvas', {id: 'game'});
+		document.querySelector('.pong-container').appendChild(newCanvas);
+	}
+}
+
 function UpdateGameOverlay(gameText, gameOver)
 {
 	const gameOverlay = document.querySelector('.overlay');
@@ -68,8 +79,8 @@ function UpdateGameOverlay(gameText, gameOver)
 					gameOverlay.remove();
 					Cleanup();
 					CloseWebsocket();
-					window.location.href = window.location;
-					// drawMainMenu();
+					ResetGameCanvas();
+					initPongMenu();
 				});
 			}
 
@@ -95,7 +106,7 @@ export function createButtonReady()
 		if (buttonReady.innerText == 'READY')
 		{
 			buttonReady.style.backgroundColor = '#0ccf0c';
-			buttonReady.innerText = 'UNREADY';
+			buttonReady.innerText = 'CANCEL';
 		}
 		else
 		{
@@ -229,6 +240,7 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 	}
 
 	const playerDiv = playerInfo.querySelector('div');
+
 	let readyButton = playerDiv.querySelector('button');
 
 	let loadingImg = playerDiv.querySelector('img');
