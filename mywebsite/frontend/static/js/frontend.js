@@ -13,36 +13,19 @@ export function CloseStatusSocket() {
 	}
 }
 
+export function UpdateStatus() {
+	const message = JSON.stringify({
+		actions: [
+			'check_friend_requests',
+			'check_friend_list',
+			'check_friends_statuses'
+		]
+	});
+	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
+		statusSocket.send(message);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-	// SSE - Server-Sent Events
-	let eventSource = null;
-
-	// function initStatusSockets() {
-	// 	console.log("INIT STATUS SOCKET");
-	// 	const url = `wss://${window.location.host}/ws/status-socket/`;
-	// 	statusSocket = new WebSocket(url);
-
-	// 	statusSocket.onopen = function (e) {
-	// 		console.log("[open] Status Connection established");
-
-	// 	};
-
-	// 	statusSocket.onmessage = function (event) {
-	// 		console.log(`[message] Data received from server: ${event.data}`);
-	// 	};
-
-	// 	statusSocket.onclose = function (event) {
-	// 		if (event.wasClean) {
-	// 			console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-	// 		} else {
-	// 			console.log('[close] Connection died');
-	// 		}
-	// 	};
-
-	// 	statusSocket.onerror = function (error) {
-	// 		console.warn("socket error:", error);
-	// 	};
-	// }
 
 	function initStatusSockets() {
 		console.log("INIT STATUS SOCKET");
@@ -51,16 +34,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
-			console.log('WebSocket connection opened:', event);
+			console.log('WebSocket connection opened:', e);
 	
-			const message = JSON.stringify({
-				actions: [
-					'check_friend_requests',
-					'check_friend_list',
-					'check_friends_statuses'
-				]
-			});
-			statusSocket.send(message);
+			UpdateStatus();
 			
 			console.log(`[send] Message sent to server: ${message}`);
 		};
@@ -81,6 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			} else {
 				console.log('Aucune information pertinente reçue.');
 			}
+
+			if (window.location.pathname === '/profile/') {
+				loadContent('/profile/', false);
+			}
 		};
 	
 		statusSocket.onclose = function (event) {
@@ -97,40 +77,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 	}	
 
-	// function initSSE() {
-	// 	if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
-	// 		eventSource = new EventSource('/auth/sse/');
-
-	// 		eventSource.onmessage = function (event) {
-	// 			const data = JSON.parse(event.data);
-	// 			if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
-	// 				if (window.location.pathname === '/profile/') {
-	// 					loadContent('/profile/', false);
-	// 				}
-	// 			}
-	// 		};
-
-	// 		eventSource.onerror = function (error) {
-	// 			console.error('EventSource error:', error);
-	// 			eventSource.close();
-	// 			setTimeout(function () {
-	// 				eventSource = new EventSource('/auth/sse/');
-	// 			}, 5000);
-	// 		};
-
-	// 		console.log('SSE connection initialized');
-	// 	} else {
-	// 		console.log('SSE connection already active');
-	// 	}
-	// }
-
 	function checkLoginStatus() {
 		return localStorage.getItem('isLoggedIn') === 'true';
 	}
 
 	if (checkLoginStatus()) {
 		console.log('User is logged in. Initiating SSE after refresh...');
-		// initSSE();
 		initStatusSockets();
 	}
 
@@ -222,7 +174,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			} else if (url.includes('profile')) {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
-					// initSSE();
 					initStatusSockets()
 				}
 			}

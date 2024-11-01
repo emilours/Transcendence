@@ -4,10 +4,10 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from frontend.models import Game, Match, PlayerMatch, CustomUser
+from frontend.models import Game, Match, PlayerMatch, CustomUser, FriendRequest, FriendList
 import json, asyncio
 from asgiref.sync import sync_to_async
-
+from django.db.models import Q
 
 @login_required
 def pong(request):
@@ -70,7 +70,7 @@ def session_open(user):
     user.active_sessions += 1
     user.is_online = True
     user.save(update_fields=['active_sessions', 'is_online'])
-    
+
 @sync_to_async
 def check_friend_request_update(user):
     pending_requests = FriendRequest.objects.filter(
