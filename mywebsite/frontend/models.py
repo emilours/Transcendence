@@ -35,6 +35,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 	first_name = models.CharField(max_length=100, validators=[validate_no_special_characters])
 	last_name = models.CharField(max_length=100, validators=[validate_no_special_characters])
 	display_name = models.CharField(max_length=100, unique=True)
+	# channel_name = models.CharField(max_length=100, default=0)
+	channel_name = models.CharField(max_length=100, default="")
 	avatar = models.FileField(upload_to='img/avatars/', default='img/avatars/avatar0.jpg')
 	is_active = models.BooleanField(default=True)
 	is_staff = models.BooleanField(default=False)

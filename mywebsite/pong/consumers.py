@@ -3,7 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 from frontend.models import CustomUser
-from .views import session_open, session_close, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
+from .views import session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -27,6 +27,8 @@ def StatusLog(message):
 
 class StatusConsumer(AsyncWebsocketConsumer):
 
+	# group_all_name = "mega_group"
+
 	async def get_all_friend_data(self):
 		user = self.scope['user']
 		friend_requests = await check_friend_request_update(user)
@@ -38,14 +40,68 @@ class StatusConsumer(AsyncWebsocketConsumer):
 			"friend_statuses": friend_statuses
 		}
 
+	async def send_status_state(self, event):
+		StatusLog(f"send_status_state(): {event['status']}")
+
+		await self.send(text_data=json.dumps(event['status']))
+
+	async def BroadcastMessage(self, status):
+		room_name = "send_room"
+
+		StatusLog(f"status: {status}")
+		if len(status['friend_requests']) != 0:
+			for i in range(len(status['friend_requests'])):
+				if "sender" in status['friend_requests'][i]:
+					sender = status['friend_requests'][i]['sender']
+					StatusLog(f"sender: {sender}")
+					if sender != '':
+						await self.channel_layer.group_add(
+							room_name, sender
+							)
+				if "receiver" in status['friend_requests'][i]:
+					receiver = status['friend_requests'][i]['receiver']
+					StatusLog(f"receiver: {receiver}")
+					if receiver != '':
+						await self.channel_layer.group_add(
+								room_name, receiver
+							)
+		if len(status['friend_statuses']) == 0:
+			for i in range(len(status['friend_statuses'])):
+				if "channel_name" in status['friend_statuses'][i]:
+					channel_name = status['friend_statuses'][i]['channel_name']
+					StatusLog(f"channel_name: {channel_name}")
+					if channel_name != '':
+						await self.channel_layer.group_add(
+							room_name, channel_name
+							)
+			
+		await self.channel_layer.group_send(
+				room_name,
+				{
+					'type': 'send_status_state',
+					'status': status
+				}
+			)
+		test = await self.channel_layer.group_channels(room_name)
+		StatusLog(f"test: {test}")
+			# await self.channel_layer.group_discard(
+			# 	room_name, channel_name
+				
+			# )
+		
+
 	async def connect(self):
 		try:
 			await self.accept()
 			user = self.scope['user']
+			#INCREMENT
+			# Faire un system de ping pong pour augmenter ca
 			await session_open(user)
 
-			data = await self.get_all_friend_data()
-			await self.send(text_data=json.dumps(data))
+			await update_channel_name(user, self.channel_name)
+
+			status = await self.get_all_friend_data()
+			await self.BroadcastMessage(status)
 
 		except Exception as e:
 			StatusLog(f"Error during connection: {e}")
@@ -55,12 +111,24 @@ class StatusConsumer(AsyncWebsocketConsumer):
 		try:
 			data = json.loads(text_data)
 			StatusLog(f"Received: {data}")
-			info = await self.get_all_friend_data()
-			await self.send(text_data=json.dumps(info))
+
+			status = await self.get_all_friend_data()
+			await self.BroadcastMessage(status)
 
 		except Exception as e:
 			StatusLog(f"Error during message handling: {e}")
 			await self.close(code=1011)
+
+	async def disconnect(self, close_code):
+		StatusLog(f"Disconnected with code {close_code}")
+		user = self.scope['user']
+		#DECREMENT
+		await session_close(user)
+		await update_channel_name(user, "")
+
+
+		status = await self.get_all_friend_data()
+		await self.BroadcastMessage(status)
 
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):

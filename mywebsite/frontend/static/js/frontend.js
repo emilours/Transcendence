@@ -22,7 +22,11 @@ export function UpdateStatus() {
 		]
 	});
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
+	{
 		statusSocket.send(message);
+		console.log(`[send] Message sent to server: ${message}`);
+	}
+
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,36 +34,41 @@ document.addEventListener("DOMContentLoaded", () => {
 	function initStatusSockets() {
 		console.log("INIT STATUS SOCKET");
 		const url = `wss://${window.location.host}/ws/status-socket/`;
-		const statusSocket = new WebSocket(url);
+		statusSocket = new WebSocket(url);
 	
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
 			console.log('WebSocket connection opened:', e);
 	
 			UpdateStatus();
-			
-			console.log(`[send] Message sent to server: ${message}`);
 		};
 	
 		statusSocket.onmessage = function (event) {
 			console.log(`[message] Data received from server: ${event.data}`);
 			
 			const data = JSON.parse(event.data);
+			let refresh = 0;
 	
 			if (data.friend_requests) {
 				console.log('Friend request:', data.friend_requests);
+				refresh = 1;
 			} else if (data.friend_count) {
 				console.log('Friend list:', data.friend_count);
+				refresh = 1;
 			} else if (data.friend_statuses) {
 				console.log('Online status:', data.friend_statuses);
+				refresh = 1;
 			} else if (data.error) {
 				console.log('Erreur:', data.error);
 			} else {
 				console.log('Aucune information pertinente reçue.');
 			}
 
-			if (window.location.pathname === '/profile/') {
-				loadContent('/profile/', false);
+			if (refresh == 1)
+			{
+				if (window.location.pathname === '/profile/') {
+					loadContent('/profile/', false);
+				}
 			}
 		};
 	
@@ -82,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	if (checkLoginStatus()) {
-		console.log('User is logged in. Initiating SSE after refresh...');
+		console.log('User is logged in. Socket status...');
 		initStatusSockets();
 	}
 
@@ -301,19 +310,21 @@ document.addEventListener("DOMContentLoaded", () => {
 							// alert(data.message);
 							if (id === 'logout-form') {
 								localStorage.removeItem('isLoggedIn');
-								if (eventSource) {
-									eventSource.close();
-									console.log('SSE connection closed');
-								}
-								if (statusSocket)
-									CloseStatusSocket();
+								CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'anonymize-data-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'anonymize-data-form') {
 								loadContent('/profile/', true);
+								loadHeader();
+							} else if (id === 'add-friend-form') {
+								UpdateStatus();
+
+							} else if (id === 'edit-profile-form') {
+								UpdateStatus();
+								loadContent('/profile/', true)
 								loadHeader();
 							} else {
 								loadContent('/profile/', true);
@@ -348,6 +359,9 @@ document.addEventListener("DOMContentLoaded", () => {
 						alert(data.error);
 					} else {
 						// alert(data.message);
+						// accept request, refuse request, cancel request, remove friend
+						console.log("data:", data);
+						UpdateStatus();
 						loadContent('/profile/', true);
 					}
 				} catch (error) {

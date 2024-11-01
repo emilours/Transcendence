@@ -57,6 +57,11 @@ def SaveLocalPongMatch(request):
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 @sync_to_async
+def update_channel_name(user, channel_name):
+      user.channel_name = channel_name
+      user.save()
+
+@sync_to_async
 def session_close(user):
     user.active_sessions -= 1
     
@@ -82,8 +87,8 @@ def check_friend_request_update(user):
         return [
             {
                 "id": friend_request.id,
-                "sender": friend_request.sender.display_name,
-                "receiver": friend_request.receiver.display_name,
+                "sender": friend_request.sender.channel_name,
+                "receiver": friend_request.receiver.channel_name,
                 "status": friend_request.status
             }
             for friend_request in pending_requests
@@ -108,6 +113,7 @@ def check_friends_statuses_update(user):
             {
                 "id": friend.id,
                 "display_name": friend.display_name,
+                "channel_name": friend.channel_name,
                 "is_online": friend.is_online,
                 "avatar": friend.avatar.url
             }
