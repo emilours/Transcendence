@@ -4,10 +4,13 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from frontend.models import Game, Match, PlayerMatch, CustomUser
+from frontend.models import Game, Match, PlayerMatch, CustomUser, FriendRequest, FriendList
 import json, asyncio
 from asgiref.sync import sync_to_async
-
+from django.db.models import Q
+from django.db import transaction
+from django.db.models import F
+from asgiref.sync import sync_to_async
 
 @login_required
 def pong(request):
@@ -49,29 +52,111 @@ def SaveLocalPongMatch(request):
 				match = Match.objects.create(game=game, status=status, details=description)
 				PlayerMatch.objects.create(player=user, match=match, score=score, is_winner=True)
 
-				# TODO: Add score or remove to CustomUser
+				# TODO:
 				return JsonResponse({'status': 'success'})
 			return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
 		except Exception as e:
 			return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
+# needs the CustomUser
+@sync_to_async
+def get_user_from_name(name):
+      try:
+            user = CustomUser.objects.get(display_name=name)
+            print(f"userrrrr: {user}")
+            return user
+      except CustomUser.DoesNotExist:
+            print(f"User {name} doesn't exist (exception)")
+            return None
 
 @sync_to_async
-def session_close(user):
-    user.active_sessions -= 1
-    
-    if user.active_sessions == 0:
-        user.is_online = False
+def get_user_friend_list(user):
+    try:
+        friend_list = user.friend_list
+        friends = friend_list.friends.all()
+        return [
+            friend.channel_name
+            for friend in friends
+        ]
+    except FriendList.DoesNotExist:
+        return []
 
-    user.save(update_fields=['active_sessions', 'is_online'])
-    
-    # return JsonResponse({"message": "Session closed, active sessions updated."}, status=200)
+@sync_to_async
+def update_channel_name(user, channel_name):
+      user.channel_name = channel_name
+      user.save(update_fields=['channel_name'])
 
 @sync_to_async
 def session_open(user):
-    user.active_sessions += 1
-    user.is_online = True
-    user.save(update_fields=['active_sessions', 'is_online'])
-    
-    # return JsonResponse({"message": "Session opened, active sessions updated."}, status=200)
+    print("| session_open |")
+    with transaction.atomic():
+        user.refresh_from_db()
+        user.active_sessions = F('active_sessions') + 1
+        user.is_online = True
+        user.save(update_fields=['active_sessions', 'is_online'])
+
+    user.refresh_from_db()
+    print(f"Active sessions after opening: {user.active_sessions}")
+
+@sync_to_async
+def session_close(user):
+    print("| session_closed |")
+    with transaction.atomic():
+        user.refresh_from_db()
+        user.active_sessions = F('active_sessions') - 1
+        if user.active_sessions == 0:
+            user.is_online = False
+        user.save(update_fields=['active_sessions', 'is_online'])
+
+    user.refresh_from_db()
+    print(f"Active sessions after closing: {user.active_sessions}")
+
+@sync_to_async
+def check_friend_request_update(user):
+    pending_requests = FriendRequest.objects.filter(
+        Q(sender=user) | Q(receiver=user),
+        status__in=['accepted', 'declined', 'pending']
+    )
+
+    if pending_requests.exists():
+        return [
+            {
+                "id": friend_request.id,
+                "sender": friend_request.sender.channel_name,
+                "receiver": friend_request.receiver.channel_name,
+                "status": friend_request.status
+            }
+            for friend_request in pending_requests
+        ]
+    return []
+
+@sync_to_async
+def check_friendlist_update(user):
+    try:
+        friendlist = FriendList.objects.get(user=user)
+        return friendlist.friend_count()
+    except FriendList.DoesNotExist:
+        return 0
+
+@sync_to_async
+def check_friends_statuses_update(user):
+    try:
+        user_friend_list = user.friend_list
+        friends = user_friend_list.friends.all()
+
+        friend_statuses = [
+            {
+                "id": friend.id,
+                "display_name": friend.display_name,
+                "channel_name": friend.channel_name,
+                "is_online": friend.is_online,
+                "avatar": friend.avatar.url
+            }
+            for friend in friends
+        ]
+
+        return friend_statuses
+
+    except FriendList.DoesNotExist:
+        return []

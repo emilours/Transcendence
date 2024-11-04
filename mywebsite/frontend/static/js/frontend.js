@@ -13,9 +13,20 @@ export function CloseStatusSocket() {
 	}
 }
 
+export function UpdateStatus(mode, name) {
+	const message = JSON.stringify({
+		'mode': mode,
+		'name': name
+	});
+	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
+	{
+		statusSocket.send(message);
+		console.log(`[send] Message sent to server: ${message}`);
+	}
+
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-	// SSE - Server-Sent Events
-	let eventSource = null;
 
 	function initStatusSockets() {
 		console.log("INIT STATUS SOCKET");
@@ -24,14 +35,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
-
+			console.log('WebSocket connection opened:', e);
 		};
 
 		statusSocket.onmessage = function (event) {
 			console.log(`[message] Data received from server: ${event.data}`);
+
+			const data = JSON.parse(event.data);
+			if (data == "true")
+			{
+				if (window.location.pathname === '/profile/') {
+					loadContent('/profile/', false);
+				}
+			}
 		};
 
 		statusSocket.onclose = function (event) {
+			console.log('WebSocket connection closed:', event);
 			if (event.wasClean) {
 				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
 			} else {
@@ -44,40 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 	}
 
-	function initSSE() {
-		if (eventSource === null || eventSource.readyState === EventSource.CLOSED) {
-			eventSource = new EventSource('/auth/sse/');
-
-			eventSource.onmessage = function (event) {
-				const data = JSON.parse(event.data);
-				if (data && (data.friend_requests || data.friend_count >= 0 || data.friend_statuses)) {
-					if (window.location.pathname === '/profile/') {
-						loadContent('/profile/', false);
-					}
-				}
-			};
-
-			eventSource.onerror = function (error) {
-				console.error('EventSource error:', error);
-				eventSource.close();
-				setTimeout(function () {
-					eventSource = new EventSource('/auth/sse/');
-				}, 5000);
-			};
-
-			console.log('SSE connection initialized');
-		} else {
-			console.log('SSE connection already active');
-		}
-	}
-
 	function checkLoginStatus() {
 		return localStorage.getItem('isLoggedIn') === 'true';
 	}
 
 	if (checkLoginStatus()) {
-		console.log('User is logged in. Initiating SSE after refresh...');
-		initSSE();
+		console.log('User is logged in. Socket status...');
 		initStatusSockets();
 	}
 
@@ -169,7 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			} else if (url.includes('profile')) {
 				if (!checkLoginStatus()) {
 					localStorage.setItem('isLoggedIn', 'true');
-					initSSE();
 					initStatusSockets()
 				}
 			}
@@ -297,19 +288,23 @@ document.addEventListener("DOMContentLoaded", () => {
 							// alert(data.message);
 							if (id === 'logout-form') {
 								localStorage.removeItem('isLoggedIn');
-								if (eventSource) {
-									eventSource.close();
-									console.log('SSE connection closed');
-								}
-								if (statusSocket)
-									CloseStatusSocket();
+								CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
-							} else if (id === 'signup-form' || id === 'login-form' || id === 'edit-profile-form' || id === 'anonymize-data-form') {
+							} else if (id === 'signup-form' || id === 'login-form' || id === 'anonymize-data-form') {
 								loadContent('/profile/', true);
+								loadHeader();
+							} else if (id === 'add-friend-form') {
+								// console.log("Form:", form, "formData:", formData);
+								console.log('sock_receiver :', data.sock_receiver)
+								UpdateStatus('user', data.sock_receiver);
+
+							} else if (id === 'edit-profile-form') {
+								UpdateStatus('friend_list', null);
+								loadContent('/profile/', true)
 								loadHeader();
 							} else {
 								loadContent('/profile/', true);
@@ -344,6 +339,9 @@ document.addEventListener("DOMContentLoaded", () => {
 						alert(data.error);
 					} else {
 						// alert(data.message);
+						// accept request, refuse request, cancel request, remove friend
+						console.log("name", data.sock_receiver)
+						UpdateStatus('user', data.sock_receiver);
 						loadContent('/profile/', true);
 					}
 				} catch (error) {

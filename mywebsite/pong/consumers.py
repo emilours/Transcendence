@@ -1,11 +1,10 @@
 import json, time, asyncio, uuid
+import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 from frontend.models import CustomUser
-from .views import session_open, session_close
-
-
+from .views import get_user_friend_list, get_user_from_name, session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -21,42 +20,122 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
-
 def log(message):
 	print(f"[PONG LOG] {message}")
 
 def StatusLog(message):
 	print(f"[STATUS LOG] {message}")
 
-
 class StatusConsumer(AsyncWebsocketConsumer):
 
-    async def connect(self):
-        try:
-            await self.accept()
-            # Any other setup logic
-            user = self.scope['user']
-			# INCREMENT
-            await session_open(user)
+	# might not even need redis anymore
+	redis_client = redis.Redis(host="redis", port=6379, decode_responses=True)
 
-        except Exception as e:
-            # If an exception occurs, log it and close the connection
-            StatusLog(f"Error during connection: {e}")
-            await self.close(code=1011)
 
-    async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-            StatusLog(f"Received: {data}")
-        except Exception as e:
-            StatusLog(f"Error during message handling: {e}")
-            await self.close(code=1011)
+	# async def get_all_friend_data(self):
+	# 	user = self.scope['user']
+	# 	friend_requests = await check_friend_request_update(user)
+	# 	friend_count = await check_friendlist_update(user)
+	# 	friend_statuses = await check_friends_statuses_update(user)
+	# 	return {
+	# 		"friend_requests": friend_requests,
+	# 		"friend_count": friend_count,
+	# 		"friend_statuses": friend_statuses
+	# 	}
 
-    async def disconnect(self, close_code):
-        StatusLog(f"Disconnected with code {close_code}")
-        user = self.scope['user']
-        await session_close(user)
+	async def send_status_state(self, event):
+		# StatusLog(f"send_status_state(): {event['refresh']}")
+
+		await self.send(text_data=json.dumps(event['refresh']))
+
+	
+	async def BroadcastMessage(self, friend_list):
+		room_name = "send_room"
+
+		StatusLog(f"friend_list: {friend_list}")
+		sender = self.scope['user'].channel_name
+		if sender is None:
+			StatusLog("sender is None")
+		friend_list.append(sender)
+
+		for friend in friend_list:
+			if friend != '':
+				await self.channel_layer.group_add(
+					room_name, friend
+					)
+				self.redis_client.sadd(f"{room_name}_channels", friend)
+
+
+		await self.channel_layer.group_send(
+				room_name,
+				{
+					'type': 'send_status_state',
+					'refresh': 'true'
+				}
+			)
+
+		channels = self.redis_client.smembers(f"{room_name}_channels")
+		StatusLog(f"Channels in '{room_name}': {channels}")
+
+		for channel in channels:
+			StatusLog(f"Removing channel: {channel}")
+			await self.channel_layer.group_discard(
+				room_name, channel
+
+			)
+			self.redis_client.srem(f"{room_name}_channels", channel)
+
+
+	async def connect(self):
+		try:
+			await self.accept()
+			user = self.scope['user']
+			#INCREMENT
+			# Faire un system de ping pong pour augmenter ca
+			await session_open(user)
+			await update_channel_name(user, self.channel_name)
+
+			# Online
+			friend_list = await get_user_friend_list(user)
+			await self.BroadcastMessage(friend_list)
+
+		except Exception as e:
+			StatusLog(f"Error during connection: {e}")
+			await self.close(code=1011)
+
+	async def receive(self, text_data):
+		try:
+			data = json.loads(text_data)
+			StatusLog(f"Received: {data}")
+
+			if (data['mode'] == "user"):
+				user = await get_user_from_name(data['name'])
+				if user is None:
+					StatusLog(f"USER NOT FOUND in receive()")
+					return
+				friend_list = [user.channel_name]
+			elif (data['mode'] == "friend_list"):
+				user = self.scope['user']
+				friend_list = await get_user_friend_list(user)
+
+			await self.BroadcastMessage(friend_list)
+
+		except Exception as e:
+			StatusLog(f"Error during message handling: {e}")
+			await self.close(code=1011)
+
+	async def disconnect(self, close_code):
+		StatusLog(f"Disconnected with code {close_code}")
+		user = self.scope['user']
+		# Offline
+		friend_list = await get_user_friend_list(user)
+		await self.BroadcastMessage(friend_list)
+
+		await update_channel_name(user, "")
+		await session_close(user)
 		#DECREMENT
+
+
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 	games = {}
@@ -216,7 +295,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 		log("SAVING MATCH TO DB")
 		# normal or tournament
 		game_type = 'normal'
-		
+
 		game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
 		match = Match.objects.create(game=game, status='completed', details=game_type)
 

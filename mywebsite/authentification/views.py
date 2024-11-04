@@ -19,6 +19,7 @@ from django.http import StreamingHttpResponse
 from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.conf import settings
+from django.contrib.sessions.models import Session
 import asyncio
 import json
 import os
@@ -45,6 +46,8 @@ def signin(request):
     if user is not None:
         login(request, user)
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
+    # elif user is not None and user.is_online == True:
+        # return JsonResponse({"error": "You are already logged in."}, status=403)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
 
@@ -102,6 +105,8 @@ def signup(request):
     user = authenticate(request, email=email, password=password1)
     if user is not None:
         login(request, user)
+        request.session.save()
+        # user.save(update_fields=['active_sessions'])
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)
@@ -114,6 +119,7 @@ def signout(request):
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
+
 
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
@@ -189,8 +195,10 @@ def send_friend_request(request):
             defaults={'status': 'pending'}
         )
 
+        
         if created:
-            return JsonResponse({"message": "Friend request sent successfully."}, status=200)
+            sock_receiver = receiver_display_name
+            return JsonResponse({"message": "Friend request sent successfully.", 'sock_receiver' : sock_receiver}, status=200)
         else:
             return JsonResponse({"error": "Friend request already exists."}, status=400)
 
@@ -203,8 +211,9 @@ def send_friend_request(request):
 def accept_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
+        sock_receiver = friend_request.sender.display_name
         friend_request.accept()
-        return JsonResponse({"message": "Friend request accepted.", "status": "accepted"}, status=200)
+        return JsonResponse({"message": "Friend request accepted.", "status": "accepted", "sock_receiver": sock_receiver}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
@@ -216,8 +225,9 @@ def accept_friend_request(request, friend_request_id):
 def refuse_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, receiver=request.user)
+        sock_receiver = friend_request.sender.display_name
         friend_request.decline()
-        return JsonResponse({"message": "Friend request refused.", "status": "declined"}, status=200)
+        return JsonResponse({"message": "Friend request refused.", "status": "declined", "sock_receiver": sock_receiver}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
@@ -229,8 +239,9 @@ def refuse_friend_request(request, friend_request_id):
 def cancel_friend_request(request, friend_request_id):
     try:
         friend_request = FriendRequest.objects.get(id=friend_request_id, sender=request.user)
+        sock_receiver = friend_request.receiver.display_name
         friend_request.cancel()
-        return JsonResponse({"message": "Friend request cancelled.", "status": "declined"}, status=200)
+        return JsonResponse({"message": "Friend request cancelled.", "status": "declined", "sock_receiver": sock_receiver}, status=200)
     except FriendRequest.DoesNotExist:
         return JsonResponse({"error": "Friend request not found."}, status=404)
     except Exception as e:
@@ -244,7 +255,8 @@ def remove_friend(request, friend_id):
         friend_list = FriendList.objects.get(user=request.user)
         friend = CustomUser.objects.get(id=friend_id)
         friend_list.unfriend(friend)
-        return JsonResponse({"message": "Friend removed successfully."}, status=200)
+        sock_receiver = friend.display_name
+        return JsonResponse({"message": "Friend removed successfully.", "sock_receiver" : sock_receiver}, status=200)
     except CustomUser.DoesNotExist:
         return JsonResponse({"error": "Friend not found."}, status=404)
     except FriendList.DoesNotExist:
