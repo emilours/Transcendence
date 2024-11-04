@@ -13,10 +13,10 @@ export function CloseStatusSocket() {
 	}
 }
 
-export function UpdateStatus(mode, user) {
+export function UpdateStatus(mode, name) {
 	const message = JSON.stringify({
 		'mode': mode,
-		'user': user
+		'name': name
 	});
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
 	{
@@ -36,16 +36,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
 			console.log('WebSocket connection opened:', e);
-
-			UpdateStatus('friend_list', null);
-			UpdateStatus('user', 'hade');
 		};
 
 		statusSocket.onmessage = function (event) {
 			console.log(`[message] Data received from server: ${event.data}`);
 
 			const data = JSON.parse(event.data);
-			if (data.refresh == "true")
+			if (data == "true")
 			{
 				if (window.location.pathname === '/profile/') {
 					loadContent('/profile/', false);
@@ -301,11 +298,12 @@ document.addEventListener("DOMContentLoaded", () => {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else if (id === 'add-friend-form') {
-								console.log("Form:", form, "formData:", formData);
-								UpdateStatus('user', null);
+								// console.log("Form:", form, "formData:", formData);
+								console.log('sock_receiver :', data.sock_receiver)
+								UpdateStatus('user', data.sock_receiver);
 
 							} else if (id === 'edit-profile-form') {
-								UpdateStatus();
+								UpdateStatus('friend_list', null);
 								loadContent('/profile/', true)
 								loadHeader();
 							} else {
@@ -342,8 +340,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					} else {
 						// alert(data.message);
 						// accept request, refuse request, cancel request, remove friend
-						console.log("data:", data);
-						UpdateStatus();
+						console.log("name", data.sock_receiver)
+						UpdateStatus('user', data.sock_receiver);
 						loadContent('/profile/', true);
 					}
 				} catch (error) {

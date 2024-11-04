@@ -4,7 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 from frontend.models import CustomUser
-from .views import get_user_friend_list, get_user_channel_name, session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
+from .views import get_user_friend_list, get_user_from_name, session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -32,52 +32,32 @@ class StatusConsumer(AsyncWebsocketConsumer):
 	redis_client = redis.Redis(host="redis", port=6379, decode_responses=True)
 
 
-	async def get_all_friend_data(self):
-		user = self.scope['user']
-		friend_requests = await check_friend_request_update(user)
-		friend_count = await check_friendlist_update(user)
-		friend_statuses = await check_friends_statuses_update(user)
-		return {
-			"friend_requests": friend_requests,
-			"friend_count": friend_count,
-			"friend_statuses": friend_statuses
-		}
+	# async def get_all_friend_data(self):
+	# 	user = self.scope['user']
+	# 	friend_requests = await check_friend_request_update(user)
+	# 	friend_count = await check_friendlist_update(user)
+	# 	friend_statuses = await check_friends_statuses_update(user)
+	# 	return {
+	# 		"friend_requests": friend_requests,
+	# 		"friend_count": friend_count,
+	# 		"friend_statuses": friend_statuses
+	# 	}
 
 	async def send_status_state(self, event):
-		StatusLog(f"send_status_state(): {event['status']}")
+		# StatusLog(f"send_status_state(): {event['refresh']}")
 
-		await self.send(text_data=json.dumps(event['status']))
+		await self.send(text_data=json.dumps(event['refresh']))
 
+	
 	async def BroadcastMessage(self, friend_list):
 		room_name = "send_room"
 
+		sender = self.scope['user'].channel_name
+		if sender is None:
+			StatusLog("sender is None")
+		friend_list.append(sender)
+
 		StatusLog(f"friend_list: {friend_list}")
-		# if len(status['friend_requests']) != 0:
-		# 	for i in range(len(status['friend_requests'])):
-		# 		if "sender" in status['friend_requests'][i]:
-		# 			sender = status['friend_requests'][i]['sender']
-		# 			StatusLog(f"sender: {sender}")
-		# 			if sender != '':
-		# 				await self.channel_layer.group_add(
-		# 					room_name, sender
-		# 					)
-		# 				self.redis_client.sadd(f"{room_name}_channels", self.channel_name)
-
-		# 		if "receiver" in status['friend_requests'][i]:
-		# 			receiver = status['friend_requests'][i]['receiver']
-		# 			StatusLog(f"receiver: {receiver}")
-		# 			if receiver != '':
-		# 				await self.channel_layer.group_add(
-		# 						room_name, receiver
-		# 					)
-		# 				self.redis_client.sadd(f"{room_name}_channels", self.channel_name)
-
-		# if len(status['friend_statuses']) == 0:
-		# 	for i in range(len(status['friend_statuses'])):
-		# 		if "channel_name" in status['friend_statuses'][i]:
-		# 			channel_name = status['friend_statuses'][i]['channel_name']
-
-		# 			StatusLog(f"channel_name: {channel_name}")
 		for friend in friend_list:
 			if friend != '':
 				await self.channel_layer.group_add(
@@ -96,6 +76,7 @@ class StatusConsumer(AsyncWebsocketConsumer):
 
 		channels = self.redis_client.smembers(f"{room_name}_channels")
 		StatusLog(f"Channels in '{room_name}': {channels}")
+
 		for channel in channels:
 			StatusLog(f"Removing channel: {channel}")
 			await self.channel_layer.group_discard(
@@ -112,10 +93,9 @@ class StatusConsumer(AsyncWebsocketConsumer):
 			#INCREMENT
 			# Faire un system de ping pong pour augmenter ca
 			await session_open(user)
-
 			await update_channel_name(user, self.channel_name)
 
-			# status = await self.get_all_friend_data()
+			# Online
 			friend_list = await get_user_friend_list(user)
 			await self.BroadcastMessage(friend_list)
 
@@ -128,8 +108,18 @@ class StatusConsumer(AsyncWebsocketConsumer):
 			data = json.loads(text_data)
 			StatusLog(f"Received: {data}")
 
-			status = await self.get_all_friend_data()
-			await self.BroadcastMessage(status)
+			if (data['mode'] == "user"):
+				user = await get_user_from_name(data['name'])
+				if user is None:
+					StatusLog(f"USER NOT FOUND in receive()")
+					return
+				friend_list = [user.channel_name]
+				# friend_list = await get_user_channel_name(user)
+			elif (data['mode'] == "friend_list"):
+				user = self.scope['user']
+				friend_list = await get_user_friend_list(user)
+
+			await self.BroadcastMessage(friend_list)
 
 		except Exception as e:
 			StatusLog(f"Error during message handling: {e}")
@@ -142,9 +132,9 @@ class StatusConsumer(AsyncWebsocketConsumer):
 		await session_close(user)
 		await update_channel_name(user, "")
 
-
-		status = await self.get_all_friend_data()
-		await self.BroadcastMessage(status)
+		# Offline
+		friend_list = await get_user_friend_list(user)
+		await self.BroadcastMessage(friend_list)
 
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):

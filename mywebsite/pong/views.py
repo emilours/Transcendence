@@ -58,6 +58,16 @@ def SaveLocalPongMatch(request):
 
 # needs the CustomUser
 @sync_to_async
+def get_user_from_name(name):
+      try:
+            user = CustomUser.objects.get(display_name=name)
+            print(f"userrrrr: {user}")
+            return user
+      except CustomUser.DoesNotExist:
+            print(f"User {name} doesn't exist (exception)")
+            return None
+
+@sync_to_async
 def get_user_friend_list(user):
     try:
         friend_list = user.friend_list
@@ -69,9 +79,10 @@ def get_user_friend_list(user):
     except FriendList.DoesNotExist:
         return []
 
-@sync_to_async
-def get_user_channel_name(user):
-    return ([user.channel_name])
+# @sync_to_async
+# def get_user_channel_name(user):
+#     print(f"user: {user}")
+#     return ([user.channel_name])
 
 @sync_to_async
 def update_channel_name(user, channel_name):
