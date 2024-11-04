@@ -1,9 +1,10 @@
 import json, time, asyncio, uuid
+import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from frontend.models import Game, Match, PlayerMatch
 from django.contrib.auth import get_user_model
 from frontend.models import CustomUser
-from .views import session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
+from .views import get_user_friend_list, get_user_channel_name, session_open, session_close, update_channel_name, check_friend_request_update, check_friendlist_update, check_friends_statuses_update
 
 # CONST VARIABLES
 PADDLE_SPEED = 0.2
@@ -27,7 +28,9 @@ def StatusLog(message):
 
 class StatusConsumer(AsyncWebsocketConsumer):
 
-	# group_all_name = "mega_group"
+	# might not even need redis anymore
+	redis_client = redis.Redis(host="redis", port=6379, decode_responses=True)
+
 
 	async def get_all_friend_data(self):
 		user = self.scope['user']
@@ -45,50 +48,62 @@ class StatusConsumer(AsyncWebsocketConsumer):
 
 		await self.send(text_data=json.dumps(event['status']))
 
-	async def BroadcastMessage(self, status):
+	async def BroadcastMessage(self, friend_list):
 		room_name = "send_room"
 
-		StatusLog(f"status: {status}")
-		if len(status['friend_requests']) != 0:
-			for i in range(len(status['friend_requests'])):
-				if "sender" in status['friend_requests'][i]:
-					sender = status['friend_requests'][i]['sender']
-					StatusLog(f"sender: {sender}")
-					if sender != '':
-						await self.channel_layer.group_add(
-							room_name, sender
-							)
-				if "receiver" in status['friend_requests'][i]:
-					receiver = status['friend_requests'][i]['receiver']
-					StatusLog(f"receiver: {receiver}")
-					if receiver != '':
-						await self.channel_layer.group_add(
-								room_name, receiver
-							)
-		if len(status['friend_statuses']) == 0:
-			for i in range(len(status['friend_statuses'])):
-				if "channel_name" in status['friend_statuses'][i]:
-					channel_name = status['friend_statuses'][i]['channel_name']
-					StatusLog(f"channel_name: {channel_name}")
-					if channel_name != '':
-						await self.channel_layer.group_add(
-							room_name, channel_name
-							)
-			
+		StatusLog(f"friend_list: {friend_list}")
+		# if len(status['friend_requests']) != 0:
+		# 	for i in range(len(status['friend_requests'])):
+		# 		if "sender" in status['friend_requests'][i]:
+		# 			sender = status['friend_requests'][i]['sender']
+		# 			StatusLog(f"sender: {sender}")
+		# 			if sender != '':
+		# 				await self.channel_layer.group_add(
+		# 					room_name, sender
+		# 					)
+		# 				self.redis_client.sadd(f"{room_name}_channels", self.channel_name)
+
+		# 		if "receiver" in status['friend_requests'][i]:
+		# 			receiver = status['friend_requests'][i]['receiver']
+		# 			StatusLog(f"receiver: {receiver}")
+		# 			if receiver != '':
+		# 				await self.channel_layer.group_add(
+		# 						room_name, receiver
+		# 					)
+		# 				self.redis_client.sadd(f"{room_name}_channels", self.channel_name)
+
+		# if len(status['friend_statuses']) == 0:
+		# 	for i in range(len(status['friend_statuses'])):
+		# 		if "channel_name" in status['friend_statuses'][i]:
+		# 			channel_name = status['friend_statuses'][i]['channel_name']
+
+		# 			StatusLog(f"channel_name: {channel_name}")
+		for friend in friend_list:
+			if friend != '':
+				await self.channel_layer.group_add(
+					room_name, friend
+					)
+				self.redis_client.sadd(f"{room_name}_channels", friend)
+
+
 		await self.channel_layer.group_send(
 				room_name,
 				{
 					'type': 'send_status_state',
-					'status': status
+					'refresh': 'true'
 				}
 			)
-		test = await self.channel_layer.group_channels(room_name)
-		StatusLog(f"test: {test}")
-			# await self.channel_layer.group_discard(
-			# 	room_name, channel_name
-				
-			# )
-		
+
+		channels = self.redis_client.smembers(f"{room_name}_channels")
+		StatusLog(f"Channels in '{room_name}': {channels}")
+		for channel in channels:
+			StatusLog(f"Removing channel: {channel}")
+			await self.channel_layer.group_discard(
+				room_name, channel
+
+			)
+			self.redis_client.srem(f"{room_name}_channels", channel)
+
 
 	async def connect(self):
 		try:
@@ -100,8 +115,9 @@ class StatusConsumer(AsyncWebsocketConsumer):
 
 			await update_channel_name(user, self.channel_name)
 
-			status = await self.get_all_friend_data()
-			await self.BroadcastMessage(status)
+			# status = await self.get_all_friend_data()
+			friend_list = await get_user_friend_list(user)
+			await self.BroadcastMessage(friend_list)
 
 		except Exception as e:
 			StatusLog(f"Error during connection: {e}")
@@ -289,7 +305,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 		log("SAVING MATCH TO DB")
 		# normal or tournament
 		game_type = 'normal'
-		
+
 		game, _ = Game.objects.get_or_create(name='Pong', description=game_type)
 		match = Match.objects.create(game=game, status='completed', details=game_type)
 

@@ -56,20 +56,37 @@ def SaveLocalPongMatch(request):
 			return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 	return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
+# needs the CustomUser
+@sync_to_async
+def get_user_friend_list(user):
+    try:
+        friendlist = FriendList.objects.get(user=user)
+        if friendlist.exists():
+            return [
+                friend.channel_name
+                for friend in friendlist
+            ]
+    except FriendList.DoesNotExist:
+        return []
+
+@sync_to_async
+def get_user_channel_name(user):
+    return ([user.channel_name])
+
 @sync_to_async
 def update_channel_name(user, channel_name):
       user.channel_name = channel_name
-      user.save()
+      user.save(update_fields=['channel_name'])
 
 @sync_to_async
 def session_close(user):
     user.active_sessions -= 1
-    
+
     if user.active_sessions == 0:
         user.is_online = False
 
     user.save(update_fields=['active_sessions', 'is_online'])
-    
+
 @sync_to_async
 def session_open(user):
     user.active_sessions += 1
@@ -119,7 +136,7 @@ def check_friends_statuses_update(user):
             }
             for friend in friends
         ]
-        
+
         return friend_statuses
 
     except FriendList.DoesNotExist:

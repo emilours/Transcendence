@@ -13,13 +13,10 @@ export function CloseStatusSocket() {
 	}
 }
 
-export function UpdateStatus() {
+export function UpdateStatus(mode, user) {
 	const message = JSON.stringify({
-		actions: [
-			'check_friend_requests',
-			'check_friend_list',
-			'check_friends_statuses'
-		]
+		'mode': mode,
+		'user': user
 	});
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
 	{
@@ -35,43 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
 		console.log("INIT STATUS SOCKET");
 		const url = `wss://${window.location.host}/ws/status-socket/`;
 		statusSocket = new WebSocket(url);
-	
+
 		statusSocket.onopen = function (e) {
 			console.log("[open] Status Connection established");
 			console.log('WebSocket connection opened:', e);
-	
-			UpdateStatus();
+
+			UpdateStatus('friend_list', null);
+			UpdateStatus('user', 'hade');
 		};
-	
+
 		statusSocket.onmessage = function (event) {
 			console.log(`[message] Data received from server: ${event.data}`);
-			
-			const data = JSON.parse(event.data);
-			let refresh = 0;
-	
-			if (data.friend_requests) {
-				console.log('Friend request:', data.friend_requests);
-				refresh = 1;
-			} else if (data.friend_count) {
-				console.log('Friend list:', data.friend_count);
-				refresh = 1;
-			} else if (data.friend_statuses) {
-				console.log('Online status:', data.friend_statuses);
-				refresh = 1;
-			} else if (data.error) {
-				console.log('Erreur:', data.error);
-			} else {
-				console.log('Aucune information pertinente reçue.');
-			}
 
-			if (refresh == 1)
+			const data = JSON.parse(event.data);
+			if (data.refresh == "true")
 			{
 				if (window.location.pathname === '/profile/') {
 					loadContent('/profile/', false);
 				}
 			}
 		};
-	
+
 		statusSocket.onclose = function (event) {
 			console.log('WebSocket connection closed:', event);
 			if (event.wasClean) {
@@ -80,11 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				console.log('[close] Connection died');
 			}
 		};
-	
+
 		statusSocket.onerror = function (error) {
 			console.warn("socket error:", error);
 		};
-	}	
+	}
 
 	function checkLoginStatus() {
 		return localStorage.getItem('isLoggedIn') === 'true';
@@ -320,7 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else if (id === 'add-friend-form') {
-								UpdateStatus();
+								console.log("Form:", form, "formData:", formData);
+								UpdateStatus('user', null);
 
 							} else if (id === 'edit-profile-form') {
 								UpdateStatus();
