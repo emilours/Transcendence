@@ -52,12 +52,12 @@ class StatusConsumer(AsyncWebsocketConsumer):
 	async def BroadcastMessage(self, friend_list):
 		room_name = "send_room"
 
+		StatusLog(f"friend_list: {friend_list}")
 		sender = self.scope['user'].channel_name
 		if sender is None:
 			StatusLog("sender is None")
 		friend_list.append(sender)
 
-		StatusLog(f"friend_list: {friend_list}")
 		for friend in friend_list:
 			if friend != '':
 				await self.channel_layer.group_add(
@@ -114,7 +114,6 @@ class StatusConsumer(AsyncWebsocketConsumer):
 					StatusLog(f"USER NOT FOUND in receive()")
 					return
 				friend_list = [user.channel_name]
-				# friend_list = await get_user_channel_name(user)
 			elif (data['mode'] == "friend_list"):
 				user = self.scope['user']
 				friend_list = await get_user_friend_list(user)
@@ -128,13 +127,14 @@ class StatusConsumer(AsyncWebsocketConsumer):
 	async def disconnect(self, close_code):
 		StatusLog(f"Disconnected with code {close_code}")
 		user = self.scope['user']
-		#DECREMENT
-		await session_close(user)
-		await update_channel_name(user, "")
-
 		# Offline
 		friend_list = await get_user_friend_list(user)
 		await self.BroadcastMessage(friend_list)
+
+		await update_channel_name(user, "")
+		await session_close(user)
+		#DECREMENT
+
 
 
 class MultiplayerPongConsumer(AsyncWebsocketConsumer):

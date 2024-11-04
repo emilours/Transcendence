@@ -106,7 +106,7 @@ def signup(request):
     if user is not None:
         login(request, user)
         request.session.save()
-        user.save(update_fields=['active_sessions'])
+        # user.save(update_fields=['active_sessions'])
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)

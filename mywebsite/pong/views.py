@@ -8,6 +8,9 @@ from frontend.models import Game, Match, PlayerMatch, CustomUser, FriendRequest,
 import json, asyncio
 from asgiref.sync import sync_to_async
 from django.db.models import Q
+from django.db import transaction
+from django.db.models import F
+from asgiref.sync import sync_to_async
 
 @login_required
 def pong(request):
@@ -49,7 +52,7 @@ def SaveLocalPongMatch(request):
 				match = Match.objects.create(game=game, status=status, details=description)
 				PlayerMatch.objects.create(player=user, match=match, score=score, is_winner=True)
 
-				# TODO: Add score or remove to CustomUser
+				# TODO:
 				return JsonResponse({'status': 'success'})
 			return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
 		except Exception as e:
@@ -79,30 +82,35 @@ def get_user_friend_list(user):
     except FriendList.DoesNotExist:
         return []
 
-# @sync_to_async
-# def get_user_channel_name(user):
-#     print(f"user: {user}")
-#     return ([user.channel_name])
-
 @sync_to_async
 def update_channel_name(user, channel_name):
       user.channel_name = channel_name
       user.save(update_fields=['channel_name'])
 
 @sync_to_async
-def session_close(user):
-    user.active_sessions -= 1
+def session_open(user):
+    print("| session_open |")
+    with transaction.atomic():
+        user.refresh_from_db()
+        user.active_sessions = F('active_sessions') + 1
+        user.is_online = True
+        user.save(update_fields=['active_sessions', 'is_online'])
 
-    if user.active_sessions == 0:
-        user.is_online = False
-
-    user.save(update_fields=['active_sessions', 'is_online'])
+    user.refresh_from_db()
+    print(f"Active sessions after opening: {user.active_sessions}")
 
 @sync_to_async
-def session_open(user):
-    user.active_sessions += 1
-    user.is_online = True
-    user.save(update_fields=['active_sessions', 'is_online'])
+def session_close(user):
+    print("| session_closed |")
+    with transaction.atomic():
+        user.refresh_from_db()
+        user.active_sessions = F('active_sessions') - 1
+        if user.active_sessions == 0:
+            user.is_online = False
+        user.save(update_fields=['active_sessions', 'is_online'])
+
+    user.refresh_from_db()
+    print(f"Active sessions after closing: {user.active_sessions}")
 
 @sync_to_async
 def check_friend_request_update(user):
