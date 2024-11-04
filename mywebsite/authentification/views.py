@@ -46,6 +46,8 @@ def signin(request):
     if user is not None:
         login(request, user)
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
+    # elif user is not None and user.is_online == True:
+        # return JsonResponse({"error": "You are already logged in."}, status=403)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
 
