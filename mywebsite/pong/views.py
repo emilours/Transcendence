@@ -60,12 +60,12 @@ def SaveLocalPongMatch(request):
 @sync_to_async
 def get_user_friend_list(user):
     try:
-        friendlist = FriendList.objects.get(user=user)
-        if friendlist.exists():
-            return [
-                friend.channel_name
-                for friend in friendlist
-            ]
+        friend_list = user.friend_list
+        friends = friend_list.friends.all()
+        return [
+            friend.channel_name
+            for friend in friends
+        ]
     except FriendList.DoesNotExist:
         return []
 
