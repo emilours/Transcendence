@@ -99,19 +99,6 @@ def session_open(user):
     user.refresh_from_db()
     print(f"Active sessions after opening: {user.active_sessions}")
 
-# @sync_to_async
-# def session_close(user):
-#     print("| session_closed |")
-#     with transaction.atomic():
-#         user.refresh_from_db()
-#         user.active_sessions = F('active_sessions') - 1
-#         if user.active_sessions == 0:
-#             user.is_online = False
-#         user.save(update_fields=['active_sessions', 'is_online'])
-
-#     user.refresh_from_db()
-#     print(f"Active sessions after closing: {user.active_sessions}")
-
 @sync_to_async
 def session_close(user):
     print("| session_closed |")
@@ -120,7 +107,6 @@ def session_close(user):
         user.active_sessions = F('active_sessions') - 1
         user.save(update_fields=['active_sessions'])
 
-        # Actualisez à nouveau l'objet pour obtenir la valeur mise à jour
         user.refresh_from_db()
         if user.active_sessions == 0:
             user.is_online = False
