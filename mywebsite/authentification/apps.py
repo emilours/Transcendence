@@ -11,7 +11,7 @@ class AuthentificationConfig(AppConfig):
             if 'frontend_customuser' in connection.introspection.table_names():
                 try:
                     users = CustomUser.objects.all()
-                    print("RREEEEEEADDDDDDYYYYY")
+                    # print("RREEEEEEADDDDDDYYYYY")
                     for user in users:
                         user.active_sessions = 0
                         user.save()

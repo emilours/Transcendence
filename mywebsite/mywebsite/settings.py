@@ -193,6 +193,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
+    'https://10.33.6.3:8080',
     'https://localhost:8080',
     'https://127.0.0.1:8080',
 	'https://10.24.4.5:8080',
@@ -222,4 +223,23 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }

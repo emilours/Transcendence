@@ -121,6 +121,21 @@ def signout(request):
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
 
 
+
+# from django.http import JsonResponse
+# from django.contrib.auth.decorators import login_required
+# from django.views.decorators.http import require_POST
+
+# @login_required
+# @require_POST
+# def signout(request):
+#     if request.user.is_authenticated:
+#         request.session.flush()
+
+#         return JsonResponse({"message": "You have successfully logged out."}, status=200)
+#     else:
+#         return JsonResponse({"error": "You are not currently logged in."}, status=403)
+
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
 
@@ -195,7 +210,7 @@ def send_friend_request(request):
             defaults={'status': 'pending'}
         )
 
-        
+
         if created:
             sock_receiver = receiver_display_name
             return JsonResponse({"message": "Friend request sent successfully.", 'sock_receiver' : sock_receiver}, status=200)
@@ -557,7 +572,7 @@ def check_friends_statuses_update(user):
             }
             for friend in friends
         ]
-        
+
         return friend_statuses
 
     except FriendList.DoesNotExist:

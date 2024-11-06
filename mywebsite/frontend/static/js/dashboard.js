@@ -37,8 +37,6 @@ export function showPongChart(stats) {
 				}
 			}
 		});
-	} else {
-		console.error('Element with ID "pongChart" not found.');
 	}
 }
 
@@ -88,7 +86,5 @@ export function showInvadersChart(stats) {
 				}
 			}
 		});
-	} else {
-		console.error('Element with ID "invadersChart" not found.');
 	}
 }

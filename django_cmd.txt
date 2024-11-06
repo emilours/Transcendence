@@ -20,3 +20,6 @@ python manage.py check
 python manage.py migrate
 # admin website
 python manage.py createsuperuser
+
+
+

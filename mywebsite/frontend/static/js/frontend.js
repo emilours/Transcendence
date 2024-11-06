@@ -9,7 +9,7 @@ var statusSocket;
 export function CloseStatusSocket() {
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
 		statusSocket.close(1000, "Closing normally");
-		console.log("Status socket closed");
+		// console.log("Status socket closed");
 	}
 }
 
@@ -21,7 +21,7 @@ export function UpdateStatus(mode, name) {
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
 	{
 		statusSocket.send(message);
-		console.log(`[send] Message sent to server: ${message}`);
+		// console.log(`[send] Message sent to server: ${message}`);
 	}
 
 }
@@ -29,17 +29,17 @@ export function UpdateStatus(mode, name) {
 document.addEventListener("DOMContentLoaded", () => {
 
 	function initStatusSockets() {
-		console.log("INIT STATUS SOCKET");
+		// console.log("INIT STATUS SOCKET");
 		const url = `wss://${window.location.host}/ws/status-socket/`;
 		statusSocket = new WebSocket(url);
 
-		statusSocket.onopen = function (e) {
-			console.log("[open] Status Connection established");
-			console.log('WebSocket connection opened:', e);
-		};
+		// statusSocket.onopen = function (e) {
+		// 	console.log("[open] Status Connection established");
+		// 	console.log('WebSocket connection opened:', e);
+		// };
 
 		statusSocket.onmessage = function (event) {
-			console.log(`[message] Data received from server: ${event.data}`);
+			// console.log(`[message] Data received from server: ${event.data}`);
 
 			const data = JSON.parse(event.data);
 			if (data == "true")
@@ -50,14 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		};
 
-		statusSocket.onclose = function (event) {
-			console.log('WebSocket connection closed:', event);
-			if (event.wasClean) {
-				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-			} else {
-				console.log('[close] Connection died');
-			}
-		};
+		// statusSocket.onclose = function (event) {
+		// 	console.log('WebSocket connection closed:', event);
+		// 	if (event.wasClean) {
+		// 		console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+		// 	} else {
+		// 		console.log('[close] Connection died');
+		// 	}
+		// };
 
 		statusSocket.onerror = function (error) {
 			console.warn("socket error:", error);
@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	if (checkLoginStatus()) {
-		console.log('User is logged in. Socket status...');
+		// console.log('User is logged in. Socket status...');
 		initStatusSockets();
 	}
 
@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				await initPongMenu(data.username, data.avatar);
 			} else if (url.includes('dashboard')) {
 				await loadResource('/static/js/dashboard.js', 'script');
-				await console.log('pong_stats:', data.pong_stats);
+				// await console.log('pong_stats:', data.pong_stats);
 				await showPongChart(data.pong_stats);
 				await showInvadersChart(data.invaders_stats.last_five_scores);
 			} else if (url.includes('signup')) {
@@ -225,6 +225,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const attachListeners = () => {
 		// Attach listeners to links and forms
+		document.querySelectorAll('[data-url]').forEach(element => {
+			element.addEventListener('click', (event) => {
+				event.preventDefault();
+				const url = element.getAttribute('data-url');
+				loadContent(url);
+			});
+		});
+
+
 		const links = [
 			{ id: 'login-from-signup', url: '/login/' },
 			{ id: 'login-from-home', url: '/login/' },
@@ -262,7 +271,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		forms.forEach(({ id, url }) => {
 			const form = document.getElementById(id);
-			if (form) {
+			if (form && !form.dataset.listenerAttached) {
+				form.dataset.listenerAttached = true;
 				form.addEventListener('submit', async (event) => {
 					event.preventDefault();
 					const formData = new FormData(form);
@@ -275,7 +285,19 @@ document.addEventListener("DOMContentLoaded", () => {
 								"X-CSRFToken": getCookie('csrftoken')
 							},
 						});
+						if (!response.headers.get('Content-Type').includes('application/json')) {
+							if (id === 'logout-form') {
+								localStorage.removeItem('isLoggedIn');
+								CloseStatusSocket();
+								loadContent('/home/', true);
+								loadHeader();
+								console.log("Logout from non json response");
+								return;
+							}
+						}
 						const data = await response.json();
+
+
 						if (data.errors) {
 							let errorMessage = '';
 							for (const [field, messages] of Object.entries(data.errors)) {
@@ -291,6 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
 								CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
+								console.log("Logout from json response");
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
@@ -299,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
 								loadHeader();
 							} else if (id === 'add-friend-form') {
 								// console.log("Form:", form, "formData:", formData);
-								console.log('sock_receiver :', data.sock_receiver)
+								// console.log('sock_receiver :', data.sock_receiver)
 								UpdateStatus('user', data.sock_receiver);
 
 							} else if (id === 'edit-profile-form') {
@@ -340,7 +363,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					} else {
 						// alert(data.message);
 						// accept request, refuse request, cancel request, remove friend
-						console.log("name", data.sock_receiver)
+						// console.log("name", data.sock_receiver)
 						UpdateStatus('user', data.sock_receiver);
 						loadContent('/profile/', true);
 					}
