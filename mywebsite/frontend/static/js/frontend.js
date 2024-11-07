@@ -9,7 +9,7 @@ var statusSocket;
 export function CloseStatusSocket() {
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
 		statusSocket.close(1000, "Closing normally");
-		console.log("Status socket closed");
+		// console.log("Status socket closed");
 	}
 }
 
@@ -21,7 +21,7 @@ export function UpdateStatus(mode, name) {
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN)
 	{
 		statusSocket.send(message);
-		console.log(`[send] Message sent to server: ${message}`);
+		// console.log(`[send] Message sent to server: ${message}`);
 	}
 
 }
@@ -29,17 +29,16 @@ export function UpdateStatus(mode, name) {
 document.addEventListener("DOMContentLoaded", () => {
 
 	function initStatusSockets() {
-		console.log("INIT STATUS SOCKET");
 		const url = `wss://${window.location.host}/ws/status-socket/`;
 		statusSocket = new WebSocket(url);
 
 		statusSocket.onopen = function (e) {
-			console.log("[open] Status Connection established");
-			console.log('WebSocket connection opened:', e);
+			// console.log("[open] Status Connection established");
+			// console.log('WebSocket connection opened:', e);
 		};
 
 		statusSocket.onmessage = function (event) {
-			console.log(`[message] Data received from server: ${event.data}`);
+			// console.log(`[message] Data received from server: ${event.data}`);
 
 			const data = JSON.parse(event.data);
 			if (data == "true")
@@ -51,16 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		};
 
 		statusSocket.onclose = function (event) {
-			console.log('WebSocket connection closed:', event);
-			if (event.wasClean) {
-				console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-			} else {
-				console.log('[close] Connection died');
-			}
+			// console.log('WebSocket connection closed:', event);
+			// if (event.wasClean) {
+			// 	console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+			// } else {
+			// 	console.log('[close] Connection died');
+			// }
 		};
 
 		statusSocket.onerror = function (error) {
-			console.warn("socket error:", error);
+			// console.warn("socket error:", error);
 		};
 	}
 
@@ -69,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	if (checkLoginStatus()) {
-		console.log('User is logged in. Socket status...');
+		// console.log('User is logged in. Socket status...');
 		initStatusSockets();
 	}
 
@@ -298,8 +297,6 @@ document.addEventListener("DOMContentLoaded", () => {
 								loadContent('/profile/', true);
 								loadHeader();
 							} else if (id === 'add-friend-form') {
-								// console.log("Form:", form, "formData:", formData);
-								console.log('sock_receiver :', data.sock_receiver)
 								UpdateStatus('user', data.sock_receiver);
 
 							} else if (id === 'edit-profile-form') {
@@ -340,7 +337,6 @@ document.addEventListener("DOMContentLoaded", () => {
 					} else {
 						// alert(data.message);
 						// accept request, refuse request, cancel request, remove friend
-						console.log("name", data.sock_receiver)
 						UpdateStatus('user', data.sock_receiver);
 						loadContent('/profile/', true);
 					}
