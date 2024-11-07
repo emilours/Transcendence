@@ -36,8 +36,8 @@ function onWindowResize()
 
 	// might need to change so it's not fullscreen
 	renderer.setSize( width, height );
-	console.log("Window Resized!");
-	console.log("width: " + width + " height: " + height);
+	// console.log("Window Resized!");
+	// console.log("width: " + width + " height: " + height);
 }
 
 export function CleanupLocalPong()
@@ -163,7 +163,7 @@ function Init()
 
 	// WINDOW RESIZE
 	window.addEventListener( 'resize', onWindowResize );
-	console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
+	// console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
 
 
 	// RENDERER
@@ -306,7 +306,7 @@ function Loop(timestamp)
 		lastTime = timestamp;
 	if (running == false)
 	{
-		console.log("Not running anymore!");
+		// console.log("Not running anymore!");
 		return;
 	}
 	// requestAnimationFrame(Loop);
@@ -323,13 +323,13 @@ function Inputs()
 		return;
 
 	// DEBUG INFO
-	if (keys.i)
-	{
-		console.log("[INFO]");
-		console.log("[right paddle] x: " + leftPaddle.position.x + " y: " + leftPaddle.position.y + " z: " + leftPaddle.position.z);
-		console.log("[ball] x: " + ball.position.x + " y: " + ball.position.y + " z: " + ball.position.z);
-		console.log("[right paddle] x: " + rightPaddle.position.x + " y: " + rightPaddle.position.y + " z: " + rightPaddle.position.z);
-	}
+	// if (keys.i)
+	// {
+	// 	console.log("[INFO]");
+	// 	console.log("[right paddle] x: " + leftPaddle.position.x + " y: " + leftPaddle.position.y + " z: " + leftPaddle.position.z);
+	// 	console.log("[ball] x: " + ball.position.x + " y: " + ball.position.y + " z: " + ball.position.z);
+	// 	console.log("[right paddle] x: " + rightPaddle.position.x + " y: " + rightPaddle.position.y + " z: " + rightPaddle.position.z);
+	// }
 
 	// PADDLE MOVEMENT
     const paddleHeight = leftPaddle.geometry.parameters.height;
@@ -436,16 +436,16 @@ function SaveMatch(score)
 		body: JSON.stringify({ score: score }),
 	})
 	.then(response => response.json())
-	.then(data => {
-		if (data.status === 'success') {
-			console.log("Pong score save to database successfully!");
-		}
-		else {
-			console.error('Error saving score:', data.message);
-		}
-	})
+	// .then(data => {
+	// 	if (data.status === 'success') {
+	// 		// console.log("Pong score save to database successfully!");
+	// 	}
+	// 	else {
+	// 		console.error('Error saving score:', data.message);
+	// 	}
+	// })
 	.catch(error => {
-		console.error('Error: ', error);
+		// console.error('Error: ', error);
 	})
 }
 

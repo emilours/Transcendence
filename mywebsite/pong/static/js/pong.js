@@ -228,7 +228,7 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 
 function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
-	console.log(userName, "update: ", user);
+	// console.log(userName, "update: ", user);
 	if (!playerInfo)
 		return;
 	if (user == undefined)
@@ -293,12 +293,12 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 export function SendEvent(event, username, data)
 {
     userName = username;
-	console.log("Sending event:", event, "username:", username, "data:", data);
+	// console.log("Sending event:", event, "username:", username, "data:", data);
     try
     {
         if (!socket || !socket.connected)
         {
-            console.log("Socket.io connection not open");
+            // console.log("Socket.io connection not open");
             return false;
         }
         if (username == null && data == null)
@@ -312,7 +312,7 @@ export function SendEvent(event, username, data)
     }
     catch (error)
     {
-        console.log("catch: " + error);
+        // console.log("catch: " + error);
         const activeMenu = document.querySelector('.menu');
         if (activeMenu)
             activeMenu.remove();
@@ -332,7 +332,7 @@ export function ConnectWebsocket(type, username)
 	InitCustomAlerts();
 	if (socket && socket.connected) {
         socket.disconnect();  // Disconnect the existing socket
-        console.log('Existing socket disconnected');
+        // console.log('Existing socket disconnected');
     }
 
 	// ${window.location.host}
@@ -347,49 +347,49 @@ export function ConnectWebsocket(type, username)
 	});
 
 	socket.on("connect", function() {
-		console.log("Connected to socket.io");
+		// console.log("Connected to socket.io");
 	});
 	socket.on("message", function(message) {
-		console.log("Message from server: ", message);
+		// console.log("Message from server: ", message);
 	});
 
 	// DISCONNECT/ERROR EVENTS
 	socket.on("disconnect", function(reason) {
-		console.log("Disconnected from socket.io for: " + reason);
+		// console.log("Disconnected from socket.io for: " + reason);
 		running = false;
 	});
 	// Handle connection errors
     socket.on('connect_error', (error) => {
-        console.error('Connection failed:', error);
+        // console.error('Connection failed:', error);
     });
     // Handle other socket errors
     socket.on('error', (error) => {
-        console.error('Socket error:', error);
+        // console.error('Socket error:', error);
     });
     // Monitor reconnection attempts and failures
     socket.on('reconnect_attempt', () => {
-        console.log('Attempting to reconnect...');
+        // console.log('Attempting to reconnect...');
     });
     socket.on('reconnect_failed', () => {
-        console.error('Reconnection failed after multiple attempts.');
+        // console.error('Reconnection failed after multiple attempts.');
     });
 
 	// CUSTOM EVENTS
 	socket.on('client_count', function(count) {
-        if (count <= 1)
-		    console.log(count + " client connected");
-        else
-		    console.log(count + " clients connected");
+        // if (count <= 1)
+		//     console.log(count + " client connected");
+        // else
+		//     console.log(count + " clients connected");
 
     });
 	socket.on('user_joined', function(user) {
-		console.log("User " + user + " has joined a lobby.");
+		// console.log("User " + user + " has joined a lobby.");
 	});
 	socket.on('user_left', function(user) {
-		console.log("User " + user + " has left a lobby.");
+		// console.log("User " + user + " has left a lobby.");
 	});
 	socket.on('game_ready', function() {
-		console.log("BOTH PLAYER READY");
+		// console.log("BOTH PLAYER READY");
         const activeMenu = document.querySelector('.menu');
         if (activeMenu)
 			activeMenu.remove();
@@ -405,7 +405,7 @@ export function ConnectWebsocket(type, username)
 		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
-		console.log("player already in room, player index:", index);
+		// console.log("player already in room, player index:", index);
 		const activeMenu = document.querySelector('.menu');
         if (activeMenu)
 		{
@@ -421,11 +421,11 @@ export function ConnectWebsocket(type, username)
 	});
 
 	socket.on('send_lobby_data', function(data) {
-		console.log("Received data from server..");
+		// console.log("Received data from server..");
 		const lobbyCode = data.lobby_id;
 		const maxLobbySize = data.max_lobby_size;
 		const gameType = data.game_type;
-		console.log("lobby:", lobbyCode, "is a", gameType, "game");
+		// console.log("lobby:", lobbyCode, "is a", gameType, "game");
 
         const activeMenu = document.querySelector('.menu');
 		if (activeMenu)
@@ -436,8 +436,8 @@ export function ConnectWebsocket(type, username)
                 const codeText = activeMenu.querySelector('h4');
                 if (codeText)
                     codeText.innerText = lobbyCode;
-                else
-                    console.log("NO h4 in menu");
+                // else
+                    // console.log("NO h4 in menu");
             }
             // else
             // {
@@ -478,7 +478,7 @@ export function ConnectWebsocket(type, username)
 		{
 			if (!document.querySelector('.overlay'))
 				CreateGameOverlay();
-			console.log("text:", gameText);
+			// console.log("text:", gameText);
 			UpdateGameOverlay(gameText, gameOver);
 		}	
 		else
@@ -490,7 +490,7 @@ export function ConnectWebsocket(type, username)
 export function CloseWebsocket() {
 	if (socket && socket.connected) {
 		socket.disconnect();
-		console.log("Socket.IO connection closed");
+		// console.log("Socket.IO connection closed");
 	}
 	running = false;
 }
@@ -544,8 +544,8 @@ function onWindowResize()
 
 	// might need to change so it's not fullscreen
 	renderer.setSize( width, height );
-	console.log("Window Resized!");
-	console.log("width: " + width + " height: " + height);
+	// console.log("Window Resized!");
+	// console.log("width: " + width + " height: " + height);
 }
 
 function StartGame()
@@ -644,11 +644,15 @@ function Init()
 
 	// WINDOW RESIZE
 	window.addEventListener( 'resize', onWindowResize );
-	console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
+	// console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
 
 
 	// RENDERER
-	renderer = new THREE.WebGLRenderer({antialias: true, canvas: game});
+	try {
+		renderer = new THREE.WebGLRenderer({antialias: true, canvas: game});
+	} catch (error) {
+		console.error('Error creating WebGLRenderer:', error);
+	}
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	renderer.outputEncoding = THREE.sRGBEncoding;
@@ -777,7 +781,7 @@ function Loop()
 {
 	if (running == false)
 	{
-		console.log("Not running anymore!");
+		// console.log("Not running anymore!");
 		return;
 	}
 	requestAnimationFrame(Loop);
@@ -791,13 +795,13 @@ function Inputs()
 	const inputEvent = 'pong_input'
 
 	//DEBUG
-	if (keys.i)
-	{
-		console.log("[INFO]");
-		console.log("[right paddle] x: " + leftPaddle.position.x + " y: " + leftPaddle.position.y + " z: " + leftPaddle.position.z);
-		console.log("[ball] x: " + ball.position.x + " y: " + ball.position.y + " z: " + ball.position.z);
-		console.log("[right paddle] x: " + rightPaddle.position.x + " y: " + rightPaddle.position.y + " z: " + rightPaddle.position.z);
-	}
+	// if (keys.i)
+	// {
+	// 	console.log("[INFO]");
+	// 	console.log("[right paddle] x: " + leftPaddle.position.x + " y: " + leftPaddle.position.y + " z: " + leftPaddle.position.z);
+	// 	console.log("[ball] x: " + ball.position.x + " y: " + ball.position.y + " z: " + ball.position.z);
+	// 	console.log("[right paddle] x: " + rightPaddle.position.x + " y: " + rightPaddle.position.y + " z: " + rightPaddle.position.z);
+	// }
 
 	//CLIENT SIDE PADDLE INPUTS
 	// Maybe could rework that so it's faster (less event send) ?
@@ -843,7 +847,6 @@ function Update()
 
 function Cleanup()
 {
-	console.warn("CLEANING UP THREEJS");
 	while (scene.children.length > 0)
 	{
         const child = scene.children[0];

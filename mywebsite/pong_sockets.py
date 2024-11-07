@@ -163,6 +163,15 @@ def GetPlayersAvatar(room_id):
                 avatars.append(player.avatar.url)
     return (avatars)
 
+async def GamePaused(sid1, sid2, game_over):
+    for i in range(60):
+        data = {
+                'text': 'Your opponent left\nForfeit win in: ' + str(60 - i),
+                'game_over': game_over 
+            }
+        await sio.emit('update_overlay', data, to=[sid1, sid2])
+        await asyncio.sleep(1)
+
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
     log(f"STARTING GAME LOOP by {sid}")
@@ -182,12 +191,20 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
         if game['status'] == "paused":
             log(f"Game {game['room_id']} is paused!")
             paused = 1
-        while game['status'] == "paused":
-            await asyncio.sleep(1 / 2)
+        # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
+        if game['status'] == "paused":
+            await GamePaused(sid1, sid2, game['game_over'])
+            game['status'] = "running"
+            if game['ready'][player_1_index] == '1':
+                game['scores'][player_1_index] = 5
+            else:
+                game['scores'][player_2_index] = 5
+            game['game_over'] = 1
         if paused == 1:
             paused = 0
-            await GameCountDown(room_id, "Game Restarting", sid1, sid2)
-            log(f"Game {game['room_id']} is resuming")
+            if game['status'] == 'paused':
+                await GameCountDown(room_id, "Game Restarting", sid1, sid2)
+                log(f"Game {game['room_id']} is resuming")
 
         # Delta time
         current_time = time.time()
@@ -536,6 +553,7 @@ async def StartGame(sid, username):
     room_id = GetUserRoom(username)
     if (username != games[room_id]['players'][0]):
         return
+    # HERE: this and the line above might cause a problem if the player leaving is the one at index 0 ??
     if (games[room_id]['status'] == "paused"):
         games[room_id]['status'] = 'running'
         return
@@ -573,7 +591,7 @@ async def JoinLobby(sid, username, room_key):
         log(f"User {username} is already in a game")
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
-        await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sidz)
+        await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sid)
         await SendLobbyData(sid)
         return
 

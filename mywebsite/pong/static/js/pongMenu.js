@@ -13,7 +13,7 @@ export function initPongMenu(username, userAvatar) {
 	    avatar = userAvatar;
     if (username)
 	    userName = username;
-	console.log('Pong game initialized - user:', userName);
+	// console.log('Pong game initialized - user:', userName);
 
 	//DEBUG
 	document.body.addEventListener( 'keydown', function(event) {
@@ -247,7 +247,6 @@ function drawTournament() {
 			}),
 			createButton('CREATE TOURNAMENT', () => {
 				onlineMenu.remove();
-				console.log("CREATE TOURNAMENT button clicked")
 				SendEvent('create_lobby', userName, TOURNAMENT_MODE);
 				drawLobbyTournament();
 			}),
