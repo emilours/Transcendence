@@ -106,7 +106,6 @@ def signup(request):
     if user is not None:
         login(request, user)
         request.session.save()
-        # user.save(update_fields=['active_sessions'])
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)
@@ -119,7 +118,6 @@ def signout(request):
         return JsonResponse({"message": "You have successfully logged out."}, status=200)
     else:
         return JsonResponse({"error": "You are not currently logged in."}, status=403)
-
 
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
@@ -459,7 +457,7 @@ def request_anonymization(request):
 
     try:
         with transaction.atomic():
-            unique_suffix = get_random_string(length=8)
+            unique_suffix = get_random_string(length=5)
 
             avatar_dir = os.path.join(settings.MEDIA_ROOT, 'img/avatars/')
 
@@ -473,7 +471,7 @@ def request_anonymization(request):
                         deleted_files.append(file_path)
 
             user.avatar = 'img/avatars/avatar0.jpg'
-            user.display_name = f'Anonymous_{unique_suffix}'
+            user.display_name = f'Anon_{unique_suffix}'
             user.first_name = 'Anonymous'
             user.last_name = 'Anonymous'
             user.save()

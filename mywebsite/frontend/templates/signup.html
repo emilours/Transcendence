@@ -12,7 +12,7 @@
 						<form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
 							{% csrf_token %}
 							<div class="form-floating mb-2">
-								<input type="text" class="form-control rounded-1" id="display_name" name="display_name" maxlength="100" required placeholder="Username">
+								<input type="text" class="form-control rounded-1" id="display_name" name="display_name" maxlength="15" required placeholder="Username">
 								<label for="display_name" >Username</label>
 							</div>
 							<div class="form-floating mb-2">
