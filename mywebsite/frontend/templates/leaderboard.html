@@ -53,7 +53,7 @@
 										{% endif %}
 									</td>
 									<td class="text-secondary-emphasis">
-										<a href="{% url 'user_dashboard' player %}">
+										<a href="#" data-url="{% url 'user_dashboard' player %}">
 											{{ player }}
 										</a>
 									</td>
@@ -120,7 +120,7 @@
 										{% endif %}
 									</td>
 									<td class="text-secondary-emphasis">
-										<a href="{% url 'user_dashboard' entry.player.display_name %}">
+										<a href="#" data-url="{% url 'user_dashboard' entry.player.display_name %}">
 											{{ entry.player.display_name }}
 										</a>
 									</td>

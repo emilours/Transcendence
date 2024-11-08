@@ -48,7 +48,7 @@ class StatusConsumer(AsyncWebsocketConsumer):
 
 		await self.send(text_data=json.dumps(event['refresh']))
 
-	
+
 	async def BroadcastMessage(self, friend_list):
 		room_name = "send_room"
 
