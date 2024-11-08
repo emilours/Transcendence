@@ -29,7 +29,6 @@ var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB
 // var overlayText;
 var userName;
 var socket;
-var userName;
 var scoreGeometry, scoreFont;
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
@@ -38,6 +37,10 @@ var running = true;
 function CreateGameOverlay()
 {
 	const gameOverlay = createElement('div', {className: 'overlay' },
+		// createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+		// 	createElement('img', )
+		// 	createElement('h2', { innerText: ""}),
+		// )
 		createElement('h2', { innerText: ""}),
 		createElement('h3', { innerText: ""})
 	);
@@ -394,6 +397,8 @@ export function ConnectWebsocket(type, username)
         if (activeMenu)
 			activeMenu.remove();
 		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
+		// HERE: either cleanup works or just send the event to the person that left
+		Cleanup();
 		StartGame();
 		SendEvent('start_game', userName);
 	});
@@ -550,8 +555,10 @@ function onWindowResize()
 
 function StartGame()
 {
+
 	Load();
 	Init();
+
 	socket.on('game_update', function(data) {
 
 		ball.position.x = parseFloat(data.ballPosition[0]);
@@ -630,35 +637,43 @@ function createScoreText()
 function Init()
 {
 	// SCENE
-	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xa400bd);
+	if (!scene)
+	{
+		scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xa400bd);
+	}
 
 	// CAMERA
 	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
 	// FIXED ASPECT RATIO Best fix so we always see the whole pong
 	var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
-	camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
-	camera.position.set(0, -11, 13);
-	camera.lookAt(0, 0, 0);
-	scene.add(camera);
+	if (!camera)
+	{
+		camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+		camera.position.set(0, -11, 13);
+		camera.lookAt(0, 0, 0);
+		scene.add(camera);
+	}
 
 	// WINDOW RESIZE
+	//TODO: maybe reset eventlistener
 	window.addEventListener( 'resize', onWindowResize );
 	// console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
 
 
 	// RENDERER
-	try {
+	if (!renderer)
+	{
+		console.log("Renderer initialization");
 		renderer = new THREE.WebGLRenderer({antialias: true, canvas: game});
-	} catch (error) {
-		console.error('Error creating WebGLRenderer:', error);
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+		renderer.outputEncoding = THREE.sRGBEncoding;
+		const container = document.getElementById('pong-container-id');
+		// NOTE: probleme if not containter!!
+		if (container)
+			container.appendChild(renderer.domElement);
 	}
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-	renderer.outputEncoding = THREE.sRGBEncoding;
-	const container = document.getElementById('pong-container-id');
-	container.appendChild(renderer.domElement);
-
 
 	// // OVERLAY TEXT
 	// overlayText = document.getElementById('overlay-text');
@@ -733,9 +748,12 @@ function Init()
 	arenaLeftSide.position.x -= 8.25;
 
 	// Ball
-	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-	ball = new THREE.Mesh(ballGeometry, ballMaterial);
-	scene.add(ball);
+	if (!ball)
+	{
+		const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
+		ball = new THREE.Mesh(ballGeometry, ballMaterial);
+		scene.add(ball);
+	}
 
 
 	// Paddles
@@ -780,10 +798,7 @@ function Init()
 function Loop()
 {
 	if (running == false)
-	{
-		// console.log("Not running anymore!");
 		return;
-	}
 	requestAnimationFrame(Loop);
 	Inputs();
 	Update();
@@ -845,29 +860,39 @@ function Update()
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
 }
 
-function Cleanup()
+export function Cleanup()
 {
-	while (scene.children.length > 0)
+	if (scene)
 	{
-        const child = scene.children[0];
+		while (scene.children.length > 0)
+		{
+			const child = scene.children[0];
 
-        // If the child is a mesh, dispose of its geometry and material
-        if (child instanceof THREE.Mesh) {
-            if (child.geometry) {
-                child.geometry.dispose(); // Dispose geometry
-            }
-            if (child.material) {
-                // If the material is an array (multiple materials), dispose each one
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(material => material.dispose());
-                } else {
-                    child.material.dispose(); // Dispose single material
-                }
-            }
-        }
+			// If the child is a mesh, dispose of its geometry and material
+			if (child instanceof THREE.Mesh) {
+				if (child.geometry) {
+					child.geometry.dispose(); // Dispose geometry
+				}
+				if (child.material) {
+					// If the material is an array (multiple materials), dispose each one
+					if (Array.isArray(child.material)) {
+						child.material.forEach(material => material.dispose());
+					} else {
+						child.material.dispose(); // Dispose single material
+					}
+				}
+			}
 
-        // Remove the child from the scene
-        scene.remove(child);
-    }
+			// Remove the child from the scene
+			scene.remove(child);
+		}
+	}
+	scene = null;
+	camera = null;
+	renderer = null;
+	controls = null;
+	loader = null;
+	ball = null;
+
 
 }

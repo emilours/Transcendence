@@ -1,6 +1,6 @@
 import { startInvaders, stopInvaders } from '/static/js/invaders.js';
 import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
-import { CloseWebsocket } from '/static/js/pong.js';
+import { CloseWebsocket, Cleanup } from '/static/js/pong.js';
 import { CleanupLocalPong } from '/static/js/pongLocal.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 		// close ws connection and cleanup threejs
 		CloseWebsocket();
+		Cleanup();
 		CleanupLocalPong();
 		cleanupPongMenu();
 		stopInvaders();

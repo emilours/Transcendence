@@ -163,7 +163,12 @@ def GetPlayersAvatar(room_id):
                 avatars.append(player.avatar.url)
     return (avatars)
 
-async def GamePaused(sid1, sid2, game_over):
+async def GamePaused(index1, index2, room_id, game_over):
+    global games
+
+    game = games[room_id]
+    sid1 = game['sids'][index1]
+    sid2 = game['sids'][index2]
     for i in range(60):
         data = {
                 'text': 'Your opponent left\nForfeit win in: ' + str(60 - i),
@@ -171,6 +176,14 @@ async def GamePaused(sid1, sid2, game_over):
             }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
         await asyncio.sleep(1)
+        if game['ready'][index1] == 1 and game['ready'][index2] == 1:
+            data = {
+                'text': '',
+                'game_over': game_over 
+            }
+            await sio.emit('update_overlay', data, to=[sid1, sid2])
+            return 1
+    return 0
 
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
@@ -188,23 +201,26 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     delta_time = 0
     paused = 0
     while True:        
-        if game['status'] == "paused":
-            log(f"Game {game['room_id']} is paused!")
-            paused = 1
+
         # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
-        if game['status'] == "paused":
-            await GamePaused(sid1, sid2, game['game_over'])
-            game['status'] = "running"
-            if game['ready'][player_1_index] == '1':
-                game['scores'][player_1_index] = 5
-            else:
-                game['scores'][player_2_index] = 5
-            game['game_over'] = 1
+        if game['status'] == "paused" or game['ready'][player_1_index] == '0' or game['ready'][player_2_index] == 0:
+            paused = 1
+            log(f"Game {game['room_id']} is paused!")
+            player_returned = await GamePaused(player_1_index, player_2_index, room_id, game['game_over'])
+            if player_returned == 0:
+                if game['ready'][player_1_index] == 1:
+                    game['scores'][player_1_index] = 5
+                elif game['ready'][player_2_index] == 1:
+                    game['scores'][player_2_index] = 5
+                game['game_over'] = 1
+                game['status'] = "running"
+            sid1 = game['sids'][player_1_index]
+            sid2 = game['sids'][player_2_index]
         if paused == 1:
             paused = 0
             if game['status'] == 'paused':
                 await GameCountDown(room_id, "Game Restarting", sid1, sid2)
-                log(f"Game {game['room_id']} is resuming")
+            log(f"Game {game['room_id']} is resuming")
 
         # Delta time
         current_time = time.time()
