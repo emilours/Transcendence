@@ -278,12 +278,15 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             await SaveMatch(room_id, game_type, player_1_index, player_2_index)
             game['status'] = "completed"
             if game['scores'][player_1_index] >= 5:
-                winner = game['players'][player_1_index]
+                winner_index = player_1_index
             else:
-                winner = game['players'][player_2_index] 
+                winner_index = player_2_index
+            winner = game['players'][winner_index]
+            avatars = await GetPlayersAvatar(room_id)
             data = {
                 'text': winner,
-                'game_over': game['game_over']
+                'game_over': game['game_over'],
+                'avatar': avatars[winner_index]
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
 

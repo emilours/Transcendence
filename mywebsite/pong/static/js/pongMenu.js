@@ -1,5 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent, createButtonReady } from './pong.js';
+import { ConnectWebsocket, CloseWebsocket, SendEvent} from './pong.js';
 import { StartLocalGame } from './pongLocal.js'
 
 const NORMAL_MODE = 'normal';
@@ -15,7 +15,7 @@ export function initPongMenu(username, userAvatar) {
 	    userName = username;
 	// console.log('Pong game initialized - user:', userName);
 
-	//DEBUG
+	// DEBUG
 	document.body.addEventListener( 'keydown', function(event) {
 	if (event.key === 't')
 		SendEvent('debug_print', userName)
@@ -23,6 +23,25 @@ export function initPongMenu(username, userAvatar) {
 
 	drawMainMenu();
 }
+
+export function createButtonReady()
+{
+	let buttonReady = createButtonGreen('READY', () => {
+		if (buttonReady.innerText == 'READY')
+		{
+			buttonReady.style.backgroundColor = '#0ccf0c';
+			buttonReady.innerText = 'CANCEL';
+		}
+		else
+		{
+			buttonReady.style.backgroundColor = '#5fbfff';
+			buttonReady.innerText = 'READY';
+		}
+		SendEvent('player_ready', userName, null);
+	});
+	return (buttonReady);
+}
+
 
 export function cleanupPongMenu()
 {

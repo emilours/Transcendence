@@ -3,7 +3,7 @@ import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, drawMainMenu } from './pongMenu.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawMainMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
 
 const BALL_SPEED = 0.1; //not needed i think
@@ -21,11 +21,54 @@ const TOURNAMENT_CHECKMARK_SIZE = 30;
 const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
-// standard global variables
-var scene, camera, renderer, controls, loader;
+
+console.log("PONG.JS");
+var scene, camera, renderer;
+var ballTexture;
+var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
+
+export function InitThreeJS()
+{
+	console.log("Initializing Threejs")
+	// THREEJS basic const global variables 
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color(0xa400bd);
+
+	camera =  new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+	camera.position.set(0, -11, 13);
+	camera.lookAt(0, 0, 0);
+	scene.add(camera);
+
+	// window.addEventListener("load", () => {
+	// 	// const gameCanvas = document.getElementById('game');
+	// 	const renderer = new THREE.WebGLRenderer({antialias: true});
+	// 	renderer.setPixelRatio( window.devicePixelRatio );
+	// 	renderer.setSize( window.innerWidth, window.innerHeight);
+	// 	renderer.outputEncoding = THREE.sRGBEncoding;
+	// 	document.getElementById('pong-container-id').appendChild(renderer.domElement);
+	// });
+
+	renderer = new THREE.WebGLRenderer({ antialias: true, canvas: game});
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.outputEncoding = THREE.sRGBEncoding;
+	document.getElementById('pong-container-id').appendChild(renderer.domElement);
+
+	// Loading font for 3D text
+	const loader = new FontLoader();
+	loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
+		scoreFont = font;
+
+		createScoreText();
+	});
+
+	// Loading Ball texture
+	const textureLoader = new THREE.TextureLoader();
+	ballTexture = textureLoader.load("../../static/textures/ball_texture.png");
+}
 
 // custom global variables
-var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+var line, ball, ballBB, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 // var overlayText;
 var userName;
 var socket;
@@ -37,12 +80,11 @@ var running = true;
 function CreateGameOverlay()
 {
 	const gameOverlay = createElement('div', {className: 'overlay' },
-		// createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
-		// 	createElement('img', )
-		// 	createElement('h2', { innerText: ""}),
-		// )
-		createElement('h2', { innerText: ""}),
-		createElement('h3', { innerText: ""})
+		createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+			createElement('img', {src: '/static/img/loading.gif', width: 50, height: 50} ),
+			createElement('h2', { innerText: "h2"})
+		),
+		createElement('h3', { innerText: "h3"})
 	);
 	document.querySelector('.pong-container').appendChild(gameOverlay);
 }
@@ -58,11 +100,16 @@ function ResetGameCanvas()
 	}
 }
 
-function UpdateGameOverlay(gameText, gameOver)
+function UpdateGameOverlay(gameText, gameOver, avatar)
 {
 	const gameOverlay = document.querySelector('.overlay');
 	if (gameOverlay)
 	{
+		const overlayImg = gameOverlay.querySelector('img');
+		if (overlayImg)
+		{
+			overlayImg.src = avatar;
+		}
 		const overlayH2 = gameOverlay.querySelector('h2');
 		if (overlayH2)
 			overlayH2.innerText = "";
@@ -86,7 +133,6 @@ function UpdateGameOverlay(gameText, gameOver)
 					initPongMenu();
 				});
 			}
-
 			gameOverlay.appendChild(quitButton);
 		}
 
@@ -101,24 +147,6 @@ function RemoveGameOverlay()
 		document.querySelector('.pong-container').removeChild(gameOverlay);
 		gameOverlay.remove();
 	}
-}
-
-export function createButtonReady()
-{
-	let buttonReady = createButtonGreen('READY', () => {
-		if (buttonReady.innerText == 'READY')
-		{
-			buttonReady.style.backgroundColor = '#0ccf0c';
-			buttonReady.innerText = 'CANCEL';
-		}
-		else
-		{
-			buttonReady.style.backgroundColor = '#5fbfff';
-			buttonReady.innerText = 'READY';
-		}
-		SendEvent('player_ready', userName, null);
-	});
-	return (buttonReady);
 }
 
 function createReadyCheckmark(size)
@@ -220,7 +248,7 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 				playerInfo.removeChild(readyButton);
 				readyButton.remove();
 			}
-			if (ready == 1)
+			if (ready == PLAYER_READY)
 			{
 				const readyCheckmark = createReadyCheckmark(NORMAL_CHECKMARK_SIZE);
 				playerInfo.appendChild(readyCheckmark);
@@ -284,7 +312,7 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 			playerDiv.removeChild(readyButton);
 			readyButton.remove();
 		}
-		if (!readyButton && ready == 1)
+		if (!readyButton && ready == PLAYER_READY)
 		{
 			readyCheckmark = createReadyCheckmark(TOURNAMENT_CHECKMARK_SIZE);
 			playerDiv.appendChild(readyCheckmark);
@@ -479,12 +507,13 @@ export function ConnectWebsocket(type, username)
 	socket.on('update_overlay', function(data) {
 		const gameText = data.text;
 		const gameOver = data.game_over;
+		const avatar = data.avatar
 		if (gameText != '')
 		{
 			if (!document.querySelector('.overlay'))
 				CreateGameOverlay();
 			// console.log("text:", gameText);
-			UpdateGameOverlay(gameText, gameOver);
+			UpdateGameOverlay(gameText, gameOver, avatar);
 		}	
 		else
 			RemoveGameOverlay();
@@ -555,10 +584,7 @@ function onWindowResize()
 
 function StartGame()
 {
-
-	Load();
 	Init();
-
 	socket.on('game_update', function(data) {
 
 		ball.position.x = parseFloat(data.ballPosition[0]);
@@ -579,21 +605,6 @@ function StartGame()
 	Loop();
 }
 
-function Load()
-{
-	// SCORE FONT
-	loader = new FontLoader();
-	loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
-		scoreFont = font;
-
-		createScoreText();
-	});
-
-	// BALL TEXTURE
-	const textureLoader = new THREE.TextureLoader();
-	ballTexture = textureLoader.load("../../static/textures/ball_texture.png")
-
-}
 
 function createScoreText()
 {
@@ -636,47 +647,9 @@ function createScoreText()
 
 function Init()
 {
-	// SCENE
-	if (!scene)
-	{
-		scene = new THREE.Scene();
-		scene.background = new THREE.Color(0xa400bd);
-	}
-
-	// CAMERA
-	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
-	// FIXED ASPECT RATIO Best fix so we always see the whole pong
-	var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
-	if (!camera)
-	{
-		camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
-		camera.position.set(0, -11, 13);
-		camera.lookAt(0, 0, 0);
-		scene.add(camera);
-	}
-
+	
 	// WINDOW RESIZE
-	//TODO: maybe reset eventlistener
 	window.addEventListener( 'resize', onWindowResize );
-	// console.log("width: " + SCREEN_WIDTH + " height: " + SCREEN_HEIGHT);
-
-
-	// RENDERER
-	if (!renderer)
-	{
-		console.log("Renderer initialization");
-		renderer = new THREE.WebGLRenderer({antialias: true, canvas: game});
-		renderer.setPixelRatio( window.devicePixelRatio );
-		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-		renderer.outputEncoding = THREE.sRGBEncoding;
-		const container = document.getElementById('pong-container-id');
-		// NOTE: probleme if not containter!!
-		if (container)
-			container.appendChild(renderer.domElement);
-	}
-
-	// // OVERLAY TEXT
-	// overlayText = document.getElementById('overlay-text');
 
 	// LIGHT
 	// can't see textures without light
@@ -887,12 +860,4 @@ export function Cleanup()
 			scene.remove(child);
 		}
 	}
-	scene = null;
-	camera = null;
-	renderer = null;
-	controls = null;
-	loader = null;
-	ball = null;
-
-
 }

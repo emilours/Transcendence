@@ -1,10 +1,12 @@
 import { startInvaders, stopInvaders } from '/static/js/invaders.js';
 import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
-import { CloseWebsocket, Cleanup } from '/static/js/pong.js';
+import { CloseWebsocket, Cleanup, InitThreeJS } from '/static/js/pong.js';
 import { CleanupLocalPong } from '/static/js/pongLocal.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 var statusSocket;
+
+console.log("FRONTEND");
 
 export function CloseStatusSocket() {
 	if (statusSocket && statusSocket.readyState === WebSocket.OPEN) {
@@ -27,7 +29,6 @@ export function UpdateStatus(mode, name) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
 	function initStatusSockets() {
 		const url = `wss://${window.location.host}/ws/status-socket/`;
 		statusSocket = new WebSocket(url);
@@ -95,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	function cleanupResources() {
 		document.querySelectorAll('script[data-dynamic="true"]').forEach(script => script.remove());
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
-		// close ws connection and cleanup threejs
+		// close ws connection and cleaning up threejs
 		CloseWebsocket();
 		Cleanup();
 		CleanupLocalPong();
@@ -150,6 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				await loadResource('https://cdn.jsdelivr.net/npm/gifler@0.1.0/gifler.min.js', 'script');
 				await loadResource('/static/css/pong.css', 'link');
 				await loadResource('/static/js/pongMenu.js', 'script');
+				// await loadResource('/static/js/pong.js', 'script'); // useless because of functions import
+				InitThreeJS();
 				await initPongMenu(data.username, data.avatar);
 			} else if (url.includes('dashboard')) {
 				await loadResource('/static/js/dashboard.js', 'script');
