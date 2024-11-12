@@ -500,7 +500,6 @@ async def PongInput(sid, text_data):
 
     player_index = game['players'].index(username)
 
-
     delta_time = game['delta_time']
 
     if action == 'up':
@@ -511,6 +510,8 @@ async def PongInput(sid, text_data):
         game['pos'][player_index] -= PADDLE_SPEED * delta_time
         if game['pos'][player_index] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
             game['pos'][player_index] = BOTTOM_WALL + PADDLE_HEIGHT / 2
+
+    
 
 async def StartTournament(sid, room_id):
     global games

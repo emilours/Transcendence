@@ -22,7 +22,6 @@ const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
 
-console.log("PONG.JS");
 var scene, camera, renderer;
 var ballTexture;
 var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
@@ -39,21 +38,16 @@ export function InitThreeJS()
 	camera.lookAt(0, 0, 0);
 	scene.add(camera);
 
-	// window.addEventListener("load", () => {
-	// 	// const gameCanvas = document.getElementById('game');
-	// 	const renderer = new THREE.WebGLRenderer({antialias: true});
-	// 	renderer.setPixelRatio( window.devicePixelRatio );
-	// 	renderer.setSize( window.innerWidth, window.innerHeight);
-	// 	renderer.outputEncoding = THREE.sRGBEncoding;
-	// 	document.getElementById('pong-container-id').appendChild(renderer.domElement);
-	// });
-
 	renderer = new THREE.WebGLRenderer({ antialias: true, canvas: game});
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	renderer.outputEncoding = THREE.sRGBEncoding;
 	document.getElementById('pong-container-id').appendChild(renderer.domElement);
 
+	// Loading Ball texture
+	const textureLoader = new THREE.TextureLoader();
+	ballTexture = textureLoader.load("../../static/textures/ball_texture.png");
+	
 	// Loading font for 3D text
 	const loader = new FontLoader();
 	loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
@@ -62,9 +56,6 @@ export function InitThreeJS()
 		createScoreText();
 	});
 
-	// Loading Ball texture
-	const textureLoader = new THREE.TextureLoader();
-	ballTexture = textureLoader.load("../../static/textures/ball_texture.png");
 }
 
 // custom global variables
@@ -80,11 +71,11 @@ var running = true;
 function CreateGameOverlay()
 {
 	const gameOverlay = createElement('div', {className: 'overlay' },
+		createElement('h2', { innerText: ""}),
 		createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
-			createElement('img', {src: '/static/img/loading.gif', width: 50, height: 50} ),
-			createElement('h2', { innerText: "h2"})
-		),
-		createElement('h3', { innerText: "h3"})
+			createElement('div', { style: 'width: 100px;' }),
+			createElement('h3', { innerText: ""})
+		)
 	);
 	document.querySelector('.pong-container').appendChild(gameOverlay);
 }
@@ -108,16 +99,17 @@ function UpdateGameOverlay(gameText, gameOver, avatar)
 		const overlayImg = gameOverlay.querySelector('img');
 		if (overlayImg)
 		{
-			overlayImg.src = avatar;
+			if (avatar)
+				overlayImg.src = avatar;
 		}
 		const overlayH2 = gameOverlay.querySelector('h2');
 		if (overlayH2)
 			overlayH2.innerText = "";
 
+
 		const overlayH3 = gameOverlay.querySelector('h3');
 		if (overlayH3)
 			overlayH3.innerText = gameText;
-
 		if (gameOver == 1)
 		{
 			if (overlayH2)
@@ -127,9 +119,16 @@ function UpdateGameOverlay(gameText, gameOver, avatar)
 			{
 				quitButton = createButton('QUIT', () => {
 					gameOverlay.remove();
-					Cleanup();
+					// Cleanup();
 					CloseWebsocket();
-					ResetGameCanvas();
+					while (scene.children.length > 0) {
+						scene.remove(scene.children[0]);
+					  }
+					renderer.render(scene, camera);
+					renderer.clear(true, true, true);
+					renderer.setSize(0, 0);
+					renderer.setSize(window.innerWidth, window.innerHeight);
+					// ResetGameCanvas();
 					initPongMenu();
 				});
 			}
@@ -426,7 +425,7 @@ export function ConnectWebsocket(type, username)
 			activeMenu.remove();
 		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		// HERE: either cleanup works or just send the event to the person that left
-		Cleanup();
+		// Cleanup();
 		StartGame();
 		SendEvent('start_game', userName);
 	});
@@ -600,7 +599,6 @@ function StartGame()
 			rightPlayerScore = player2Score;
 			createScoreText();
 		}
-		// overlayText.textContent = `Ball position X: ${ball.position.x.toFixed(2)} Y: ${ball.position.y.toFixed(2)}`
 	});
 	Loop();
 }
@@ -793,7 +791,7 @@ function Inputs()
 
 	//CLIENT SIDE PADDLE INPUTS
 	// Maybe could rework that so it's faster (less event send) ?
-	if (keys.w)
+	if (keys.w || keys.arrowup)
 	{
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
@@ -801,23 +799,7 @@ function Inputs()
 		}))
 	}
 
-	if (keys.s)
-	{
-		socket.emit(inputEvent, JSON.stringify({
-			'username': userName,
-			'action':'down'
-		}))
-	}
-
-	if (keys.arrowup)
-	{
-		socket.emit(inputEvent, JSON.stringify({
-			'username': userName,
-			'action':'up'
-		}))
-	}
-
-	if (keys.arrowdown)
+	if (keys.s || keys.arrowdown)
 	{
 		socket.emit(inputEvent, JSON.stringify({
 			'username': userName,
@@ -831,33 +813,4 @@ function Update()
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
-}
-
-export function Cleanup()
-{
-	if (scene)
-	{
-		while (scene.children.length > 0)
-		{
-			const child = scene.children[0];
-
-			// If the child is a mesh, dispose of its geometry and material
-			if (child instanceof THREE.Mesh) {
-				if (child.geometry) {
-					child.geometry.dispose(); // Dispose geometry
-				}
-				if (child.material) {
-					// If the material is an array (multiple materials), dispose each one
-					if (Array.isArray(child.material)) {
-						child.material.forEach(material => material.dispose());
-					} else {
-						child.material.dispose(); // Dispose single material
-					}
-				}
-			}
-
-			// Remove the child from the scene
-			scene.remove(child);
-		}
-	}
 }
