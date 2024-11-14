@@ -153,6 +153,14 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
     log("Match properly saved!")
 
 @sync_to_async
+def GetPlayerAvatar(username):
+    player = CustomUser.objects.filter(display_name=username)
+    if player.exists():
+        player = player.first()
+    return (player.avatar.url)
+
+
+@sync_to_async
 def GetPlayersAvatar(room_id):
     avatars = []
     for i in range (0, 4):
@@ -172,14 +180,14 @@ async def GamePaused(index1, index2, room_id, game_over):
     for i in range(60):
         data = {
                 'text': 'Your opponent left\nForfeit win in: ' + str(60 - i),
-                'game_over': game_over 
+                'game_over': game_over
             }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
         await asyncio.sleep(1)
         if game['ready'][index1] == 1 and game['ready'][index2] == 1:
             data = {
                 'text': '',
-                'game_over': game_over 
+                'game_over': game_over
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
             return 1
@@ -191,16 +199,30 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     game = games[room_id]
     sid1 = game['sids'][player_1_index]
     sid2 = game['sids'][player_2_index]
+    temp_avatars = await GetPlayersAvatar(room_id)
+    avatars = [temp_avatars[player_1_index], temp_avatars[player_2_index]]
+    usernames = [game['players'][player_1_index], game['players'][player_2_index]]
     game['status'] = "running"
     game_type = game['game_type']
+
+    # First update to draw hud
+    data = {
+            'ballPosition': game['ballPosition'],
+            'pos': [game['pos'][player_1_index], game['pos'][player_2_index]],
+            'scores': [game['scores'][player_1_index], game['scores'][player_2_index]],
+            'usernames': usernames,
+            'avatars':  avatars
+        }
+    await sio.emit('game_update', data, to=[sid1, sid2])
+
+
     await GameCountDown(room_id, "Game Starting", sid1, sid2)
-    # REWORK: needed only if i disconnect immediately
-    # username1 = game['players'][player_1_index]
-    # username2 = game['players'][player_2_index]
+    
     games[room_id]['last_time'] = time.time()
     delta_time = 0
     paused = 0
-    while True:        
+
+    while True:
 
         # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
         if game['status'] == "paused" or game['ready'][player_1_index] == '0' or game['ready'][player_2_index] == 0:
@@ -264,13 +286,15 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
 
 
         # Broadcast the updated game state to both players
+
         data = {
             'ballPosition': game['ballPosition'],
             'pos': [game['pos'][player_1_index], game['pos'][player_2_index]],
-            'scores': [game['scores'][player_1_index], game['scores'][player_2_index]]
+            'scores': [game['scores'][player_1_index], game['scores'][player_2_index]],
+            'usernames': usernames,
+            'avatars':  avatars
         }
         await sio.emit('game_update', data, to=[sid1, sid2])
-
 
 
         # Check if game is over
@@ -282,7 +306,6 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             else:
                 winner_index = player_2_index
             winner = game['players'][winner_index]
-            avatars = await GetPlayersAvatar(room_id)
             data = {
                 'text': winner,
                 'game_over': game['game_over'],
@@ -511,7 +534,7 @@ async def PongInput(sid, text_data):
         if game['pos'][player_index] - PADDLE_HEIGHT / 2 < BOTTOM_WALL:
             game['pos'][player_index] = BOTTOM_WALL + PADDLE_HEIGHT / 2
 
-    
+
 
 async def StartTournament(sid, room_id):
     global games
@@ -527,7 +550,7 @@ async def StartTournament(sid, room_id):
     winner1 = await game_task
     color_print(BLUE, f"Game 1 finished: {winner1}")
     winner1_index = games[room_id]['players'].index(winner1)
-    
+
     game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[2], player_index_list[3]))
     winner2 = await game_task
     color_print(BLUE, f"Game 2 finished: {winner2}")
@@ -554,7 +577,7 @@ async def GameCountDown(room_id, message, sid1, sid2):
     for i in range(3):
         data = {
             'text': message + ": " + str(3 - i),
-            'game_over': game_over 
+            'game_over': game_over
         }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
         await asyncio.sleep(1)

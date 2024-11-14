@@ -1,12 +1,13 @@
 import * as THREE from './three.module.js';
-// import { OrbitControls } from './OrbitControls.js';
+import { OrbitControls } from './OrbitControls.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
 import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawMainMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
+import { DrawGameOverlay, DrawGameHud, RemoveGameOverlay, RemoveGameHud } from './HudOverlay.js';
 
-const BALL_SPEED = 0.1; //not needed i think
+
 const BALL_SIZE = 0.2; // maybe a bit bigger
 const MAX_HEIGHT = 4.5; // idk how to name this
 const MIN_HEIGHT = -4.5;
@@ -22,14 +23,25 @@ const TOURNAMENT_MODE = 'tournament';
 const NORMAL_MODE = 'normal';
 
 
-var scene, camera, renderer;
+var scene, camera, renderer, controls;
 var ballTexture;
 var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
+
+
+// custom global variables
+var line, ball, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+// var overlayText;
+var userName;
+var socket;
+var scoreGeometry, scoreFont;
+var leftPlayerScore = 0; // player 1
+var rightPlayerScore = 0; // player 2
+var running = true;
 
 export function InitThreeJS()
 {
 	console.log("Initializing Threejs")
-	// THREEJS basic const global variables 
+	// THREEJS basic const global variables
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xa400bd);
 
@@ -44,108 +56,22 @@ export function InitThreeJS()
 	renderer.outputEncoding = THREE.sRGBEncoding;
 	document.getElementById('pong-container-id').appendChild(renderer.domElement);
 
+    // Create and set up OrbitControls
+    controls = new OrbitControls(camera, renderer.domElement);
+
 	// Loading Ball texture
+    //NOTE: either font or textures causes 'GPU stall due to ReadPixels'
 	const textureLoader = new THREE.TextureLoader();
 	ballTexture = textureLoader.load("../../static/textures/ball_texture.png");
-	
+
 	// Loading font for 3D text
-	const loader = new FontLoader();
-	loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
-		scoreFont = font;
+	// const loader = new FontLoader();
+	// loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
+	// 	scoreFont = font;
 
-		createScoreText();
-	});
+	// 	createScoreText();
+	// });
 
-}
-
-// custom global variables
-var line, ball, ballBB, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
-// var overlayText;
-var userName;
-var socket;
-var scoreGeometry, scoreFont;
-var leftPlayerScore = 0; // player 1
-var rightPlayerScore = 0; // player 2
-var running = true;
-
-function CreateGameOverlay()
-{
-	const gameOverlay = createElement('div', {className: 'overlay' },
-		createElement('h2', { innerText: ""}),
-		createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
-			createElement('div', { style: 'width: 100px;' }),
-			createElement('h3', { innerText: ""})
-		)
-	);
-	document.querySelector('.pong-container').appendChild(gameOverlay);
-}
-
-function ResetGameCanvas()
-{
-	const canvas = document.querySelector('canvas');
-	if (canvas)
-	{
-		canvas.remove();
-		const newCanvas = createElement('canvas', {id: 'game'});
-		document.querySelector('.pong-container').appendChild(newCanvas);
-	}
-}
-
-function UpdateGameOverlay(gameText, gameOver, avatar)
-{
-	const gameOverlay = document.querySelector('.overlay');
-	if (gameOverlay)
-	{
-		const overlayImg = gameOverlay.querySelector('img');
-		if (overlayImg)
-		{
-			if (avatar)
-				overlayImg.src = avatar;
-		}
-		const overlayH2 = gameOverlay.querySelector('h2');
-		if (overlayH2)
-			overlayH2.innerText = "";
-
-
-		const overlayH3 = gameOverlay.querySelector('h3');
-		if (overlayH3)
-			overlayH3.innerText = gameText;
-		if (gameOver == 1)
-		{
-			if (overlayH2)
-				overlayH2.innerText = "WINNER";
-			let quitButton = gameOverlay.querySelector('button');
-			if (!quitButton)
-			{
-				quitButton = createButton('QUIT', () => {
-					gameOverlay.remove();
-					// Cleanup();
-					CloseWebsocket();
-					while (scene.children.length > 0) {
-						scene.remove(scene.children[0]);
-					  }
-					renderer.render(scene, camera);
-					renderer.clear(true, true, true);
-					renderer.setSize(0, 0);
-					renderer.setSize(window.innerWidth, window.innerHeight);
-					// ResetGameCanvas();
-					initPongMenu();
-				});
-			}
-			gameOverlay.appendChild(quitButton);
-		}
-
-	}
-}
-
-function RemoveGameOverlay()
-{
-	const gameOverlay = document.querySelector('.overlay');
-	if (gameOverlay)
-	{
-		document.querySelector('.pong-container').removeChild(gameOverlay);
-		gameOverlay.remove();
-	}
 }
 
 function createReadyCheckmark(size)
@@ -453,7 +379,6 @@ export function ConnectWebsocket(type, username)
 	});
 
 	socket.on('send_lobby_data', function(data) {
-		// console.log("Received data from server..");
 		const lobbyCode = data.lobby_id;
 		const maxLobbySize = data.max_lobby_size;
 		const gameType = data.game_type;
@@ -504,19 +429,18 @@ export function ConnectWebsocket(type, username)
     });
 	//HERE
 	socket.on('update_overlay', function(data) {
-		const gameText = data.text;
+		const text = data.text;
 		const gameOver = data.game_over;
 		const avatar = data.avatar
-		if (gameText != '')
-		{
-			if (!document.querySelector('.overlay'))
-				CreateGameOverlay();
-			// console.log("text:", gameText);
-			UpdateGameOverlay(gameText, gameOver, avatar);
-		}	
-		else
-			RemoveGameOverlay();
-
+        RemoveGameOverlay();
+		if (text == '')
+            return;
+        let mode;
+        if (gameOver == 1)
+            mode = 'gameover';
+        else
+            mode = 'waiting';
+        DrawGameOverlay(mode, text, avatar);
 	});
 }
 
@@ -584,8 +508,14 @@ function onWindowResize()
 function StartGame()
 {
 	Init();
+    let firstDraw = 1;
 	socket.on('game_update', function(data) {
-
+        if (firstDraw == 1)
+        {
+            DrawGameHud(userName, data.usernames, data.avatars, data.scores);
+            firstDraw = 0;
+            return;
+        }
 		ball.position.x = parseFloat(data.ballPosition[0]);
 		ball.position.y = parseFloat(data.ballPosition[1]);
 		leftPaddle.position.y = parseFloat(data.pos[0]);
@@ -597,9 +527,11 @@ function StartGame()
 		{
 			leftPlayerScore = player1Score;
 			rightPlayerScore = player2Score;
-			createScoreText();
+			// createScoreText();
+            RemoveGameHud();
+            DrawGameHud(userName, data.usernames, data.avatars, data.scores);
 		}
-	});
+    });
 	Loop();
 }
 
@@ -645,7 +577,7 @@ function createScoreText()
 
 function Init()
 {
-	
+
 	// WINDOW RESIZE
 	window.addEventListener( 'resize', onWindowResize );
 
@@ -813,4 +745,7 @@ function Update()
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
 	rightPaddleOutLine.position.y = rightPaddle.position.y;
+
+    // Update controls every frame
+    controls.update();
 }
