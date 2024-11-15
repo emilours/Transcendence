@@ -146,6 +146,7 @@ export function drawLobbyOnline(mode) {
 			style: `
 				font-size: 1em;
 				padding: 5px;
+                padding-top: 12px;
 				text-align: center;
 				color: black;
 				display: inline-block;
@@ -285,9 +286,22 @@ function drawTournament() {
 }
 
 export function drawLobbyTournament() {
+	let lobbyCode = createElement('h4', {innerText: '', style: 'co'});
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'LOBBY', style: 'margin-bottom: 20px;' }),
+        createElement('div', {
+			style: `
+				font-size: 1em;
+				padding: 5px;
+                padding-top: 12px;
+				text-align: center;
+				color: black;
+				display: inline-block;
+				background-color: rgba(0.9, 0.9, 0.9, 0.7);
+				width: fit-content;
+			`
+		}, lobbyCode)
 	);
 
 	let player1Info;

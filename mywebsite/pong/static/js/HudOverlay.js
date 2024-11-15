@@ -33,15 +33,7 @@ export function DrawGameHud(userName, usernames, avatars, scores)
 	document.querySelector('.pong-container').appendChild(gameHud);
 }
 
-export function RemoveGameHud()
-{
-	const gameOverlay = document.querySelector('.game-hud');
-	if (gameOverlay)
-	{
-		document.querySelector('.pong-container').removeChild(gameOverlay);
-		gameOverlay.remove();
-	}
-}
+
 
 export function DrawGameOverlay(mode, text, avatar)
 {
@@ -57,7 +49,7 @@ export function DrawGameOverlay(mode, text, avatar)
                 ),
             quitButton = createButton('QUIT', () => {
                 gameOverlay.remove();
-                RemoveGameHud();
+                RemoveMenu('.game-hud');
                 CloseWebsocket();
                 while (scene.children.length > 0) {
                     scene.remove(scene.children[0]);
@@ -78,12 +70,13 @@ export function DrawGameOverlay(mode, text, avatar)
     document.querySelector('.pong-container').appendChild(gameOverlay);
 }
 
-export function RemoveGameOverlay()
+
+export function RemoveMenu(className)
 {
-	const gameOverlay = document.querySelector('.overlay');
-	if (gameOverlay)
+	const menu = document.querySelector(className);
+	if (menu)
 	{
-		document.querySelector('.pong-container').removeChild(gameOverlay);
-		gameOverlay.remove();
+		document.querySelector('.pong-container').removeChild(menu);
+		menu.remove();
 	}
 }

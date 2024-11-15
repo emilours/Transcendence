@@ -5,7 +5,7 @@ import { FontLoader } from './FontLoader.js';
 
 import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawMainMenu } from './pongMenu.js';
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { DrawGameOverlay, DrawGameHud, RemoveGameOverlay, RemoveGameHud } from './HudOverlay.js';
+import { DrawGameOverlay, DrawGameHud, RemoveMenu} from './HudOverlay.js';
 
 
 const BALL_SIZE = 0.2; // maybe a bit bigger
@@ -387,21 +387,11 @@ export function ConnectWebsocket(type, username)
         const activeMenu = document.querySelector('.menu');
 		if (activeMenu)
 		{
-			//TODO: lobby code for normal/tournament
-            if (gameType == NORMAL_MODE)
-            {
                 const codeText = activeMenu.querySelector('h4');
                 if (codeText)
-                    codeText.innerText = lobbyCode;
-                // else
-                    // console.log("NO h4 in menu");
-            }
-            // else
-            // {
-            //     const codeText
-            // }
-
+                    codeText.innerText = "code: " + lobbyCode;
 		}
+
 		const playerInfoNormal = document.querySelectorAll('.button-vertical');
 		const playerInfoTournament = document.querySelectorAll('.button-horizontal');
 		for (let i = 0; i < maxLobbySize; i++)
@@ -432,7 +422,7 @@ export function ConnectWebsocket(type, username)
 		const text = data.text;
 		const gameOver = data.game_over;
 		const avatar = data.avatar
-        RemoveGameOverlay();
+        RemoveMenu('.overlay');
 		if (text == '')
             return;
         let mode;
@@ -528,7 +518,7 @@ function StartGame()
 			leftPlayerScore = player1Score;
 			rightPlayerScore = player2Score;
 			// createScoreText();
-            RemoveGameHud();
+            RemoveMenu('.game-hud');
             DrawGameHud(userName, data.usernames, data.avatars, data.scores);
 		}
     });
