@@ -9,11 +9,6 @@
 	color: 71, 46, 39;
 }
 
-header {
-	box-shadow: 0 4px 8px rgba(83, 53, 35, 0.2);
-	z-index: 10;
-}
-
 /* High contrast */
 body.high-contrast, header.high-contrast, footer.high-contrast {
 	background-color: #000;
@@ -27,16 +22,7 @@ body.high-contrast, header.high-contrast, footer.high-contrast {
 	border: 1px solid #fff;
 }
 
-.high-contrast input[type="checkbox"]:checked {
-	background-color: #fff;
-	border-color: #000;
-	color: #000;
-}
-
-
-
 .high-contrast .darky-color {
-	/* background-color: #fff; */
 	color: #000;
 }
 
@@ -44,46 +30,61 @@ body.high-contrast, header.high-contrast, footer.high-contrast {
 	color: #fff
 }
 
-
-/* Form */
-.high-contrast input[type="text"],
-.high-contrast input[type="email"],
-.high-contrast input[type="password"],
-.high-contrast input[type="file"],
-.high-contrast textarea,
-.high-contrast select {
-	background-color: #fdfdfd;
-	border: 2px solid #000;
-	color: #000;
+.high-contrast h1.whity-color {
+    color: #fff !important;
 }
 
-/* image */
+/* Links */
+
+.high-contrast {
+	text-decoration: none;
+	transition: all 0.3 ease;
+}
+
+.high-contrast a:hover,
+.high-contrast .about-us-link:hover {
+	color: red;
+	text-decoration: underline;
+	/* background-color: #222; */
+}
+
+/* Forms */
+
+.high-contrast input:focus,
+.high-contrast textarea:focus,
+.high-contrast select:focus,
+.high-contrast input:hover,
+.high-contrast textarea:hover
+.high-contrast select:hover {
+	border: 2px solid #000; /* Bordure noire */
+	outline: none; /* Supprime l'outline par défaut */
+	transition: border-color 0.3s ease; /* Animation de transition */
+}
+
+.high-contrast input[type="checkbox"]:focus {
+	outline: 2px solid #000; /* Ajoute une outline noire autour de la case */
+	outline-offset: 2px; /* Distance entre la case et l'outline */
+}
+
+/* Img */
 .high-contrast img#logo-42 {
-	content: url("../img/42_Logo_white.png");
+	content: url("../img/42_Logo_red.png");
 }
 
 /* Focus outline for better navigation visibility */
 .high-contrast .btn:hover {
 	background-color: #fff;
 	color: #000;
-	border-color: #000;
-	border: 2px solid black;
+	border-color: #fff;
+	border: 2px solid #fff;
 	outline: 2px solid black;
 }
 
 .high-contrast .btn:active {
-	background-color: #ccc;
+	background-color: #fff;
 	color: #000;
 	border-color: #000;
-	border: 2px solid black;
-	outline: 2px solid black;
-}
-
-.high-contrast .btn:focus {
-	outline: 2px solid #fff;
-	background-color: #444;
-	border-color: #000;
-	border: 2px solid black;
+	border: 2px solid #fff;
 	outline: 2px solid black;
 }
 

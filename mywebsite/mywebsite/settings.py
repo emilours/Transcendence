@@ -16,7 +16,6 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -86,8 +85,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # 'DIRS': [],
-		'DIRS': [os.path.join(BASE_DIR, 'templates')],
-		# 'DIRS': [BASE_DIR / 'frontend' / 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        # 'DIRS': [os.path.join(BASE_DIR / 'frontend' / 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
