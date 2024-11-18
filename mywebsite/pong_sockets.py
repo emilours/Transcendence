@@ -201,6 +201,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     sid2 = game['sids'][player_2_index]
     temp_avatars = await GetPlayersAvatar(room_id)
     avatars = [temp_avatars[player_1_index], temp_avatars[player_2_index]]
+    color_print(DARK_GRAY, f"avatars: {temp_avatars}")
     usernames = [game['players'][player_1_index], game['players'][player_2_index]]
     game['status'] = "running"
     game_type = game['game_type']
@@ -217,15 +218,14 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
 
 
     await GameCountDown(room_id, "Game Starting", sid1, sid2)
-    
+
     games[room_id]['last_time'] = time.time()
     delta_time = 0
     paused = 0
 
     while True:
-
         # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
-        if game['status'] == "paused" or game['ready'][player_1_index] == '0' or game['ready'][player_2_index] == 0:
+        if game['ready'][player_1_index] == '0' or game['ready'][player_2_index] == 0:
             paused = 1
             log(f"Game {game['room_id']} is paused!")
             player_returned = await GamePaused(player_1_index, player_2_index, room_id, game['game_over'])
@@ -309,7 +309,8 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             data = {
                 'text': winner,
                 'game_over': game['game_over'],
-                'avatar': avatars[winner_index]
+                'game_type': game['game_type'],
+                'avatar': temp_avatars[winner_index]
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
 
@@ -463,7 +464,6 @@ async def PlayerReady(sid, username):
     session = await sio.get_session(sid)
     room_id = session.get('room_id')
     index = games[room_id]['sids'].index(sid)
-    log(f"Index: {index}")
     if games[room_id]['ready'][index] == 0:
         games[room_id]['ready'][index] = 1
     else:
@@ -482,14 +482,14 @@ async def PlayerReady(sid, username):
         await sio.emit('game_ready', room=room_id)
     else:
         log("SOMEONE IS NOT READY")
-    await SendLobbyData(sid)
+    await SendLobbyData(sid, room_id)
 
 
-async def SendLobbyData(sid):
+async def SendLobbyData(sid, room_id):
     global games
 
-    session = await sio.get_session(sid)
-    room_id = session.get('room_id')
+    # session = await sio.get_session(sid)
+    # room_id = session.get('room_id')
     game_type = games[room_id]['game_type']
     if game_type == NORMAL_GAME:
         max_lobby_size = MAX_PLAYER_NORMAL
@@ -597,8 +597,12 @@ async def StartGame(sid, username):
     if (username != games[room_id]['players'][0]):
         return
     # HERE: this and the line above might cause a problem if the player leaving is the one at index 0 ??
-    if (games[room_id]['status'] == "paused"):
+    if games[room_id]['status'] == "paused":
         games[room_id]['status'] = 'running'
+        return
+    # if (game[room_id])
+    color_print(YELLOW, f"game status: {games[room_id]['status']}")
+    if games[room_id]['status'] != "waiting":
         return
     room_full = IsRoomFull(room_id)
     log(f"room_full: {room_full}")
@@ -621,7 +625,7 @@ async def LeaveLobby(sid, username):
         log(f"WARNING: User is not in a room")
         return
     await LeaveRoom(sid, username, room_id)
-    await SendLobbyData(sid)
+    await SendLobbyData(sid, room_id)
 
 
 @sio.on('join_lobby')
@@ -635,7 +639,7 @@ async def JoinLobby(sid, username, room_key):
         await sio.enter_room(sid, room_id)
         log(f"User [{username}] joined room [{room_id}]")
         await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sid)
-        await SendLobbyData(sid)
+        await SendLobbyData(sid, room_id)
         return
 
     room_id = IsLobbyCreated(room_key)
@@ -655,7 +659,7 @@ async def JoinLobby(sid, username, room_key):
     await SaveSession(sid, username, room_id)
     await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
-    await SendLobbyData(sid)
+    await SendLobbyData(sid, room_id)
 
 @sio.on('find_lobby')
 async def FindLobby(sid, username, game_type):
@@ -668,7 +672,7 @@ async def FindLobby(sid, username, game_type):
     await JoinRoom(sid, username, room_id, 0)
     await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
-    await SendLobbyData(sid)
+    await SendLobbyData(sid, room_id)
 
 @sio.on('create_lobby')
 async def CreateLobby(sid, username, game_type):
@@ -688,7 +692,7 @@ async def CreateLobby(sid, username, game_type):
     # if room_id is None:
     await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
-    await SendLobbyData(sid)
+    await SendLobbyData(sid, room_id)
 
 
 @sio.on('connect')
@@ -717,7 +721,7 @@ async def Connect(sid, environ):
     if room_id is not None:
         await SaveSession(sid, username, room_id)
         await JoinRoom(sid, username, room_id, -1)
-        await SendLobbyData(sid)
+        await SendLobbyData(sid, room_id)
 
 
 @sio.on('message')

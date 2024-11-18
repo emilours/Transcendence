@@ -29,7 +29,8 @@ var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
 
 
 // custom global variables
-var line, ball, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+var light, line, ball, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+var arenaFloor, arenaLeftSide, arenaTopSide, arenaRightSide, arenaBottomSide;
 // var overlayText;
 var userName;
 var socket;
@@ -126,6 +127,7 @@ function createElementNS(namespace, type, properties = {}, ...children) {
 
 // 'button' --> button type (same as 'div')
 // '.button' --> button className
+
 function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 {
 
@@ -181,6 +183,7 @@ function UpdateLobbyOnline(user, avatar, ready, playerInfo)
 		}
 	}
 }
+
 
 function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 {
@@ -351,7 +354,7 @@ export function ConnectWebsocket(type, username)
 			activeMenu.remove();
 		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		// HERE: either cleanup works or just send the event to the person that left
-		// Cleanup();
+		Cleanup();
 		StartGame();
 		SendEvent('start_game', userName);
 	});
@@ -391,6 +394,8 @@ export function ConnectWebsocket(type, username)
                 if (codeText)
                     codeText.innerText = "code: " + lobbyCode;
 		}
+		if (!activeMenu)
+			return
 
 		const playerInfoNormal = document.querySelectorAll('.button-vertical');
 		const playerInfoTournament = document.querySelectorAll('.button-horizontal');
@@ -413,7 +418,7 @@ export function ConnectWebsocket(type, username)
             menu.remove(); // removeChild ?
         if (gameType == NORMAL_MODE)
             drawLobbyOnline('create');
-        else if (game_type == TOURNAMENT_MODE)
+        else if (gameType == TOURNAMENT_MODE)
             drawLobbyTournament('create');
 		CustomAlert("You were in a game, joining lobby...");
     });
@@ -421,7 +426,8 @@ export function ConnectWebsocket(type, username)
 	socket.on('update_overlay', function(data) {
 		const text = data.text;
 		const gameOver = data.game_over;
-		const avatar = data.avatar
+		const avatar = data.avatar;
+		const gameType = data.game_type;
         RemoveMenu('.overlay');
 		if (text == '')
             return;
@@ -430,7 +436,7 @@ export function ConnectWebsocket(type, username)
             mode = 'gameover';
         else
             mode = 'waiting';
-        DrawGameOverlay(mode, text, avatar);
+        DrawGameOverlay(mode, text, avatar, gameType);
 	});
 }
 
@@ -502,6 +508,7 @@ function StartGame()
 	socket.on('game_update', function(data) {
         if (firstDraw == 1)
         {
+			RemoveMenu('.game-hud');
             DrawGameHud(userName, data.usernames, data.avatars, data.scores);
             firstDraw = 0;
             return;
@@ -573,7 +580,7 @@ function Init()
 
 	// LIGHT
 	// can't see textures without light
-	var light = new THREE.PointLight(0xffffff);
+	light = new THREE.PointLight(0xffffff);
 	light.position.set(0, 0, 10);
 	scene.add(light);
 
@@ -624,11 +631,11 @@ function Init()
 	const arenaFloorGeometry = new THREE.BoxGeometry(16, 9, 0.5);
 	const arenaSmallSideGeometry = new THREE.BoxGeometry(0.5, 10, 0.5);
 	const arenaLargeSideGeometry = new THREE.BoxGeometry(17, 0.5, 0.5);
-	const arenaFloor = new THREE.Mesh(arenaFloorGeometry, blackMaterial);
-	const arenaLeftSide = new THREE.Mesh(arenaSmallSideGeometry, whiteMaterial);
-	const arenaTopSide = new THREE.Mesh(arenaLargeSideGeometry, whiteMaterial);
-	const arenaBottomSide = arenaTopSide.clone();
-	const arenaRightSide = arenaLeftSide.clone();
+	arenaFloor = new THREE.Mesh(arenaFloorGeometry, blackMaterial);
+	arenaLeftSide = new THREE.Mesh(arenaSmallSideGeometry, whiteMaterial);
+	arenaTopSide = new THREE.Mesh(arenaLargeSideGeometry, whiteMaterial);
+	arenaBottomSide = arenaTopSide.clone();
+	arenaRightSide = arenaLeftSide.clone();
 	scene.add(arenaFloor);
 	scene.add(arenaLeftSide);
 	scene.add(arenaTopSide);
@@ -641,12 +648,9 @@ function Init()
 	arenaLeftSide.position.x -= 8.25;
 
 	// Ball
-	if (!ball)
-	{
-		const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-		ball = new THREE.Mesh(ballGeometry, ballMaterial);
-		scene.add(ball);
-	}
+	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
+	ball = new THREE.Mesh(ballGeometry, ballMaterial);
+	scene.add(ball);
 
 
 	// Paddles
@@ -738,4 +742,31 @@ function Update()
 
     // Update controls every frame
     controls.update();
+}
+
+export function Cleanup()
+{
+	// let length = scene.children.length;
+	// let i = 0;
+	// while (i < length) {
+	// 	// scene.remove(scene.children[0]);
+	// 	console.log("object:", scene.children[i]);
+	// 	i++;
+	// 	}
+	scene.remove(light)
+	scene.remove(arenaFloor);
+	scene.remove(arenaLeftSide);
+	scene.remove(arenaTopSide);
+	scene.remove(arenaRightSide);
+	scene.remove(arenaBottomSide);
+	scene.remove(leftPaddle);
+	scene.remove(leftPaddleOutLine);
+	scene.remove(rightPaddleOutLine);
+	scene.remove(rightPaddle);
+	scene.remove(ball);
+	scene.remove(line);
+	renderer.render(scene, camera);
+	renderer.clear(true, true, true);
+	renderer.setSize(0, 0);
+	renderer.setSize(window.innerWidth, window.innerHeight);
 }

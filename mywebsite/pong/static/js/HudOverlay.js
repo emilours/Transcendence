@@ -1,7 +1,11 @@
 import {createElement,  createButton} from './GameUtils.js';
-import { CloseWebsocket } from './pong.js';
+import { CloseWebsocket, Cleanup } from './pong.js';
+import { initPongMenu } from './pongMenu.js';
+
 
 const HUD_IMAGE_SIZE = 75;
+const TOURNAMENT_MODE = 'tournament';
+const NORMAL_MODE = 'normal';
 
 export function DrawGameHud(userName, usernames, avatars, scores)
 {
@@ -35,7 +39,7 @@ export function DrawGameHud(userName, usernames, avatars, scores)
 
 
 
-export function DrawGameOverlay(mode, text, avatar)
+export function DrawGameOverlay(mode, text, avatar, gameType)
 {
     let gameOverlay;
     if (mode === 'gameover')
@@ -50,14 +54,8 @@ export function DrawGameOverlay(mode, text, avatar)
             quitButton = createButton('QUIT', () => {
                 gameOverlay.remove();
                 RemoveMenu('.game-hud');
-                CloseWebsocket();
-                while (scene.children.length > 0) {
-                    scene.remove(scene.children[0]);
-                    }
-                renderer.render(scene, camera);
-                renderer.clear(true, true, true);
-                renderer.setSize(0, 0);
-                renderer.setSize(window.innerWidth, window.innerHeight);
+				CloseWebsocket();
+                Cleanup();
                 initPongMenu();
             }));
     }
