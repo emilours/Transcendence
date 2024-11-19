@@ -10,9 +10,15 @@
 }
 
 /* High contrast */
-body.high-contrast, header.high-contrast, footer.high-contrast {
+body.high-contrast {
 	background-color: #000;
 	color: #fff;
+}
+
+body.high-contrast footer.bg-primary {
+	background-color: #000 !important;
+	color: #fff !important;
+	/* border-top: 2px solid #fff; */
 }
 
 /* buttons in high contrast */
@@ -23,15 +29,25 @@ body.high-contrast, header.high-contrast, footer.high-contrast {
 }
 
 .high-contrast .darky-color {
-	color: #000;
+	color: #000 !important;
 }
 
 .high-contrast .whity-color {
-	color: #fff
+	color: #fff !important;
 }
 
 .high-contrast h1.whity-color {
-    color: #fff !important;
+	color: #fff !important;
+}
+
+/* Background */
+
+.high-contrast .bg-whity-color {
+	background-color: #fff !important;
+}
+
+.high-contrast .bg-darky-color {
+	background-color: #000 !important;
 }
 
 /* Links */
@@ -43,7 +59,7 @@ body.high-contrast, header.high-contrast, footer.high-contrast {
 
 .high-contrast a:hover,
 .high-contrast .about-us-link:hover {
-	color: red;
+	color: blue !important;
 	text-decoration: underline;
 	/* background-color: #222; */
 }
@@ -96,4 +112,13 @@ a.card:hover {
 a.card:hover img {
 	opacity: 0.9;
 	transition: opacity 0.3s ease;
+}
+
+/* Global focus styles */
+.high-contrast :focus-visible {
+	outline: 3px solid blue !important;
+}
+
+:focus-visible {
+	outline: 2px solid black !important;
 }

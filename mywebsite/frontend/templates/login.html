@@ -7,7 +7,7 @@
 					<div class="card-body p-5 text-secondary-emphasis">
 						<div class="d-flex justify-content-between align-items-center">
 							<h1 class="card-title text-center font-balsamiq ">Login</h1>
-							<img src="{% static 'img/pusheen-login.gif' %}" alt="gif de pusheen" width="100" height="100">
+							<img src="{% static 'img/pusheen-login.gif' %}" alt="Pusheen lying on a laptop keyboard" width="100" height="100">
 						</div>
 						<form id="login-form" class="font-roboto" method="POST" action="{% url 'home' %}">
 							{% csrf_token %}
@@ -29,7 +29,7 @@
 						<div class="text-center mt-3">
 							<p>Or login with:</p>
 							<a href="{{ api_42_auth_url }}" class="btn btn-outline-secondary w-100 rounded-3">
-								Login with <img src="{% static 'img/42_Logo.png' %}" id="logo-42" alt="Login with 42 school account" width="24" height="24">
+								Login with <img src="{% static 'img/42_Logo.png' %}" id="Logo of School 42" alt="Login with 42 school account" width="24" height="24">
 							</a>
 						</div>
 					</div>

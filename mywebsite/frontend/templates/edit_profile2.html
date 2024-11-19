@@ -38,7 +38,7 @@
 										<input type="radio" name="avatar_choice" value="{{ avatar.url }}" class="form-check-input" id="avatar_{{ forloop.counter }}"
 										{% if user.avatar.url == avatar.url %}checked{% endif %}
 										onchange="toggleCustomAvatar(false)">
-										<img src="{{ avatar.url }}" alt="Your avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
+										<img src="{{ avatar.url }}" alt="Your profile avatar" class="img-thumbnail img-fluid" style="width: 100px; height: 100px;">
 									</label>
 									{% endfor %}
 
