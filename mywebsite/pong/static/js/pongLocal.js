@@ -314,7 +314,8 @@ function Loop(timestamp)
 	Inputs();
 	Update(timestamp);
 	renderer.render(scene, camera);
-	
+	RemoveMenu('.game-hud');
+	DrawLocalGameHud([leftPlayerScore, rightPlayerScore]);
 	requestAnimationFrame(Loop);
 }
 
