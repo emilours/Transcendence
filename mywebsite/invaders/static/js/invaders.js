@@ -288,13 +288,13 @@ export function startInvaders(userName) {
 				body: JSON.stringify({ score: score }),
 			})
 			.then(response => response.json())
-			.then(data => {
-				if (data.status === 'success') {
-					console.log('Score saved successfully in the database!');
-				} else {
-					console.error('Error saving score:', data.message);
-				}
-			})
+			// .then(data => {
+			// 	if (data.status === 'success') {
+			// 		console.log('Score saved successfully in the database!');
+			// 	} else {
+			// 		console.error('Error saving score:', data.message);
+			// 	}
+			// })
 			.catch(error => {
 				console.error('Error: ', error);
 			});

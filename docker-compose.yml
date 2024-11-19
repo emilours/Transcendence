@@ -4,7 +4,7 @@ services:
     container_name: mywebsite
     # command: daphne -u daphne/daphne.sock mywebsite.asgi:application
     # command: python manage.py runserver 0.0.0.0:8000
-    # command: gunicorn mywebsite.wsgi:application --bind 0.0.0.0:8000
+    command: /usr/bin/supervisord
     volumes:
       - static_volume:/app/staticfiles/
       - media_volume:/app/media/

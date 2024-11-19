@@ -25,7 +25,7 @@ RUN chmod +x /entrypoint.sh
 
 COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-CMD ["/usr/bin/supervisord"]
+# CMD ["/usr/bin/supervisord"]
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 

@@ -46,8 +46,6 @@ def signin(request):
     if user is not None:
         login(request, user)
         return JsonResponse({"message": "You have successfully logged in."}, status=200)
-    # elif user is not None and user.is_online == True:
-        # return JsonResponse({"error": "You are already logged in."}, status=403)
     else:
         return JsonResponse({"error": "Invalid email or password."}, status=401)
 
@@ -106,7 +104,6 @@ def signup(request):
     if user is not None:
         login(request, user)
         request.session.save()
-        # user.save(update_fields=['active_sessions'])
         return JsonResponse({"message": "Account successfully created and logged in."}, status=201)
     else:
         return JsonResponse({"error": "Authentication failed."}, status=401)
@@ -123,42 +120,6 @@ def signout(request):
 
 def is_online(user):
     return user.last_login and timezone.now() - user.last_login < timedelta(minutes=45)
-
-def contact(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"message": "No users authenticated"}, status=401)
-    users = CustomUser.objects.all()
-    online_users = []
-    offline_users = []
-
-    for user in users:
-        friend_list = getattr(user, 'friend_list', None)
-        friends_count = friend_list.friend_count() if friend_list else 0
-
-        last_login_local = localtime(user.last_login) if user.last_login else None
-        formatted_last_login = last_login_local.strftime('%Y-%m-%d %H:%M') if last_login_local else ''
-
-        user_data = {
-            'id': user.id,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'display_name': user.display_name,
-            'avatar': str(user.avatar.url) if user.avatar else '',
-            'last_login': formatted_last_login,
-            'is_online' : user.is_online,
-            'received_requests_count': user.received_requests_count,
-            'sent_requests_count': user.sent_requests_count,
-            'friends_count': friends_count,
-            'declined_requests_count': user.declined_requests_count,
-        }
-
-        if is_online(user):
-            online_users.append(user_data)
-        else:
-            offline_users.append(user_data)
-
-    return JsonResponse({'online': online_users, 'offline': offline_users})
 
 # # ================================================================================================================================================================
 # # ===                                                      FRIEND REQUESTS                                                                                     ===
@@ -195,7 +156,7 @@ def send_friend_request(request):
             defaults={'status': 'pending'}
         )
 
-        
+
         if created:
             sock_receiver = receiver_display_name
             return JsonResponse({"message": "Friend request sent successfully.", 'sock_receiver' : sock_receiver}, status=200)
@@ -459,7 +420,7 @@ def request_anonymization(request):
 
     try:
         with transaction.atomic():
-            unique_suffix = get_random_string(length=8)
+            unique_suffix = get_random_string(length=5)
 
             avatar_dir = os.path.join(settings.MEDIA_ROOT, 'img/avatars/')
 
@@ -473,7 +434,7 @@ def request_anonymization(request):
                         deleted_files.append(file_path)
 
             user.avatar = 'img/avatars/avatar0.jpg'
-            user.display_name = f'Anonymous_{unique_suffix}'
+            user.display_name = f'Anon_{unique_suffix}'
             user.first_name = 'Anonymous'
             user.last_name = 'Anonymous'
             user.save()
@@ -482,83 +443,3 @@ def request_anonymization(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-
-# # ================================================================================================================================================================
-# # ===                                                      SSE                                                                                                 ===
-# # ================================================================================================================================================================
-
-@login_required
-def sse(request):
-    async def event_stream():
-        last_status = []
-        last_number = await asyncio.to_thread(check_friendlist_update, request.user)
-        last_friend_statuses = await asyncio.to_thread(check_friends_statuses_update, request.user)
-
-        try:
-            while True:
-                friend_statuses_update = await asyncio.to_thread(check_friends_statuses_update, request.user)
-                status_update = await asyncio.to_thread(check_friend_request_update, request.user)
-                number_update = await asyncio.to_thread(check_friendlist_update, request.user)
-
-                if status_update != last_status or last_number != number_update or last_friend_statuses != friend_statuses_update:
-                    combined_update = {
-                        "friend_requests": status_update,
-                        "friend_count": number_update,
-                        "friend_statuses": friend_statuses_update
-                    }
-                    yield f"data: {json.dumps(combined_update)}\n\n"
-
-                    last_status = status_update
-                    last_number = number_update
-                    last_friend_statuses = friend_statuses_update
-
-                await asyncio.sleep(5)
-        except asyncio.CancelledError:
-            return
-
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-
-def check_friend_request_update(user):
-    pending_requests = FriendRequest.objects.filter(
-        Q(sender=user) | Q(receiver=user),
-        status__in=['accepted', 'declined', 'pending']
-    )
-
-    if pending_requests.exists():
-        return [
-            {
-                "id": friend_request.id,
-                "sender": friend_request.sender.display_name,
-                "receiver": friend_request.receiver.display_name,
-                "status": friend_request.status
-            }
-            for friend_request in pending_requests
-        ]
-    return []
-
-def check_friendlist_update(user):
-    try:
-        friendlist = FriendList.objects.get(user=user)
-        return friendlist.friend_count()
-    except FriendList.DoesNotExist:
-        return 0
-
-def check_friends_statuses_update(user):
-    try:
-        user_friend_list = user.friend_list
-        friends = user_friend_list.friends.all()
-
-        friend_statuses = [
-            {
-                "id": friend.id,
-                "display_name": friend.display_name,
-                "is_online": friend.is_online,
-                "avatar": friend.avatar.url
-            }
-            for friend in friends
-        ]
-        
-        return friend_statuses
-
-    except FriendList.DoesNotExist:
-        return []

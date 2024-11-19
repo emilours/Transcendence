@@ -5,6 +5,7 @@ import { initPongMenu } from './pongMenu.js';
 
 const HUD_IMAGE_SIZE = 75;
 const TOURNAMENT_MODE = 'tournament';
+const DEFAULT_AVATAR = '/static/img/avatarDefault.gif';
 const NORMAL_MODE = 'normal';
 
 export function DrawGameHud(userName, usernames, avatars, scores)
@@ -34,6 +35,22 @@ export function DrawGameHud(userName, usernames, avatars, scores)
             )
         );
     }
+	document.querySelector('.pong-container').appendChild(gameHud);
+}
+
+
+export function DrawLocalGameHud(scores)
+{
+    let gameHud;
+    gameHud = createElement('div', {className: 'game-hud' },
+        createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+            createElement('img', {className: 'rounded-circle', style: 'border: 5px solid green;', src: DEFAULT_AVATAR, width: HUD_IMAGE_SIZE, height: HUD_IMAGE_SIZE} ),
+            createElement('h3', { innerText: "Player1"}),
+            createElement('h3', { innerText: scores[0] + "  :  " + scores[1]}),
+            createElement('h3', { innerText: "Player2"}),
+            createElement('img', {className: 'rounded-circle', style: 'border: 5px solid green;', src: DEFAULT_AVATAR, width: HUD_IMAGE_SIZE, height: HUD_IMAGE_SIZE} )
+        )
+    );
 	document.querySelector('.pong-container').appendChild(gameHud);
 }
 

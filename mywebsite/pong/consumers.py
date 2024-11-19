@@ -48,7 +48,7 @@ class StatusConsumer(AsyncWebsocketConsumer):
 
 		await self.send(text_data=json.dumps(event['refresh']))
 
-	
+
 	async def BroadcastMessage(self, friend_list):
 		room_name = "send_room"
 
@@ -83,8 +83,6 @@ class StatusConsumer(AsyncWebsocketConsumer):
 				room_name, channel
 
 			)
-			self.redis_client.srem(f"{room_name}_channels", channel)
-
 
 	async def connect(self):
 		try:
@@ -343,6 +341,7 @@ class MultiplayerPongConsumer(AsyncWebsocketConsumer):
 			self.room_group_name,
 			self.channel_name
 		)
+		self.redis_client.srem(f"{room_name}_channels", self.channel_name)
 
 		log(f"User {self.user.display_name} has disconnected")
 

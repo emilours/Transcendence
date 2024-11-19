@@ -1,6 +1,7 @@
 import * as THREE from './three.module.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
+import { DrawLocalGameHud, RemoveMenu } from './HudOverlay.js';
 
 
 // standard global variables
@@ -313,6 +314,7 @@ function Loop(timestamp)
 	Inputs();
 	Update(timestamp);
 	renderer.render(scene, camera);
+	
 	requestAnimationFrame(Loop);
 }
 
