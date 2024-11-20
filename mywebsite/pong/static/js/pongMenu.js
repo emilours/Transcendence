@@ -113,7 +113,7 @@ function drawJoinMenu(mode) {
 		buttonJoin = createButton('JOIN', () => {
 			const lobbyCode = document.getElementById('inputField').value;
 			lobbyMenu.remove();
-			SendEvent('join_lobby', userName, lobbyCode);
+			SendEvent('join_lobby', userName, lobbyCode, mode);
 			// after successful drawLobbyMenu('join')
 			// HERE --> rework UpdateMenu:
 			// Cleaner and just better
@@ -255,7 +255,7 @@ function drawPlayerLocal(name) {
 	return playerInfo;
 }
 
-function drawTournament() {
+export function drawTournament() {
 	const onlineMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),

@@ -446,6 +446,8 @@ async def LeaveRoom(sid, username, room_id):
     await sio.leave_room(sid, room_id)
     if room_id is None or room_id not in games:
         return
+    if username not in games[room_id]['players']:
+        return 
     index = games[room_id]['players'].index(username)
     del games[room_id]['players'][index]
     del games[room_id]['sids'][index]
@@ -635,24 +637,37 @@ async def LeaveLobby(sid, username):
     await LeaveRoom(sid, username, room_id)
     await SendLobbyData(sid, room_id)
 
+def IsCorrectGameMode(room_id, game_mode):
+    global games
+
+    if room_id not in games:
+        return False
+    if games[room_id]['game_type'] == game_mode:
+        return True 
+
 
 @sio.on('join_lobby')
-async def JoinLobby(sid, username, room_key):
+async def JoinLobby(sid, username, room_key, game_mode):
 
     room_id = IsLobbyCreated(room_key)
     if room_id is None:
         color_print(RED, f"[Error] lobby code {room_key} is not valid")
-        await sio.emit('invalid_lobby_code', to=sid)
+        await sio.emit('invalid_lobby_code', game_mode, to=sid)
         return
-
+    
+    if not IsCorrectGameMode(room_id, game_mode):
+        await sio.emit('invalid_game_mode', game_mode, to=sid)
+        return
+    
     if IsRoomFull(room_id):
-        await sio.emit('room_already_full', to=sid)
+        await sio.emit('room_already_full', game_mode, to=sid)
         return
-
+    
     await SaveSession(sid, username, room_id)
     await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid, room_id)
+        
 
 @sio.on('find_lobby')
 async def FindLobby(sid, username, game_type):
@@ -741,8 +756,6 @@ async def disconnect(sid):
 
     if room_id in games and games[room_id]['status'] == "running":
         games[room_id]['status'] = "paused"
-        # maybe shouldn't use PlayerReady()
-        # await PlayerReady(sid, username)
         player_index = games[room_id]['players'].index(username)
         games[room_id]['ready'][player_index] = 0
         await sio.leave_room(sid, room_id)

@@ -3,8 +3,8 @@ import { OrbitControls } from './OrbitControls.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawMainMenu } from './pongMenu.js';
-import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawTournament } from './pongMenu.js';
+import { createElement } from './GameUtils.js';
 import { DrawGameOverlay, DrawGameHud, RemoveMenu} from './HudOverlay.js';
 
 
@@ -249,7 +249,7 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event, username, data)
+export function SendEvent(event, username, data, gameMode)
 {
     userName = username;
 	// console.log("Sending event:", event, "username:", username, "data:", data);
@@ -260,7 +260,11 @@ export function SendEvent(event, username, data)
             // console.log("Socket.io connection not open");
             return false;
         }
-        if (username == null && data == null)
+		if (event == "join_lobby")
+		{
+			socket.emit(event, username, data, gameMode);
+		}
+        else if (username == null && data == null)
             socket.emit(event);
         else if (username == null)
             socket.emit(event, data);
@@ -358,11 +362,14 @@ export function ConnectWebsocket(type, username)
 		StartGame();
 		SendEvent('start_game', userName);
 	});
-	socket.on('invalid_lobby_code', function() {
+	socket.on('invalid_lobby_code', function(gameMode) {
         const activeMenu = document.querySelector('.menu');
         if (activeMenu)
             activeMenu.remove();
-        drawOnlineMenu();
+		if (gameMode == NORMAL_MODE)
+       		drawOnlineMenu();
+		else
+			drawTournament();
 		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
@@ -380,6 +387,27 @@ export function ConnectWebsocket(type, username)
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});
+	socket.on('invalid_game_mode', function(gameMode) {
+		const activeMenu = document.querySelector('.menu');
+		if (activeMenu)
+			activeMenu.remove();
+		if (gameMode == NORMAL_MODE)
+			drawOnlineMenu();
+		else
+			drawTournament();
+		CustomAlert("Invalid Game Mode");
+	});
+	socket.on('room_already_full', function(gameMode) {
+		const activeMenu = document.querySelector('.menu');
+		if (activeMenu)
+			activeMenu.remove();
+		if (gameMode == NORMAL_MODE)
+			drawOnlineMenu();
+		else
+			drawTournament();
+		CustomAlert("Room Already Full");
+	});
+
 
 	socket.on('send_lobby_data', function(data) {
 		const lobbyCode = data.lobby_id;
