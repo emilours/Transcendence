@@ -43,6 +43,8 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
+DISCONNECT_MAX_TIME = 60
+
 
 MAX_PLAYER_NORMAL = 2
 MAX_PLAYER_TOURNAMENT = 4
@@ -176,10 +178,10 @@ async def GamePaused(index1, index2, room_id, game_over):
     game = games[room_id]
     sid1 = game['sids'][index1]
     sid2 = game['sids'][index2]
-    # DEBUG 60 -> 5
-    for i in range(5):
+
+    for i in range(DISCONNECT_MAX_TIME):
         data = {
-                'text': 'Your opponent left\nForfeit win in: ' + str(60 - i),
+                'text': 'Your opponent left\nForfeit win in: ' + str(DISCONNECT_MAX_TIME - i),
                 'game_over': game_over
             }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
@@ -312,10 +314,11 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
                 winner_index = player_2_index
             winner = game['players'][winner_index]
             data = {
-                'text': winner,
+                'text': "Waiting for next match...",
                 'game_over': game['game_over'],
                 'game_type': game['game_type'],
-                'avatar': temp_avatars[winner_index]
+                'avatar': temp_avatars[winner_index],
+                'winner': game['players'][winner_index]
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
 
@@ -549,19 +552,23 @@ async def PongInput(sid, text_data):
 async def StartTournament(sid, room_id):
     global games
 
-    # TODO: MAKE IT so one of the players playing the tournament runs the game loop!
-    color_print(YELLOW, f"Tournament {GetRoomKey(room_id)} starts")
     # NOTE: THIS WILL BE AN ISSUE IF A PLAYER LEAVE (after his game) maybe need to play with status
-    player_index_list = [0, 1, 2, 3]
-    random.shuffle(player_index_list)
-    # log(f"index list: {player_index_list}")
+    color_print(YELLOW, f"Tournament {GetRoomKey(room_id)} starts")
+    player_index = [0, 1, 2, 3]
+    random.shuffle(player_index)
 
-    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[0], player_index_list[1]))
+    data = {
+            'text': 'Waiting for other match to end..',
+            'game_over': 0
+        }
+    await sio.emit('update_overlay', data, to=[games[room_id]['sids'][player_index[2]], games[room_id]['sids'][player_index[3]]])
+
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index[0], player_index[1]))
     winner1 = await game_task
     color_print(BLUE, f"Game 1 {GetRoomKey(room_id)} finished: {winner1}")
     winner1_index = games[room_id]['players'].index(winner1)
 
-    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[2], player_index_list[3]))
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index[2], player_index[3]))
     winner2 = await game_task
     color_print(BLUE, f"Game 2 {GetRoomKey(room_id)} finished: {winner2}")
     winner2_index = games[room_id]['players'].index(winner2)
@@ -570,8 +577,17 @@ async def StartTournament(sid, room_id):
     color_print(GREEN, f"Final game will oppose '{games[room_id]['players'][winner1_index]}' to '{games[room_id]['players'][winner2_index]}'")
     game_task = asyncio.create_task(StartGameLoop(sid, room_id, winner1_index, winner2_index))
     winner = await game_task
+    winner_index = games[room_id]['players'].index(winner)
     color_print(BLUE, f"Final game {GetRoomKey(room_id)} finished: {winner}, GG!")
-
+    avatars = await GetPlayersAvatar(room_id)
+    data = {
+            'text': "final",
+            'game_over': 1,
+            'game_type': games[room_id]['game_type'],
+            'avatar': avatars[winner_index],
+            'winner': games[room_id]['players'][winner_index]
+        }
+    await sio.emit('update_overlay', data, to=games[room_id]['sids'][winner_index])
 
 async def SaveSession(sid, username, room_id):
     await sio.save_session(sid, {

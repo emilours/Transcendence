@@ -453,6 +453,7 @@ export function ConnectWebsocket(type, username)
 	//HERE
 	socket.on('update_overlay', function(data) {
 		const text = data.text;
+		const winner = data.winner;
 		const gameOver = data.game_over;
 		const avatar = data.avatar;
 		const gameType = data.game_type;
@@ -464,7 +465,7 @@ export function ConnectWebsocket(type, username)
             mode = 'gameover';
         else
             mode = 'waiting';
-        DrawGameOverlay(mode, text, avatar, gameType);
+        DrawGameOverlay(mode, text, avatar, userName, winner);
 	});
 }
 
@@ -531,6 +532,12 @@ function onWindowResize()
 
 function StartGame()
 {
+	// Here: if (mode == "local")
+					// StartLocalGame();
+			// else
+				// StartOnlineGame();
+		
+	// all this is online game
 	Init();
     let firstDraw = 1;
 	socket.on('game_update', function(data) {
