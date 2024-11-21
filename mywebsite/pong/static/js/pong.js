@@ -3,13 +3,16 @@ import { OrbitControls } from './OrbitControls.js';
 import { TextGeometry } from './TextGeometry.js';
 import { FontLoader } from './FontLoader.js';
 
-import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawMainMenu } from './pongMenu.js';
-import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { DrawGameOverlay, DrawGameHud, RemoveMenu} from './HudOverlay.js';
+import { drawOnlineMenu, drawLobbyOnline, drawLobbyTournament, initPongMenu, createButtonReady, drawTournament } from './pongMenu.js';
+import { createElement } from './GameUtils.js';
+import { DrawGameOverlay, DrawLocalGameOverlay, DrawGameHud, DrawLocalGameHud, RemoveMenu} from './HudOverlay.js';
 
 
-const BALL_SIZE = 0.2; // maybe a bit bigger
-const MAX_HEIGHT = 4.5; // idk how to name this
+const PADDLE_SPEED = 8.0;
+const PADDLE_WIDTH = 0.2;
+const BALL_SPEED = 2.0;
+const BALL_SIZE = 0.2;
+const MAX_HEIGHT = 4.5;
 const MIN_HEIGHT = -4.5;
 const LOADING_IMG = '/static/img/loading.gif';
 const WAITING_FOR_PLAYER = 'Waiting for a player';
@@ -29,19 +32,20 @@ var VIEW_ANGLE = 45, ASPECT = 16 / 9, NEAR = 0.1, FAR = 2000;
 
 
 // custom global variables
-var light, line, ball, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
+var light, line, ball, ballBB, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 var arenaFloor, arenaLeftSide, arenaTopSide, arenaRightSide, arenaBottomSide;
-// var overlayText;
 var userName;
 var socket;
-var scoreGeometry, scoreFont;
+// var scoreGeometry, scoreFont;
+var ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 var leftPlayerScore = 0; // player 1
 var rightPlayerScore = 0; // player 2
 var running = true;
+var lastTime = 0;
+var deltaTime = 0;
 
 export function InitThreeJS()
 {
-	console.log("Initializing Threejs")
 	// THREEJS basic const global variables
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xa400bd);
@@ -70,7 +74,7 @@ export function InitThreeJS()
 	// loader.load( '../../static/fonts/roboto_condensed.json', function ( font ) {
 	// 	scoreFont = font;
 
-	// 	createScoreText();
+		// createScoreText();
 	// });
 
 }
@@ -249,7 +253,7 @@ function UpdateLobbyTournament(user, avatar, ready, playerInfo)
 }
 
 // FUNCTIONS TO TIGGER EVENT ON SOCKET.IO SERVER
-export function SendEvent(event, username, data)
+export function SendEvent(event, username, data, gameMode)
 {
     userName = username;
 	// console.log("Sending event:", event, "username:", username, "data:", data);
@@ -260,7 +264,11 @@ export function SendEvent(event, username, data)
             // console.log("Socket.io connection not open");
             return false;
         }
-        if (username == null && data == null)
+		if (event == "join_lobby")
+		{
+			socket.emit(event, username, data, gameMode);
+		}
+        else if (username == null && data == null)
             socket.emit(event);
         else if (username == null)
             socket.emit(event, data);
@@ -355,14 +363,17 @@ export function ConnectWebsocket(type, username)
 		// TODO: maybe need to add event from server 'init_game' for tournament (2 players play game, 2 stay in waiting room ?)
 		// HERE: either cleanup works or just send the event to the person that left
 		Cleanup();
-		StartGame();
+		StartGame("online");
 		SendEvent('start_game', userName);
 	});
-	socket.on('invalid_lobby_code', function() {
+	socket.on('invalid_lobby_code', function(gameMode) {
         const activeMenu = document.querySelector('.menu');
         if (activeMenu)
             activeMenu.remove();
-        drawOnlineMenu();
+		if (gameMode == NORMAL_MODE)
+       		drawOnlineMenu();
+		else
+			drawTournament();
 		CustomAlert("Invalid Lobby Code");
 	});
 	socket.on('player_already_in_room', function (index) {
@@ -380,6 +391,27 @@ export function ConnectWebsocket(type, username)
 		}
 		CustomAlert("You already are in a game, joining lobby...");
 	});
+	socket.on('invalid_game_mode', function(gameMode) {
+		const activeMenu = document.querySelector('.menu');
+		if (activeMenu)
+			activeMenu.remove();
+		if (gameMode == NORMAL_MODE)
+			drawOnlineMenu();
+		else
+			drawTournament();
+		CustomAlert("Invalid Game Mode");
+	});
+	socket.on('room_already_full', function(gameMode) {
+		const activeMenu = document.querySelector('.menu');
+		if (activeMenu)
+			activeMenu.remove();
+		if (gameMode == NORMAL_MODE)
+			drawOnlineMenu();
+		else
+			drawTournament();
+		CustomAlert("Room Already Full");
+	});
+
 
 	socket.on('send_lobby_data', function(data) {
 		const lobbyCode = data.lobby_id;
@@ -425,6 +457,7 @@ export function ConnectWebsocket(type, username)
 	//HERE
 	socket.on('update_overlay', function(data) {
 		const text = data.text;
+		const winner = data.winner;
 		const gameOver = data.game_over;
 		const avatar = data.avatar;
 		const gameType = data.game_type;
@@ -436,7 +469,7 @@ export function ConnectWebsocket(type, username)
             mode = 'gameover';
         else
             mode = 'waiting';
-        DrawGameOverlay(mode, text, avatar, gameType);
+        DrawGameOverlay(mode, text, avatar, userName, winner);
 	});
 }
 
@@ -501,9 +534,17 @@ function onWindowResize()
 	// console.log("width: " + width + " height: " + height);
 }
 
-function StartGame()
+export function StartGame(mode)
 {
 	Init();
+	if (mode === "local")
+		StartLocalGame();
+	else if (mode === "online")
+		StartOnlineGame();
+}
+
+function StartOnlineGame()
+{
     let firstDraw = 1;
 	socket.on('game_update', function(data) {
         if (firstDraw == 1)
@@ -529,9 +570,21 @@ function StartGame()
             DrawGameHud(userName, data.usernames, data.avatars, data.scores);
 		}
     });
-	Loop();
+	OnlineLoop();
 }
 
+function StartLocalGame()
+{
+	let firstDraw = 1;
+	if (firstDraw == 1)
+	{
+		RemoveMenu('.game-hud');
+		DrawLocalGameHud([leftPlayerScore, rightPlayerScore]);
+		firstDraw = 0;
+	}
+	requestAnimationFrame(LocalLoop);
+
+}
 
 function createScoreText()
 {
@@ -574,6 +627,14 @@ function createScoreText()
 
 function Init()
 {
+	// reset values
+	running = true;
+	leftPlayerScore = 0;
+	rightPlayerScore = 0;
+	lastTime = 0;
+	deltaTime = 0;
+	// TODO: randomize this:
+	ballSpeed = {x: BALL_SPEED, y: BALL_SPEED};
 
 	// WINDOW RESIZE
 	window.addEventListener( 'resize', onWindowResize );
@@ -620,7 +681,6 @@ function Init()
 	const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x353535 });
 	const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 	const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-	const redWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
 	const paddleOutlineMaterial = new THREE.MeshBasicMaterial({ color: 0xd1d1d1, side: THREE.BackSide });
 	const ballMaterial = new THREE.MeshBasicMaterial({map: ballTexture});
 
@@ -650,7 +710,11 @@ function Init()
 	// Ball
 	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
 	ball = new THREE.Mesh(ballGeometry, ballMaterial);
+	ball.position.x = 0;
+	ball.position.y = 0;
 	scene.add(ball);
+
+	ballBB = new THREE.Sphere(ball.position, BALL_SIZE);
 
 
 	// Paddles
@@ -680,7 +744,6 @@ function Init()
 
 
 	// Middle Line
-
 	const points = [];
 	points.push( new THREE.Vector3( 0, MAX_HEIGHT, -0.20 ) );
 	points.push( new THREE.Vector3( 0, MIN_HEIGHT, -0.20) );
@@ -692,20 +755,37 @@ function Init()
 }
 
 
-function Loop()
+function OnlineLoop()
 {
 	if (running == false)
 		return;
-	requestAnimationFrame(Loop);
-	Inputs();
-	Update();
+	requestAnimationFrame(OnlineLoop);
+	OnlineInputs();
+	OnlineUpdate();
 	renderer.render(scene, camera);
 }
 
-function Inputs()
+function LocalLoop(timestamp)
+{
+	if (lastTime == 0)
+		lastTime = timestamp;
+	if (running == false)
+	{
+		// console.log("Not running anymore!");
+		return;
+	}
+	// requestAnimationFrame(Loop);
+	LocalInputs();
+	LocalUpdate(timestamp);
+	renderer.render(scene, camera);
+	requestAnimationFrame(LocalLoop);
+}
+
+function OnlineInputs()
 {
 	const inputEvent = 'pong_input'
-
+	if (running == false)
+		return;
 	//DEBUG
 	// if (keys.i)
 	// {
@@ -734,7 +814,41 @@ function Inputs()
 	}
 }
 
-function Update()
+function LocalInputs()
+{
+	// DISABLE INPUT IF GAME NOT RUNNING
+	if (running == false)
+		return;
+
+	// PADDLE MOVEMENT
+    const paddleHeight = leftPaddle.geometry.parameters.height;
+	
+	// LEFT
+	if (keys.w && leftPaddle.position.y + paddleHeight / 2 < MAX_HEIGHT)
+        leftPaddle.position.y += PADDLE_SPEED * deltaTime; //
+    else if (keys.s && leftPaddle.position.y - paddleHeight / 2 > MIN_HEIGHT)
+        leftPaddle.position.y -= PADDLE_SPEED * deltaTime; //
+
+    if (leftPaddle.position.y + paddleHeight / 2 > MAX_HEIGHT)
+        leftPaddle.position.y = MAX_HEIGHT - paddleHeight / 2;
+    else if (leftPaddle.position.y - paddleHeight / 2  < MIN_HEIGHT)
+        leftPaddle.position.y = MIN_HEIGHT + paddleHeight / 2;
+
+
+	// RIGHT
+	if (keys.arrowup && rightPaddle.position.y + rightPaddle.geometry.parameters.height / 2 < MAX_HEIGHT)
+        rightPaddle.position.y += PADDLE_SPEED * deltaTime; //
+    else if (keys.arrowdown && rightPaddle.position.y - rightPaddle.geometry.parameters.height / 2 > MIN_HEIGHT)
+        rightPaddle.position.y -= PADDLE_SPEED * deltaTime; //
+
+    if (rightPaddle.position.y + paddleHeight / 2 > MAX_HEIGHT)
+        rightPaddle.position.y = MAX_HEIGHT - paddleHeight / 2;
+    else if (rightPaddle.position.y - paddleHeight / 2  < MIN_HEIGHT)
+        rightPaddle.position.y = MIN_HEIGHT + paddleHeight / 2;
+
+}
+
+function OnlineUpdate()
 {
 	// Paddle Outline
 	leftPaddleOutLine.position.y = leftPaddle.position.y;
@@ -744,29 +858,139 @@ function Update()
     controls.update();
 }
 
+function LocalUpdate(timestamp)
+{
+	// DELTA TIME
+	deltaTime = (timestamp - lastTime) / 1000;
+	lastTime = timestamp;
+	
+	// PADDLE OUTLINE UPDATE
+	leftPaddleOutLine.position.y = leftPaddle.position.y;
+	rightPaddleOutLine.position.y = rightPaddle.position.y;
+
+	// BALL - WALL COLLISION
+	if (ball.position.x - BALL_SIZE <= -8)
+	{
+		rightPlayerScore += 1;
+		// createScoreText();
+		RemoveMenu('.game-hud');
+		DrawLocalGameHud([leftPlayerScore, rightPlayerScore]);
+		ball.position.x = 0;
+		ball.position.y = 0;
+	}
+	if (ball.position.x + BALL_SIZE >= 8)
+	{
+		leftPlayerScore += 1;
+		// createScoreText();
+		RemoveMenu('.game-hud');
+		DrawLocalGameHud([leftPlayerScore, rightPlayerScore]);
+		ball.position.x = 0;
+		ball.position.y = 0;
+	}
+	if ((ball.position.y - BALL_SIZE < MIN_HEIGHT && ballSpeed.y < 0)|| (ball.position.y + BALL_SIZE > MAX_HEIGHT && ballSpeed.y > 0))
+		ballSpeed.y = -ballSpeed.y;
+
+	// BALL10-PADDLE COLLISIONS
+	leftPaddleBB.copy(leftPaddle.geometry.boundingBox).applyMatrix4(leftPaddle.matrixWorld);
+    rightPaddleBB.copy(rightPaddle.geometry.boundingBox).applyMatrix4(rightPaddle.matrixWorld);
+	if (ballBB.intersectsBox(rightPaddleBB) && ballSpeed.x > 0)
+	{
+		ballSpeed.x = -ballSpeed.x;
+		ball.position.x += ballSpeed.x * (PADDLE_WIDTH / 2); //
+	}
+	
+	if (ballBB.intersectsBox(leftPaddleBB)  && ballSpeed.x < 0)
+	{
+		ballSpeed.x = -ballSpeed.x;
+		ball.position.x += ballSpeed.x * (PADDLE_WIDTH / 2); //
+	}
+	
+	// BALL MOVEMENT
+	ball.position.x += ballSpeed.x * BALL_SPEED * deltaTime; //
+	ball.position.y += ballSpeed.y * BALL_SPEED * deltaTime; //
+	ball.rotation.x += 1.5 * ballSpeed.x * deltaTime; //
+	ball.rotation.y += 1.5 * ballSpeed.y * deltaTime; //
+
+	// SCORE
+	if (leftPlayerScore >= 5 || rightPlayerScore >= 5)
+	{
+		running = false;
+		document.body.removeEventListener("keydown", function(event) {});
+		// SaveMatch();
+		let winner;
+		if (leftPlayerScore >= 5)
+			winner = "Player1";
+		else
+			winner = "Player2";
+		DrawLocalGameOverlay(winner);
+
+	}
+}
+
+function SaveMatch(score)
+{
+	fetch('/pong/SaveLocalPongMatch', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-CSRFToken': getCookie('csrftoken')
+		},
+		body: JSON.stringify({ score: score }),
+	})
+	.then(response => response.json())
+	// .then(data => {
+	// 	if (data.status === 'success') {
+	// 		// console.log("Pong score save to database successfully!");
+	// 	}
+	// 	else {
+	// 		console.error('Error saving score:', data.message);
+	// 	}
+	// })
+	.catch(error => {
+		// console.error('Error: ', error);
+	})
+}
+
+function getCookie(name) 
+{
+	let cookieValue = null;
+	if (document.cookie && document.cookie !== '') {
+		const cookies = document.cookie.split(';');
+		for (let i = 0; i < cookies.length; i++) {
+			const cookie = cookies[i].trim();
+			if (cookie.substring(0, name.length + 1) === (name + '=')) {
+				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+				break;
+			}
+		}
+	}
+	return cookieValue;
+}
+
+
 export function Cleanup()
 {
-	// let length = scene.children.length;
-	// let i = 0;
-	// while (i < length) {
-	// 	// scene.remove(scene.children[0]);
-	// 	console.log("object:", scene.children[i]);
-	// 	i++;
-	// 	}
-	scene.remove(light)
-	scene.remove(arenaFloor);
-	scene.remove(arenaLeftSide);
-	scene.remove(arenaTopSide);
-	scene.remove(arenaRightSide);
-	scene.remove(arenaBottomSide);
-	scene.remove(leftPaddle);
-	scene.remove(leftPaddleOutLine);
-	scene.remove(rightPaddleOutLine);
-	scene.remove(rightPaddle);
-	scene.remove(ball);
-	scene.remove(line);
-	renderer.render(scene, camera);
-	renderer.clear(true, true, true);
-	renderer.setSize(0, 0);
-	renderer.setSize(window.innerWidth, window.innerHeight);
+	running = false;
+	if (scene)
+	{
+		scene.remove(light)
+		scene.remove(arenaFloor);
+		scene.remove(arenaLeftSide);
+		scene.remove(arenaTopSide);
+		scene.remove(arenaRightSide);
+		scene.remove(arenaBottomSide);
+		scene.remove(leftPaddle);
+		scene.remove(leftPaddleOutLine);
+		scene.remove(rightPaddleOutLine);
+		scene.remove(rightPaddle);
+		scene.remove(ball);
+		scene.remove(line);
+	}
+	if (renderer)
+	{
+		renderer.render(scene, camera);
+		renderer.clear(true, true, true);
+		renderer.setSize(0, 0);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}
 }

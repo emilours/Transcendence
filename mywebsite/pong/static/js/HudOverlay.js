@@ -56,25 +56,42 @@ export function DrawLocalGameHud(scores)
 
 
 
-export function DrawGameOverlay(mode, text, avatar, gameType)
+export function DrawGameOverlay(mode, text, avatar, userName, winner)
 {
     let gameOverlay;
+    let h2Text = "WINNER";
     if (mode === 'gameover')
     {
-        let quitButton;
-        gameOverlay = createElement('div', {className: 'overlay' },
-            createElement('h2', { innerText: "WINNER"}),
-            createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
-                createElement('img', {className: 'rounded-circle', src: avatar, width: 50, height: 50} ),
-                createElement('h3', { innerText: text})
-                ),
-            quitButton = createButton('QUIT', () => {
-                gameOverlay.remove();
-                RemoveMenu('.game-hud');
-				CloseWebsocket();
-                Cleanup();
-                initPongMenu();
-            }));
+
+        if (text == "final")
+            h2Text = "TOURNAMENT WINNER";
+        if (winner == userName && (text !== "final" && text !== "quit"))
+        {
+            gameOverlay = createElement('div', {className: 'overlay' },
+                createElement('h2', { innerText: h2Text}),
+                createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+                    createElement('img', {className: 'rounded-circle', src: avatar, width: 50, height: 50} ),
+                    createElement('h3', { innerText: winner})),
+                createElement('h4', { innerText: text, style: 'padding-top: 15px;'})
+            );
+        }
+        else
+        {
+            let quitButton;
+            gameOverlay = createElement('div', {className: 'overlay' },
+                createElement('h2', { innerText: h2Text}),
+                createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+                    createElement('img', {className: 'rounded-circle', src: avatar, width: 50, height: 50} ),
+                    createElement('h3', { innerText: winner})
+                    ),
+                quitButton = createButton('QUIT', () => {
+                    gameOverlay.remove();
+                    RemoveMenu('.game-hud');
+                    CloseWebsocket();
+                    Cleanup();
+                    initPongMenu();
+                }));
+        }
     }
     else if (mode === 'waiting')
     {
@@ -85,6 +102,23 @@ export function DrawGameOverlay(mode, text, avatar, gameType)
     document.querySelector('.pong-container').appendChild(gameOverlay);
 }
 
+export function DrawLocalGameOverlay(winner)
+{
+    let quitButton;
+    let gameOverlay = createElement('div', {className: 'overlay' },
+        createElement('h2', { innerText: "WINNER"}),
+        createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+            createElement('img', {className: 'rounded-circle', src: DEFAULT_AVATAR, width: 50, height: 50} ),
+            createElement('h3', { innerText: winner})
+            ),
+        quitButton = createButton('QUIT', () => {
+            gameOverlay.remove();
+            RemoveMenu('.game-hud');
+            Cleanup();
+            initPongMenu();
+        }));
+    document.querySelector('.pong-container').appendChild(gameOverlay);
+}
 
 export function RemoveMenu(className)
 {

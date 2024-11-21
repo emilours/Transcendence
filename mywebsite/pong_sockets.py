@@ -43,6 +43,8 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
+DISCONNECT_MAX_TIME = 60
+
 
 MAX_PLAYER_NORMAL = 2
 MAX_PLAYER_TOURNAMENT = 4
@@ -118,7 +120,6 @@ def reset_ball(room_id):
 @sync_to_async
 def SaveMatch(room_id, game_type, player_1_index, player_2_index):
 
-    log("SAVING MATCH TO DB")
     # normal or tournament
 
     game, _ = Game.objects.get_or_create(name=GAME_NAME, description=game_type)
@@ -150,7 +151,7 @@ def SaveMatch(room_id, game_type, player_1_index, player_2_index):
 
     PlayerMatch.objects.create(player=player2, match=match, score=score2, is_winner=is_player_winner)
 
-    log("Match properly saved!")
+    color_print(YELLOW, "Match saved to database")
 
 @sync_to_async
 def GetPlayerAvatar(username):
@@ -177,31 +178,35 @@ async def GamePaused(index1, index2, room_id, game_over):
     game = games[room_id]
     sid1 = game['sids'][index1]
     sid2 = game['sids'][index2]
-    for i in range(60):
+
+    for i in range(DISCONNECT_MAX_TIME):
         data = {
-                'text': 'Your opponent left\nForfeit win in: ' + str(60 - i),
+                'text': 'Your opponent left\nForfeit win in: ' + str(DISCONNECT_MAX_TIME - i),
                 'game_over': game_over
             }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
         await asyncio.sleep(1)
-        if game['ready'][index1] == 1 and game['ready'][index2] == 1:
-            data = {
-                'text': '',
-                'game_over': game_over
-            }
-            await sio.emit('update_overlay', data, to=[sid1, sid2])
-            return 1
+        if index1 in game['ready'] and index2 in game['ready']:
+            if game['ready'][index1] == 1 and game['ready'][index2] == 1:
+                data = {
+                    'text': '',
+                    'game_over': game_over
+                }
+                await sio.emit('update_overlay', data, to=[sid1, sid2])
+                return 1
     return 0
+
+def GetRoomKey(room_id):
+    return room_id[:8]
 
 async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     global games
-    log(f"STARTING GAME LOOP by {sid}")
+    color_print(YELLOW, f"Game loop {GetRoomKey(room_id)} starts")
     game = games[room_id]
     sid1 = game['sids'][player_1_index]
     sid2 = game['sids'][player_2_index]
     temp_avatars = await GetPlayersAvatar(room_id)
     avatars = [temp_avatars[player_1_index], temp_avatars[player_2_index]]
-    color_print(DARK_GRAY, f"avatars: {temp_avatars}")
     usernames = [game['players'][player_1_index], game['players'][player_2_index]]
     game['status'] = "running"
     game_type = game['game_type']
@@ -215,34 +220,42 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             'avatars':  avatars
         }
     await sio.emit('game_update', data, to=[sid1, sid2])
-
-
     await GameCountDown(room_id, "Game Starting", sid1, sid2)
 
     games[room_id]['last_time'] = time.time()
     delta_time = 0
-    paused = 0
+    # paused = 0
+    delete_user = ""
 
     while True:
         # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
-        if game['ready'][player_1_index] == '0' or game['ready'][player_2_index] == 0:
-            paused = 1
-            log(f"Game {game['room_id']} is paused!")
+        if game['ready'][player_1_index] == 0 or game['ready'][player_2_index] == 0:
+            color_print(BLUE, f"Game {GetRoomKey(room_id)} has status {game['status']}")
+            color_print(YELLOW, f"Game {GetRoomKey(room_id)} paused")
             player_returned = await GamePaused(player_1_index, player_2_index, room_id, game['game_over'])
+            color_print(RED, f"GamePaused has returned with {player_returned}")
+            sid1 = game['sids'][player_1_index]
+            sid2 = game['sids'][player_2_index]
             if player_returned == 0:
                 if game['ready'][player_1_index] == 1:
                     game['scores'][player_1_index] = 5
+                    delete_user = game['players'][player_2_index]
                 elif game['ready'][player_2_index] == 1:
                     game['scores'][player_2_index] = 5
+                    delete_user = game['players'][player_1_index]
                 game['game_over'] = 1
                 game['status'] = "running"
-            sid1 = game['sids'][player_1_index]
-            sid2 = game['sids'][player_2_index]
-        if paused == 1:
-            paused = 0
-            if game['status'] == 'paused':
+            else:
+                data = {
+                    'text': "Waiting for next match...",
+                    'game_over': game['game_over'],
+                    'game_type': game['game_type'],
+                    'avatar': temp_avatars[winner_index],
+                    'winner': game['players'][winner_index]
+                }
+                await sio.emit('update_overlay', data, to=[sid1, sid2])
                 await GameCountDown(room_id, "Game Restarting", sid1, sid2)
-            log(f"Game {game['room_id']} is resuming")
+            color_print(YELLOW, f"Game {GetRoomKey(room_id)} resuming")
 
         # Delta time
         current_time = time.time()
@@ -273,10 +286,10 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             reset_ball(room_id)
 
         if game['scores'][player_1_index] >= WINNING_SCORE: #
-            log(f"player 1 {game['players'][player_1_index]} won the game")
+            color_print(YELLOW, f"player 1 {game['players'][player_1_index]} won the game")
             game['game_over'] = 1
         elif game['scores'][player_2_index] >= WINNING_SCORE: #
-            log(f"player 2 {game['players'][player_2_index]} won the game")
+            color_print(YELLOW, f"player 2 {game['players'][player_2_index]} won the game")
             game['game_over'] = 1
 
 
@@ -307,10 +320,11 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
                 winner_index = player_2_index
             winner = game['players'][winner_index]
             data = {
-                'text': winner,
+                'text': "Waiting for next match...",
                 'game_over': game['game_over'],
                 'game_type': game['game_type'],
-                'avatar': temp_avatars[winner_index]
+                'avatar': temp_avatars[winner_index],
+                'winner': game['players'][winner_index]
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
 
@@ -318,6 +332,8 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             # current_task.cancel()
             # current_task = None
             # Reset data for next matches (tournament)
+            if delete_user != "":
+                game['players'][game['players'].index(delete_user)] = None
             for i in range(len(game['scores'])):
                 game['scores'][i] = 0
             for i in range(len(game['pos'])):
@@ -337,10 +353,10 @@ async def UserAlreadyConnected(username):
         try:
             session = await sio.get_session(sid)
             if username == session.get('username'):
-                log(f"User {username} is already connected to a socket at {sid}")
+                color_print(RED, f"{username} is already connected with sid {sid}")
                 return True
         except KeyError:
-            log(f"KeyError in UserAlreadyConnected()")
+            color_print(RED, f"[Error] KeyError in UserAlreadyConnected()")
     return False
 
 def GetUserRoom(username):
@@ -381,15 +397,16 @@ def CreateRoom(game_type, private):
         'game_over': 0,
         'last_time': 0,
         'delta_time': 0,
-        'status': "waiting", # waiting (for a 2nd player), paused (player disconnected), running
+        'status': "waiting", # waiting (for other players), paused (player disconnected), running
     }
-    log(f"Room {room_id} created")
+    # log(f"Room {room_id} created")
+    color_print(YELLOW, f"Room {GetRoomKey(room_id)} created")
     return room_id
 
 async def JoinRoom(sid, username, room_id, new):
     global games
     if room_id not in games:
-        log(f"[Error] Can't join room {room_id}")
+        color_print(RED, f"[Error] Can't join room {GetRoomKey(room_id)}")
         return
     if (new == -1):
         index = games[room_id]['players'].index(username)
@@ -411,7 +428,7 @@ async def JoinRoom(sid, username, room_id, new):
         games[room_id]['player_count'] += 1
 
     await sio.enter_room(sid, room_id)
-    log(f"User [{username}] joined room [{room_id}]")
+    color_print(YELLOW, f"{username} joined room {GetRoomKey(room_id)}")
 
 def IsLobbyCreated(room_key):
     global games
@@ -425,12 +442,10 @@ def IsRoomFull(room_id):
     global games
 
     game_type = games[room_id]['game_type']
-    log(f"{games[room_id]['player_count']} players in room for {game_type} game")
+    color_print(YELLOW, f"{games[room_id]['player_count']} players in {game_type} game {GetRoomKey(room_id)}")
     if game_type == NORMAL_GAME and games[room_id]['player_count'] == MAX_PLAYER_NORMAL:
-        log(f"{game_type} room full: {room_id}")
         return NORMAL_GAME
     elif game_type == TOURNAMENT_GAME and games[room_id]['player_count'] == MAX_PLAYER_TOURNAMENT:
-        log(f"{game_type} room full: {room_id}")
         return TOURNAMENT_GAME
     return None
 
@@ -438,24 +453,29 @@ async def LeaveRoom(sid, username, room_id):
     global games
 
     await sio.leave_room(sid, room_id)
+    if room_id is None or room_id not in games:
+        return
+    if username not in games[room_id]['players']:
+        return 
     index = games[room_id]['players'].index(username)
-    del games[room_id]['players'][index]
-    del games[room_id]['sids'][index]
-    del games[room_id]['pos'][index]
-    del games[room_id]['scores'][index]
-    del games[room_id]['ready'][index]
+    # del games[room_id]['players'][index]
+    games[room_id]['sids'][index] = ""
+    # del games[room_id]['pos'][index]
+    # del games[room_id]['scores'][index]
+    # del games[room_id]['ready'][index]
 
     games[room_id]['player_count'] -= 1
-    if games[room_id]['player_count'] <= 0:
+    if games[room_id]['player_count'] <= 0 or games[room_id]['status'] == "completed":
         await DeleteRoom(room_id)
         games[room_id] = {}
         del games[room_id]
-    log(f"User [{username}] left room [{room_id}]")
+    color_print(YELLOW, f"{username} left room {GetRoomKey(room_id)}")
     await sio.emit('user_left', username)
+    await SendLobbyData(sid, room_id)
 
 async def DeleteRoom(room_id):
     await sio.close_room(room_id)
-    log(f"Room {room_id} deleted")
+    color_print(YELLOW, f"Room {GetRoomKey(room_id)} deleted")
 
 @sio.on('player_ready')
 async def PlayerReady(sid, username):
@@ -469,27 +489,27 @@ async def PlayerReady(sid, username):
     else:
         games[room_id]['ready'][index] = 0
 
-    log(f"CHECK: {games[room_id]}")
+    # log(f"CHECK: {games[room_id]}")
     start = True
     if not IsRoomFull(room_id):
         start = False
     for ready in games[room_id]['ready']:
-        log(f"ready: {ready}")
+        # log(f"ready: {ready}")
         if ready == 0:
             start = False
     if start:
-        log("EVERYONE READY TO PLAY")
+        color_print(YELLOW, f"Everyone in {GetRoomKey(room_id)} is ready")
         await sio.emit('game_ready', room=room_id)
     else:
-        log("SOMEONE IS NOT READY")
+        color_print(YELLOW, f"Someone in {GetRoomKey(room_id)} is not ready")
     await SendLobbyData(sid, room_id)
 
 
 async def SendLobbyData(sid, room_id):
     global games
 
-    # session = await sio.get_session(sid)
-    # room_id = session.get('room_id')
+    if room_id not in games:
+        return
     game_type = games[room_id]['game_type']
     if game_type == NORMAL_GAME:
         max_lobby_size = MAX_PLAYER_NORMAL
@@ -503,13 +523,13 @@ async def SendLobbyData(sid, room_id):
         'users': games[room_id]['players'],
         'avatars': await GetPlayersAvatar(room_id)
     }
-    log(f"Data: {data}")
+    # log(f"Data: {data}")
     await sio.emit('send_lobby_data', data, room=room_id)
 
 @sio.on('pong_input')
 async def PongInput(sid, text_data):
     global games
-    log(f"{text_data}")
+    # log(f"{text_data}")
     data = json.loads(text_data)
 
     username = data['username']
@@ -517,7 +537,6 @@ async def PongInput(sid, text_data):
 
     session = await sio.get_session(sid)
     room_id = session.get('room_id')
-    log(f"room: {room_id}")
 
     game = games[room_id]
 
@@ -539,29 +558,42 @@ async def PongInput(sid, text_data):
 async def StartTournament(sid, room_id):
     global games
 
-    # TODO: MAKE IT so one of the players playing the tournament runs the game loop!
-    log(f"Starting Tournament")
     # NOTE: THIS WILL BE AN ISSUE IF A PLAYER LEAVE (after his game) maybe need to play with status
-    player_index_list = [0, 1, 2, 3]
-    random.shuffle(player_index_list)
-    log(f"index list: {player_index_list}")
+    color_print(YELLOW, f"Tournament {GetRoomKey(room_id)} starts")
+    player_index = [0, 1, 2, 3]
+    random.shuffle(player_index)
 
-    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[0], player_index_list[1]))
+    data = {
+            'text': 'Waiting for other match to end..',
+            'game_over': 0
+        }
+    await sio.emit('update_overlay', data, to=[games[room_id]['sids'][player_index[2]], games[room_id]['sids'][player_index[3]]])
+
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index[0], player_index[1]))
     winner1 = await game_task
-    color_print(BLUE, f"Game 1 finished: {winner1}")
+    color_print(BLUE, f"Game 1 {GetRoomKey(room_id)} finished: {winner1}")
     winner1_index = games[room_id]['players'].index(winner1)
 
-    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index_list[2], player_index_list[3]))
+    game_task = asyncio.create_task(StartGameLoop(sid, room_id, player_index[2], player_index[3]))
     winner2 = await game_task
-    color_print(BLUE, f"Game 2 finished: {winner2}")
+    color_print(BLUE, f"Game 2 {GetRoomKey(room_id)} finished: {winner2}")
     winner2_index = games[room_id]['players'].index(winner2)
 
 
     color_print(GREEN, f"Final game will oppose '{games[room_id]['players'][winner1_index]}' to '{games[room_id]['players'][winner2_index]}'")
     game_task = asyncio.create_task(StartGameLoop(sid, room_id, winner1_index, winner2_index))
     winner = await game_task
-    color_print(RED, f"Final game finished: {winner}, GG!")
-
+    winner_index = games[room_id]['players'].index(winner)
+    color_print(BLUE, f"Final game {GetRoomKey(room_id)} finished: {winner}, GG!")
+    avatars = await GetPlayersAvatar(room_id)
+    data = {
+            'text': "final",
+            'game_over': 1,
+            'game_type': games[room_id]['game_type'],
+            'avatar': avatars[winner_index],
+            'winner': games[room_id]['players'][winner_index]
+        }
+    await sio.emit('update_overlay', data, to=games[room_id]['sids'][winner_index])
 
 async def SaveSession(sid, username, room_id):
     await sio.save_session(sid, {
@@ -600,66 +632,75 @@ async def StartGame(sid, username):
     if games[room_id]['status'] == "paused":
         games[room_id]['status'] = 'running'
         return
-    # if (game[room_id])
     color_print(YELLOW, f"game status: {games[room_id]['status']}")
     if games[room_id]['status'] != "waiting":
         return
     room_full = IsRoomFull(room_id)
-    log(f"room_full: {room_full}")
     if room_full == NORMAL_GAME:
-        # await sio.emit('init_game', room=room_id)
         games[room_id]['last_time'] = time.time()
-        asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
+        winner = await asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
+        winner_index = games[room_id]['players'].index(winner)
+        avatars = await GetPlayersAvatar(room_id)
+        color_print(DARK_GRAY, f"avatars: {avatars}")
+        data = {
+            'text': "quit",
+            'game_over': 1,
+            'game_type': games[room_id]['game_type'],
+            'avatar': avatars[winner_index],
+            'winner': games[room_id]['players'][winner_index]
+        }
+        await sio.emit('update_overlay', data, to=games[room_id]['sids'][winner_index])
     elif room_full == TOURNAMENT_GAME:
         await StartTournament(sid, room_id)
-    else:
-        log("room not full")
-
 
 @sio.on('leave_lobby')
 async def LeaveLobby(sid, username):
+    global games
 
-    log(f"LeaveLobby() username: {username}")
     room_id = GetUserRoom(username)
     if room_id is None:
-        log(f"WARNING: User is not in a room")
+        color_print(RED, f"[Error] {username} is not in a room")
         return
+    
+    # if room_id in games:
+    #     if games[room_id]['status'] != "waiting":
+    #         games[room_id]['game_over'] = 1
+    #         games[room_id]['ready'][games[room_id]['players'].index(username)] = 1
+    #         color_print(DARK_GRAY, f"ready: {games[room_id]['ready']}")
     await LeaveRoom(sid, username, room_id)
     await SendLobbyData(sid, room_id)
 
+def IsCorrectGameMode(room_id, game_mode):
+    global games
+
+    if room_id not in games:
+        return False
+    if games[room_id]['game_type'] == game_mode:
+        return True 
+
 
 @sio.on('join_lobby')
-async def JoinLobby(sid, username, room_key):
-
-    log(f"JoinLobby() username: {username}, room_key: {room_key}")
-    room_id = GetUserRoom(username)
-    if room_id is not None:
-        await SaveSession(sid, username, room_id)
-        log(f"User {username} is already in a game")
-        await sio.enter_room(sid, room_id)
-        log(f"User [{username}] joined room [{room_id}]")
-        await sio.emit('player_already_in_room', games[room_id]['players'].index(username), to=sid)
-        await SendLobbyData(sid, room_id)
-        return
+async def JoinLobby(sid, username, room_key, game_mode):
 
     room_id = IsLobbyCreated(room_key)
-    if (room_key == 'admin'):
-        room_id = GetAvailableRoom(TOURNAMENT_GAME)
     if room_id is None:
-        log(f"invalid_lobby_code")
-        # need and send an error event if room doesn't exist or full already
-        await sio.emit('invalid_lobby_code', to=sid)
+        color_print(RED, f"[Error] lobby code {room_key} is not valid")
+        await sio.emit('invalid_lobby_code', game_mode, to=sid)
         return
-
+    
+    if not IsCorrectGameMode(room_id, game_mode):
+        await sio.emit('invalid_game_mode', game_mode, to=sid)
+        return
+    
     if IsRoomFull(room_id):
-        await sio.emit('room_already_full', to=sid)
+        await sio.emit('room_already_full', game_mode, to=sid)
         return
-
-    log("JOIN SUCCESSFULL")
+    
     await SaveSession(sid, username, room_id)
     await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid, room_id)
+        
 
 @sio.on('find_lobby')
 async def FindLobby(sid, username, game_type):
@@ -667,7 +708,6 @@ async def FindLobby(sid, username, game_type):
 
     room_id = GetAvailableRoom(game_type)
     if room_id is None:
-        log("No available lobby, creating a new one")
         room_id = CreateRoom(game_type, PUBLIC_LOBBY)
     await JoinRoom(sid, username, room_id, 0)
     await SaveSession(sid, username, room_id)
@@ -677,19 +717,15 @@ async def FindLobby(sid, username, game_type):
 @sio.on('create_lobby')
 async def CreateLobby(sid, username, game_type):
 
-    log(f"CreateLobby() username: {username}, game_type: {game_type}")
-
     # Check if user is already in a game
     room_id = GetUserRoom(username)
     if room_id is not None:
-        log(f"User {username} is already in a game")
+        color_print(YELLOW, f"{username} is already in a game")
         await sio.enter_room(sid, room_id)
-        log(f"User [{username}] joined room [{room_id}]")
+        color_print(YELLOW, f"{username} joined room {room_id}")
     else:
         room_id = CreateRoom(game_type, PRIVATE_LOBBY)
         await JoinRoom(sid, username, room_id, 0)
-    # room_id = GetAvailableRoom(game_type)
-    # if room_id is None:
     await SaveSession(sid, username, room_id)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid, room_id)
@@ -708,15 +744,14 @@ async def Connect(sid, environ):
     game_type = query.get('gameType', [None])[0]
 
     if not username or not game_type:
-        log(f"No username or game type")
+        color_print(RED, f"[Error] No username or game type")
         await sio.disconnect(sid)
         return False
     if await UserAlreadyConnected(username):
-        log("User already connected to socket")
         await sio.disconnect(sid)
         return False
     connected_users[sid] = username
-    log(f"User {username} connected ({sid})")
+    color_print(YELLOW, f"{username} connected")
     room_id = GetUserRoom(username)
     if room_id is not None:
         await SaveSession(sid, username, room_id)
@@ -726,7 +761,7 @@ async def Connect(sid, environ):
 
 @sio.on('message')
 async def Message(sid, data):
-    log(f"Message from {sid}: {data}")
+    color_print(DARK_GRAY, f"Message from {sid}: {data}")
     await sio.send(f"Server received {data} from {sid}!")
 
 
@@ -741,27 +776,30 @@ async def disconnect(sid):
     client_count -= 1
     await sio.emit('client_count', client_count)
 
+    username = "Unknow"
+    room_id = None
+
     try:
         session = await sio.get_session(sid)
-        log(f"session in disconnect: {session}")
-        room_id = session.get('room_id')
-        username = session.get('username')
-        if games[room_id]['status'] == "running":
-            log("game paused")
-            games[room_id]['status'] = "paused"
-            await PlayerReady(sid, username)
-            await sio.leave_room(sid, room_id)
-            await sio.emit('user_left', username)
-            log(f"User {username} disconnected ({sid})")
-            return
+        # color_print(DARK_GRAY, f"session: {session}")
+        room_id = session['room_id']
+        username = session['username']
+    except KeyError as e:
+        color_print(RED, f"[Error] Missing key {str(e)} for {sid}")
 
-        await LeaveRoom(sid, username, room_id)
+    if room_id in games and games[room_id]['status'] == "running":
+        games[room_id]['status'] = "paused"
+        player_index = games[room_id]['players'].index(username)
+        games[room_id]['ready'][player_index] = 0
+        await sio.leave_room(sid, room_id)
         await sio.emit('user_left', username)
-        log(f"User {username} disconnected ({sid})")
-        # TEST
-        await DebugPrint(sid, username)
-    except KeyError:
-        log(f"No session found for {sid}")
+        color_print(YELLOW, f"{username} disconnected")
+        return
+
+    await LeaveRoom(sid, username, room_id)
+    color_print(YELLOW, f"{username} disconnected")
+    await DebugPrint(sid, username)
+    
 
 
 @sio.on('debug_print')
@@ -809,7 +847,7 @@ if __name__ == "__main__":
     ssl_keyfile = "daphne/nginx.key"
 
     # Run the server
-    log("STARTING SOCKET SERVER")
+    color_print(GREEN, "Pong socket server started!")
     # , ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile
     uvicorn.run(app, host='0.0.0.0', port=6789, ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile)
 

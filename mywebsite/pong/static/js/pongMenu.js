@@ -1,6 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent} from './pong.js';
-import { StartLocalGame } from './pongLocal.js'
+import { ConnectWebsocket, CloseWebsocket, SendEvent, StartGame} from './pong.js';
 
 const NORMAL_MODE = 'normal';
 const TOURNAMENT_MODE = 'tournament';
@@ -113,7 +112,7 @@ function drawJoinMenu(mode) {
 		buttonJoin = createButton('JOIN', () => {
 			const lobbyCode = document.getElementById('inputField').value;
 			lobbyMenu.remove();
-			SendEvent('join_lobby', userName, lobbyCode);
+			SendEvent('join_lobby', userName, lobbyCode, mode);
 			// after successful drawLobbyMenu('join')
 			// HERE --> rework UpdateMenu:
 			// Cleaner and just better
@@ -223,7 +222,7 @@ function drawLobbyLocal() {
 			}),
 			createButtonGreen('START', () => {
 				document.querySelector('.menu').remove();
-				StartLocalGame();
+				StartGame("local");
 			})
 		)
 	);
@@ -255,7 +254,7 @@ function drawPlayerLocal(name) {
 	return playerInfo;
 }
 
-function drawTournament() {
+export function drawTournament() {
 	const onlineMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
 		createElement('h3', { innerText: 'CHOOSE AN OPTION' }),
