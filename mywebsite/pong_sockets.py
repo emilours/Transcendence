@@ -494,6 +494,8 @@ async def PlayerReady(sid, username):
         # log(f"ready: {ready}")
         if ready == 0:
             start = False
+    if games[room_id]['status'] == "running" or games[room_id]['status'] == "paused":
+        statrt = True
     if start:
         color_print(YELLOW, f"Everyone in {GetRoomKey(room_id)} is ready")
         await sio.emit('game_ready', room=room_id)
@@ -626,6 +628,9 @@ async def StartGame(sid, username):
     if (username != games[room_id]['players'][0]):
         return
     # HERE: this and the line above might cause a problem if the player leaving is the one at index 0 ??
+    
+    if games[room_id]['status'] == "running":
+        return
     if games[room_id]['status'] == "paused":
         games[room_id]['status'] = 'running'
         return
