@@ -65,7 +65,6 @@ export function DrawGameOverlay(mode, text, avatar, userName, winner)
 
         if (text == "final")
             h2Text = "TOURNAMENT WINNER";
-        console.log("h2Text:", h2Text, "text:", text);
         if (winner == userName && (text !== "final" && text !== "quit"))
         {
             gameOverlay = createElement('div', {className: 'overlay' },
