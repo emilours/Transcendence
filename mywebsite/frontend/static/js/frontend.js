@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 								CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
-								console.log("Logout from non json response");
+								// console.log("Logout from non json response");
 								return;
 							}
 						}
@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
 								CloseStatusSocket();
 								loadContent('/home/', true);
 								loadHeader();
-								console.log("Logout from json response");
+								// console.log("Logout from json response");
 							} else if (id === 'delete-account-form') {
 								loadContent('/deleted_profile/', true);
 								loadHeader();
