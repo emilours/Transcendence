@@ -495,7 +495,7 @@ async def PlayerReady(sid, username):
         if ready == 0:
             start = False
     if games[room_id]['status'] == "running" or games[room_id]['status'] == "paused":
-        statrt = True
+        start = True
     if start:
         color_print(YELLOW, f"Everyone in {GetRoomKey(room_id)} is ready")
         await sio.emit('game_ready', room=room_id)
