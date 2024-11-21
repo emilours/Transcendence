@@ -3,25 +3,25 @@
 	<div class="container mb-5">
 		<div class="row justify-content-center mt-2 g-3">
 			<div class="col-12 col-lg-8">
-				<div class="card shadow rounded-4">
-					<div class="card-header text-center bg-primary font-potta rounded-top-4">
+				<div class="card shadow rounded-2">
+					<div class="card-header text-center bg-primary font-potta rounded-top-2">
 						<h2 class="font-balsamiq text-secondary-emphasis">Edit Profile</h2>
 					</div>
 					<div class="card-body p-5 text-secondary-emphasis">
 						<form id="edit-profile-form" method="POST" enctype="multipart/form-data" action="{% url 'authentification:update_profile' %}">
 							{% csrf_token %}
 							<div class="form-floating mb-3">
-								<input type="text" id="first_name" name="first_name" maxlength="20" class="form-control text-secondary-emphasis rounded-1" value="{{ user.first_name }}" required>
+								<input type="text" id="first_name" placeholder="" name="first_name" maxlength="100" class="form-control text-secondary-emphasis rounded-1" value="{{ user.first_name }}" required>
 								<label for="first_name" style="opacity: 0.7;">First Name:</label>
 							</div>
 
 							<div class="form-floating mb-3">
-								<input type="text" id="last_name" name="last_name" maxlength="20" class="form-control text-secondary-emphasis rounded-1" value="{{ user.last_name }}" required>
+								<input type="text" id="last_name" placeholder="" name="last_name" maxlength="100" class="form-control text-secondary-emphasis rounded-1" value="{{ user.last_name }}" required>
 								<label for="last_name" style="opacity: 0.7;">Last Name:</label>
 							</div>
-							
+
 							<div class="form-floating mb-3">
-								<input type="text" id="display_name" name="display_name" maxlength="15" class="form-control text-secondary-emphasis rounded-1" value="{{ user.display_name }}" required>
+								<input type="text" id="display_name" placeholder="" name="display_name" maxlength="15" class="form-control text-secondary-emphasis rounded-1" value="{{ user.display_name }}" required>
 								<label for="display_name" style="opacity: 0.7;">Display Name:</label>
 							</div>
 
