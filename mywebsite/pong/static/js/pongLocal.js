@@ -11,7 +11,6 @@ var scene, camera, renderer, loader;
 var line, ball, ballBB, ballTexture, leftPaddle, leftPaddleOutLine, leftPaddleBB, rightPaddle, rightPaddleOutLine, rightPaddleBB, keys, scoreMesh;
 
 
-var overlayText;
 var scoreGeometry, scoreFont, gameOver;
 const PADDLE_SPEED = 8.0;
 const PADDLE_WIDTH = 0.2;
@@ -175,14 +174,6 @@ function Init()
 	const container = document.getElementById('pong-container-id');
 	container.appendChild(renderer.domElement);
 
-	// OVERLAY TEXT
-	overlayText = document.getElementById('overlay-text');
-	if (overlayText.classList.contains('menu'))
-	{
-		overlayText.classList.remove('menu');
-		overlayText.classList.add('text-overlay');
-		overlayText.textContent = ``;
-	} 
 
 	// LIGHTS
 	// can't see textures without light
@@ -222,7 +213,6 @@ function Init()
 	const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x353535 });
 	const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 	const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-	const redWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
 	const paddleOutlineMaterial = new THREE.MeshBasicMaterial({ color: 0xd1d1d1, side: THREE.BackSide });
 	const ballMaterial = new THREE.MeshBasicMaterial({map: ballTexture});
 
@@ -250,9 +240,7 @@ function Init()
 	arenaLeftSide.position.x -= 8.25;
 
 	// BALL
-	// const cubeGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 	const ballGeometry = new THREE.SphereGeometry(BALL_SIZE, 64, 32);
-	// cube = new THREE.Mesh(cubeGeometry, redWireframeMaterial);
 	ball = new THREE.Mesh(ballGeometry, ballMaterial);
 	// scene.add(cube);
 	ball.position.x = 0;
@@ -416,13 +404,6 @@ function Update(timestamp)
 	{
 		running = false;
 		document.body.removeEventListener("keydown", function(event) {});
-		if (overlayText.classList.contains('text-overlay'))
-		{
-			overlayText.classList.remove('text-overlay');
-			overlayText.classList.add('menu');
-			overlayText.textContent = `GAME OVER`;
-		}
-
 		// SaveMatch();
 
 	}

@@ -1,6 +1,5 @@
 import { createElement, createButton, createButtonGreen, appendChildren, createArrowButton } from './GameUtils.js';
-import { ConnectWebsocket, CloseWebsocket, SendEvent} from './pong.js';
-import { StartLocalGame } from './pongLocal.js'
+import { ConnectWebsocket, CloseWebsocket, SendEvent, StartGame} from './pong.js';
 
 const NORMAL_MODE = 'normal';
 const TOURNAMENT_MODE = 'tournament';
@@ -223,7 +222,7 @@ function drawLobbyLocal() {
 			}),
 			createButtonGreen('START', () => {
 				document.querySelector('.menu').remove();
-				StartLocalGame();
+				StartGame("local");
 			})
 		)
 	);

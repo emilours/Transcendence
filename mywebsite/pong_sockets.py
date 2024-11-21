@@ -635,12 +635,19 @@ async def StartGame(sid, username):
     if room_full == NORMAL_GAME:
         # await sio.emit('init_game', room=room_id)
         games[room_id]['last_time'] = time.time()
-        asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
+        winner = await asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
+        winner_index = games[room_id]['players'].index(winner)
+        avatars = await GetPlayersAvatar(room_id)
+        data = {
+            'text': "quit",
+            'game_over': 1,
+            'game_type': games[room_id]['game_type'],
+            'avatar': avatars[winner_index],
+            'winner': games[room_id]['players'][winner_index]
+        }
+        await sio.emit('update_overlay', data, to=games[room_id]['sids'][winner_index])
     elif room_full == TOURNAMENT_GAME:
         await StartTournament(sid, room_id)
-    # else:
-        # log("room not full")
-
 
 @sio.on('leave_lobby')
 async def LeaveLobby(sid, username):

@@ -1,7 +1,6 @@
 import { startInvaders, stopInvaders } from '/static/js/invaders.js';
 import { initPongMenu, cleanupPongMenu } from '/static/js/pongMenu.js';
-import { CloseWebsocket, InitThreeJS } from '/static/js/pong.js';
-import { CleanupLocalPong } from '/static/js/pongLocal.js';
+import { CloseWebsocket, InitThreeJS, Cleanup } from '/static/js/pong.js';
 import { showPongChart, showInvadersChart } from '/static/js/dashboard.js';
 
 var statusSocket;
@@ -99,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelectorAll('link[data-dynamic="true"]').forEach(link => link.remove());
 		// close ws connection and cleaning up threejs
 		CloseWebsocket();
-		CleanupLocalPong();
 		cleanupPongMenu();
+		Cleanup();
 		stopInvaders();
 
 		// Close any open Bootstrap modals

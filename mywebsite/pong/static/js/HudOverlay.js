@@ -66,7 +66,7 @@ export function DrawGameOverlay(mode, text, avatar, userName, winner)
         if (text == "final")
             h2Text = "TOURNAMENT WINNER";
         console.log("h2Text:", h2Text, "text:", text);
-        if (winner == userName && text !== "final")
+        if (winner == userName && (text !== "final" && text !== "quit"))
         {
             gameOverlay = createElement('div', {className: 'overlay' },
                 createElement('h2', { innerText: h2Text}),
@@ -100,6 +100,24 @@ export function DrawGameOverlay(mode, text, avatar, userName, winner)
             createElement('h3', { innerText: text}),
         );
     }
+    document.querySelector('.pong-container').appendChild(gameOverlay);
+}
+
+export function DrawLocalGameOverlay(winner)
+{
+    let quitButton;
+    let gameOverlay = createElement('div', {className: 'overlay' },
+        createElement('h2', { innerText: "WINNER"}),
+        createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;'},
+            createElement('img', {className: 'rounded-circle', src: DEFAULT_AVATAR, width: 50, height: 50} ),
+            createElement('h3', { innerText: winner})
+            ),
+        quitButton = createButton('QUIT', () => {
+            gameOverlay.remove();
+            RemoveMenu('.game-hud');
+            Cleanup();
+            initPongMenu();
+        }));
     document.querySelector('.pong-container').appendChild(gameOverlay);
 }
 
