@@ -5943,3 +5943,5 @@ CREATE TABLE "django_session" ("session_key" varchar(40) NOT NULL PRIMARY KEY, "
 CREATE INDEX "django_session_session_key_c0390e0f_like" ON "django_session" ("session_key" varchar_pattern_ops); (params None)
 CREATE INDEX "django_session_expire_date_a5c62663" ON "django_session" ("expire_date"); (params None)
 Forbidden (Origin checking failed - https://10.32.3.7:8080 does not match any trusted origins.): /auth/signup/
+Not Found: /accounts/login/
+Not Found: /accounts/login/
