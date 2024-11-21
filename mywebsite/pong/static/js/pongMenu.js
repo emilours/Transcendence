@@ -158,7 +158,7 @@ export function drawLobbyOnline(mode) {
 	let player1Info;
 	let player2Info;
 
-	if (mode === 'create') {
+	if (mode === 'create' || mode === 'reconnect') {
 		let playerInfo = createElement('div', { className: 'button-horizontal', style: 'align-items: flex-start;' },
 			player1Info = drawPlayerOnline(userName),
 			createElement('h3', { innerText: 'VS', style: 'margin: 40px; margin-top: 100px;' }),
@@ -177,10 +177,15 @@ export function drawLobbyOnline(mode) {
 		lobbyMenu.appendChild(playerInfo);
 	}
 
+	
+
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
-        SendEvent('leave_lobby', userName);
-		drawOnlineMenu();
+		SendEvent('leave_lobby', userName);
+		if (mode == 'reconnect')
+			initPongMenu();
+		else
+			drawOnlineMenu();
 	});
 	lobbyMenu.appendChild(backButton);
 
@@ -284,7 +289,7 @@ export function drawTournament() {
 	document.querySelector('.pong-container').appendChild(onlineMenu);
 }
 
-export function drawLobbyTournament() {
+export function drawLobbyTournament(mode) {
 	let lobbyCode = createElement('h4', {innerText: '', style: 'co'});
 	lobbyMenu = createElement('div', { className: 'menu' },
 		createElement('h2', { innerText: 'TOURNAMENT' }),
@@ -322,8 +327,11 @@ export function drawLobbyTournament() {
 
 	const backButton = createButton('BACK', () => {
 		document.querySelector('.menu').remove();
-        SendEvent('leave_lobby', userName)
-		drawTournament();
+		SendEvent('leave_lobby', userName)
+		if (mode == 'reconnect')
+			initPongMenu();
+		else
+			drawTournament();
 	});
 	backButton.style.marginTop = '40px';
 	lobbyMenu.appendChild(backButton);

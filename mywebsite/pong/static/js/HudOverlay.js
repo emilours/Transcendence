@@ -58,6 +58,9 @@ export function DrawLocalGameHud(scores)
 
 export function DrawGameOverlay(mode, text, avatar, userName, winner)
 {
+    const menu = document.querySelector('.menu');
+    if (menu)
+        return;
     let gameOverlay;
     let h2Text = "WINNER";
     if (mode === 'gameover')
@@ -104,6 +107,9 @@ export function DrawGameOverlay(mode, text, avatar, userName, winner)
 
 export function DrawLocalGameOverlay(winner)
 {
+    const menu = document.querySelector('.menu');
+    if (menu)
+        return;
     let quitButton;
     let gameOverlay = createElement('div', {className: 'overlay' },
         createElement('h2', { innerText: "WINNER"}),

@@ -444,14 +444,13 @@ export function ConnectWebsocket(type, username)
         const user = data.username;
         const lobbyId = data.lobby_id;
         const gameType = data.game_type;
-
         let menu = document.querySelector('.menu');
         if (menu)
             menu.remove(); // removeChild ?
         if (gameType == NORMAL_MODE)
-            drawLobbyOnline('create');
+            drawLobbyOnline('reconnect');
         else if (gameType == TOURNAMENT_MODE)
-            drawLobbyTournament('create');
+            drawLobbyTournament('reconnect');
 		CustomAlert("You were in a game, joining lobby...");
     });
 	//HERE
@@ -470,6 +469,16 @@ export function ConnectWebsocket(type, username)
         else
             mode = 'waiting';
         DrawGameOverlay(mode, text, avatar, userName, winner);
+	});
+	socket.on('refresh', function() {
+		const customAlert = document.getElementById('customAlert');
+		customAlert.style.display = 'none';
+		RemoveMenu('.menu');
+		RemoveMenu('.game-hud');
+		RemoveMenu('.overlay');
+		Cleanup();
+		CloseWebsocket();
+		initPongMenu();
 	});
 }
 

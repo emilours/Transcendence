@@ -43,7 +43,7 @@ PLAYER1_X = -7.5
 PLAYER2_X = 7.5
 WINNING_SCORE = 5
 
-DISCONNECT_MAX_TIME = 60
+DISCONNECT_MAX_TIME = 20
 
 
 MAX_PLAYER_NORMAL = 2
@@ -186,14 +186,13 @@ async def GamePaused(index1, index2, room_id, game_over):
             }
         await sio.emit('update_overlay', data, to=[sid1, sid2])
         await asyncio.sleep(1)
-        if index1 in game['ready'] and index2 in game['ready']:
-            if game['ready'][index1] == 1 and game['ready'][index2] == 1:
-                data = {
-                    'text': '',
-                    'game_over': game_over
-                }
-                await sio.emit('update_overlay', data, to=[sid1, sid2])
-                return 1
+        if game['ready'][index1] == 1 and game['ready'][index2] == 1:
+            data = {
+                'text': '',
+                'game_over': game_over
+            }
+            await sio.emit('update_overlay', data, to=[sid1, sid2])
+            return 1
     return 0
 
 def GetRoomKey(room_id):
@@ -224,13 +223,14 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
 
     games[room_id]['last_time'] = time.time()
     delta_time = 0
-    # paused = 0
+    paused = 0
     delete_user = ""
 
     while True:
         # TODO: rework --> change to if + timer + forfeit win & way to stop if player comes back
         if game['ready'][player_1_index] == 0 or game['ready'][player_2_index] == 0:
             color_print(BLUE, f"Game {GetRoomKey(room_id)} has status {game['status']}")
+            paused = 1
             color_print(YELLOW, f"Game {GetRoomKey(room_id)} paused")
             player_returned = await GamePaused(player_1_index, player_2_index, room_id, game['game_over'])
             color_print(RED, f"GamePaused has returned with {player_returned}")
@@ -245,15 +245,11 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
                     delete_user = game['players'][player_1_index]
                 game['game_over'] = 1
                 game['status'] = "running"
-            else:
-                data = {
-                    'text': "Waiting for next match...",
-                    'game_over': game['game_over'],
-                    'game_type': game['game_type'],
-                    'avatar': temp_avatars[winner_index],
-                    'winner': game['players'][winner_index]
-                }
-                await sio.emit('update_overlay', data, to=[sid1, sid2])
+            sid1 = game['sids'][player_1_index]
+            sid2 = game['sids'][player_2_index]
+        if paused == 1:
+            paused = 0
+            if game['status'] == 'paused':
                 await GameCountDown(room_id, "Game Restarting", sid1, sid2)
             color_print(YELLOW, f"Game {GetRoomKey(room_id)} resuming")
 
@@ -333,6 +329,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
             # current_task = None
             # Reset data for next matches (tournament)
             if delete_user != "":
+                await sio.emit('refresh', to=game['sids'][game['players'].index(delete_user)])
                 game['players'][game['players'].index(delete_user)] = None
             for i in range(len(game['scores'])):
                 game['scores'][i] = 0
@@ -458,11 +455,11 @@ async def LeaveRoom(sid, username, room_id):
     if username not in games[room_id]['players']:
         return 
     index = games[room_id]['players'].index(username)
-    # del games[room_id]['players'][index]
-    games[room_id]['sids'][index] = ""
-    # del games[room_id]['pos'][index]
-    # del games[room_id]['scores'][index]
-    # del games[room_id]['ready'][index]
+    del games[room_id]['players'][index]
+    del games[room_id]['sids'][index]
+    del games[room_id]['pos'][index]
+    del games[room_id]['scores'][index]
+    del games[room_id]['ready'][index]
 
     games[room_id]['player_count'] -= 1
     if games[room_id]['player_count'] <= 0 or games[room_id]['status'] == "completed":
@@ -640,13 +637,12 @@ async def StartGame(sid, username):
         games[room_id]['last_time'] = time.time()
         winner = await asyncio.create_task(StartGameLoop(sid, room_id, 0, 1))
         winner_index = games[room_id]['players'].index(winner)
-        avatars = await GetPlayersAvatar(room_id)
-        color_print(DARK_GRAY, f"avatars: {avatars}")
+        color_print(DARK_GRAY, f" winner_index: {winner_index}")
         data = {
             'text': "quit",
             'game_over': 1,
             'game_type': games[room_id]['game_type'],
-            'avatar': avatars[winner_index],
+            'avatar': await GetPlayerAvatar(winner),
             'winner': games[room_id]['players'][winner_index]
         }
         await sio.emit('update_overlay', data, to=games[room_id]['sids'][winner_index])
@@ -662,11 +658,15 @@ async def LeaveLobby(sid, username):
         color_print(RED, f"[Error] {username} is not in a room")
         return
     
-    # if room_id in games:
-    #     if games[room_id]['status'] != "waiting":
-    #         games[room_id]['game_over'] = 1
-    #         games[room_id]['ready'][games[room_id]['players'].index(username)] = 1
-    #         color_print(DARK_GRAY, f"ready: {games[room_id]['ready']}")
+    if room_id in games and games[room_id]['status'] == "running" or games[room_id]['status'] == "paused":
+        games[room_id]['status'] = "paused"
+        player_index = games[room_id]['players'].index(username)
+        games[room_id]['ready'][player_index] = 0
+        await sio.leave_room(sid, room_id)
+        await sio.emit('user_left', username)
+        color_print(YELLOW, f"{username} disconnected")
+        return
+
     await LeaveRoom(sid, username, room_id)
     await SendLobbyData(sid, room_id)
 
@@ -787,7 +787,7 @@ async def disconnect(sid):
     except KeyError as e:
         color_print(RED, f"[Error] Missing key {str(e)} for {sid}")
 
-    if room_id in games and games[room_id]['status'] == "running":
+    if room_id in games and games[room_id]['status'] == "running" or games[room_id]['status'] == "paused":
         games[room_id]['status'] = "paused"
         player_index = games[room_id]['players'].index(username)
         games[room_id]['ready'][player_index] = 0
