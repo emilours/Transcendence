@@ -204,9 +204,9 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
     game = games[room_id]
     sid1 = game['sids'][player_1_index]
     sid2 = game['sids'][player_2_index]
-    temp_avatars = await GetPlayersAvatar(room_id)
-    avatars = [temp_avatars[player_1_index], temp_avatars[player_2_index]]
+
     usernames = [game['players'][player_1_index], game['players'][player_2_index]]
+    avatars = [await GetPlayerAvatar(usernames[0]), await GetPlayerAvatar(usernames[1])]
     game['status'] = "running"
     game_type = game['game_type']
 
@@ -319,7 +319,7 @@ async def StartGameLoop(sid, room_id, player_1_index, player_2_index):
                 'text': "Waiting for next match...",
                 'game_over': game['game_over'],
                 'game_type': game['game_type'],
-                'avatar': temp_avatars[winner_index],
+                'avatar': await GetPlayerAvatar(game['players'][winner_index]),
                 'winner': game['players'][winner_index]
             }
             await sio.emit('update_overlay', data, to=[sid1, sid2])
