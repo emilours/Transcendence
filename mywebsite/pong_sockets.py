@@ -369,7 +369,7 @@ def GetAvailableRoom(game_type):
     global games
 
     for game in games.values():
-        if 'game_type' in game and game['game_type'] == game_type and game['status'] != "completed" and game['private'] != PRIVATE_LOBBY:
+        if 'game_type' in game and game['game_type'] == game_type and game['status'] == "waiting" and game['private'] != PRIVATE_LOBBY:
             if game_type == NORMAL_GAME and game['player_count'] < MAX_PLAYER_NORMAL:
                 return game['room_id']
             elif game_type == TOURNAMENT_GAME and game['player_count'] < MAX_PLAYER_TOURNAMENT:

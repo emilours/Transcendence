@@ -634,6 +634,27 @@ function createScoreText()
 	scene.add(scoreMesh);
 }
 
+
+function HandleKeyDown(e)
+{
+	if (e.key === 't')
+		SendEvent('debug_print', userName)
+	if (e.key === "ArrowUp" || e.key === "ArrowDown")
+		e.preventDefault();
+
+	var key = e.code.replace('Key', '').toLowerCase();
+	if ( keys[ key ] !== undefined )
+		keys[ key ] = true;
+}
+
+function HandleKeyUp(e)
+{
+	var key = e.code.replace('Key', '').toLowerCase();
+	if ( keys[ key ] !== undefined )
+		keys[ key ] = false;
+}
+
+
 function Init()
 {
 	// reset values
@@ -665,24 +686,8 @@ function Init()
 		i: false
 	};
 
-
-	document.body.addEventListener( 'keydown', function(e) {
-	// debug event
-	if (e.key === 't')
-		SendEvent('debug_print', userName)
-	if (e.key === "ArrowUp" || e.key === "ArrowDown")
-		e.preventDefault();
-	var key = e.code.replace('Key', '').toLowerCase();
-	// console.log("key: " + key);
-	if ( keys[ key ] !== undefined )
-		keys[ key ] = true;
-	});
-
-	document.body.addEventListener( 'keyup', function(e) {
-	var key = e.code.replace('Key', '').toLowerCase();
-	if ( keys[ key ] !== undefined )
-		keys[ key ] = false;
-	});
+	document.body.addEventListener( 'keydown', HandleKeyDown);
+	document.body.addEventListener( 'keyup', HandleKeyUp);
 
 
 	// MATERIAL
@@ -980,6 +985,8 @@ function getCookie(name)
 export function Cleanup()
 {
 	running = false;
+	document.body.removeEventListener( 'keydown', HandleKeyDown);
+	document.body.removeEventListener( 'keyup', HandleKeyUp);
 	if (scene)
 	{
 		scene.remove(light)
