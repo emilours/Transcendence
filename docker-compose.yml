@@ -1,6 +1,7 @@
 services:
   mywebsite:
-    build: ./mywebsite
+    build:
+      context: ./mywebsite
     container_name: mywebsite
     # command: daphne -u daphne/daphne.sock mywebsite.asgi:application
     # command: python manage.py runserver 0.0.0.0:8000
@@ -8,7 +9,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles/
       - media_volume:/app/media/
-      - ./mywebsite:/app
+      # - ./mywebsite:/app
       - daphne_volume:/app/daphne
     ports:
       - 8000:8000
