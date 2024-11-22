@@ -90,7 +90,7 @@ def signup(request):
 
     max_avatar_size = 2 * 1024 * 1024
     if avatar and avatar.size > max_avatar_size:
-        return JsonResponse({"error": f"File size exceeds the maximum limit of 2MB."}, status=400)
+        return JsonResponse({"error": f"File size exceeds the maximum limit of 2MB."}, status=200)
 
     user = User.objects.create_user(email=email, password=password1)
     user.first_name = firstname

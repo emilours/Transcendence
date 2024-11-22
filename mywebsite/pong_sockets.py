@@ -158,7 +158,8 @@ def GetPlayerAvatar(username):
     player = CustomUser.objects.filter(display_name=username)
     if player.exists():
         player = player.first()
-    return (player.avatar.url)
+        return (player.avatar.url)
+    return (None)
 
 
 @sync_to_async
@@ -453,7 +454,7 @@ async def LeaveRoom(sid, username, room_id):
     if room_id is None or room_id not in games:
         return
     if username not in games[room_id]['players']:
-        return 
+        return
     index = games[room_id]['players'].index(username)
     del games[room_id]['players'][index]
     del games[room_id]['sids'][index]
@@ -628,7 +629,7 @@ async def StartGame(sid, username):
     if (username != games[room_id]['players'][0]):
         return
     # HERE: this and the line above might cause a problem if the player leaving is the one at index 0 ??
-    
+
     if games[room_id]['status'] == "running":
         return
     if games[room_id]['status'] == "paused":
@@ -662,7 +663,7 @@ async def LeaveLobby(sid, username):
     if room_id is None:
         color_print(RED, f"[Error] {username} is not in a room")
         return
-    
+
     if room_id in games and games[room_id]['status'] == "running" or games[room_id]['status'] == "paused":
         games[room_id]['status'] = "paused"
         player_index = games[room_id]['players'].index(username)
@@ -681,7 +682,7 @@ def IsCorrectGameMode(room_id, game_mode):
     if room_id not in games:
         return False
     if games[room_id]['game_type'] == game_mode:
-        return True 
+        return True
 
 
 @sio.on('join_lobby')
@@ -692,20 +693,20 @@ async def JoinLobby(sid, username, room_key, game_mode):
         color_print(RED, f"[Error] lobby code {room_key} is not valid")
         await sio.emit('invalid_lobby_code', game_mode, to=sid)
         return
-    
+
     if not IsCorrectGameMode(room_id, game_mode):
         await sio.emit('invalid_game_mode', game_mode, to=sid)
         return
-    
+
     if IsRoomFull(room_id):
         await sio.emit('room_already_full', game_mode, to=sid)
         return
-    
+
     await SaveSession(sid, username, room_id)
     await JoinRoom(sid, username, room_id, 0)
     await sio.emit('user_joined', username)
     await SendLobbyData(sid, room_id)
-        
+
 
 @sio.on('find_lobby')
 async def FindLobby(sid, username, game_type):
@@ -804,7 +805,7 @@ async def disconnect(sid):
     await LeaveRoom(sid, username, room_id)
     color_print(YELLOW, f"{username} disconnected")
     await DebugPrint(sid, username)
-    
+
 
 
 @sio.on('debug_print')
