@@ -20,7 +20,7 @@ Core features include live matches between players (with tournament capabilities
 
 ## **AUTHENTIFICATION** 👤🔐
 
-![Auth](assets/videos/42API.gif)
+![Auth](assets/videos/onlineGame.gif)
 
 The User Management module focuses on user interactions and secure access control within the Pong platform. Users can **register securely** and select a unique display name, update their information, and upload an avatar (with a default option if none is provided). 
 
@@ -46,7 +46,6 @@ A user-friendly interface allows players to track their gaming history and analy
 
 The Graphics module revolutionizes the visual elements of the Pong game by incorporating advanced 3D techniques using **ThreeJS/WebGL** 🌐. This enhances the gameplay experience with stunning visual effects and immersive environments. By leveraging modern 3D technology, the game ensures compatibility, optimal performance, and an aesthetically advanced gaming environment that delights players.
 
-![Gameplay4](assets/videos/onlineMatch.gif)
 ## **RGPD** 🧙‍♂️ 
 
 The **GDPR Compliance** module ensures user privacy and data protection by implementing key features aligned with the regulation. We have introduced **semi-anonymization**, where sensitive user data (e.g., names, display names, avatars) is replaced with random strings in the database upon anonymization requests.
