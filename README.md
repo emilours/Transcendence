@@ -40,12 +40,9 @@ The Gameplay and User Experience module enhances the platform with two games: **
 
 A user-friendly interface allows players to track their gaming history and analyze performance conveniently, ensuring an enjoyable and informative experience.
 
-![Gameplay2](assets/videos/Invaders.gif)
+![Gameplay2](assets/imgs/leaderBoard.png)
 
-<p float="left">
-  <img src="assets/imgs/leaderBoard.png" width="45%" />
-  <img src="assets/imgs/dashBoard.png" width="45%" />
-</p>
+![Gameplay2](assets/imgs/dashBoard.png)
 
 The Graphics module revolutionizes the visual elements of the Pong game by incorporating advanced 3D techniques using **ThreeJS/WebGL** 🌐. This enhances the gameplay experience with stunning visual effects and immersive environments. By leveraging modern 3D technology, the game ensures compatibility, optimal performance, and an aesthetically advanced gaming environment that delights players.
 
