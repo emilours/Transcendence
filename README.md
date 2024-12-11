@@ -26,6 +26,10 @@ The User Management module focuses on user interactions and secure access contro
 
 Additional features include **friend management** with online status, user profiles **displaying stats** (e.g., wins/losses), and a detailed match history of 1v1 games, accessible to logged-in users. Duplicate usernames/emails must be handled logically. The module also integrates **OAuth 2.0 authentication via the 42 API**, ensuring secure sign-in and seamless token-based exchanges while adhering to best practices for user-friendly and secure login flows.
 
+![Auth1](assets/imgs/pendingrequest.png)
+
+![Auth1](assets/imgs/friendList.png)
+
 Additionally, custom work has been done on **Django models** to efficiently manage and store user data in the database, ensuring smooth integration with the backend.
 
 ## **GAMEPLAY EXPERIENCE** 🎮
