@@ -42,9 +42,7 @@ The Gameplay and User Experience module enhances the platform with two games: **
 
 **Pusheen's Invaders** 👾 incorporates Pusheen the Cat-themed customization, including unique power-ups, maps, and attacks, alongside a default gameplay mode for simplicity. For both games, **Pusheen's Pong** 🏓 and **Pusheen's Invaders** 👾, dashboards provide comprehensive user and game statistics, featuring detailed match histories, performance metrics, and visually appealing data visualizations like charts and graphs.
 
-<div align="center">
-  <img src="assets/videos/Invaders.gif alt="Auth1" />
-</div>
+![Gameplay1](assets/videos/Invaders.gif)
 
 A user-friendly interface allows players to track their gaming history and analyze performance conveniently, ensuring an enjoyable and informative experience.
 
