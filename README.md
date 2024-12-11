@@ -1,7 +1,7 @@
 
 # **TRANSCENDENCE 🏓 : Challenge your skills, compete with friends, and relive the classic fun of Pong – the game that never gets old!**
 
-![Welcome](assets/videos/WelcomingPage.gif)
+![Welcome](assets/videos/welcomingPage.gif)
 
 This project involves developing a web-based platform for real-time Pong gameplay with a user-friendly interface. Using Django for the backend, PostgreSQL for the database, and Bootstrap with JavaScript for the frontend, the application must be a single-page application compatible with Google Chrome.
 
