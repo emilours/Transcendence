@@ -28,7 +28,9 @@ Additional features include **friend management** with online status, user profi
 
 ![Auth1](assets/imgs/pendingrequest.png)
 
-![Auth1](assets/imgs/friendList.png)
+<div align="center">
+  <img src="assets/imgs/friendList.png" alt="Auth1" />
+</div>
 
 Additionally, custom work has been done on **Django models** to efficiently manage and store user data in the database, ensuring smooth integration with the backend.
 
@@ -44,7 +46,9 @@ The Gameplay and User Experience module enhances the platform with two games: **
 
 A user-friendly interface allows players to track their gaming history and analyze performance conveniently, ensuring an enjoyable and informative experience.
 
-![Gameplay2](assets/imgs/leaderBoard.png)
+<div align="center">
+  <img src="assets/imgs/leaderBoard.png" alt="Auth1" />
+</div>
 
 ![Gameplay2](assets/imgs/dashBoard.png)
 
